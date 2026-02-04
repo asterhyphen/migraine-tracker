@@ -1,4 +1,4 @@
-package com.example.migraine_tracker
+package dev.aster.migraine_tracker
 
 import io.flutter.embedding.android.FlutterActivity
 
