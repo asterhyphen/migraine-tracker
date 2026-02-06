@@ -1,62 +1,113 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MigraineApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MigraineApp extends StatelessWidget {
+  const MigraineApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      debugShowCheckedModeBanner: false,
+      home: const HomeScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomeScreenState extends State<HomeScreen> {
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  DateTime dob = DateTime(2006, 11, 09); 
+  bool hadMigraine = false;
+  double intensity = 5;
+
+  int calculateAge() {
+    DateTime today = DateTime.now();
+    int age = today.year - dob.year;
+
+    if (today.month < dob.month ||
+        (today.month == dob.month && today.day < dob.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  void saveEntry() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          hadMigraine
+              ? "Migraine logged. Intensity: ${intensity.toInt()}"
+              : "No migraine today logged",
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
+      appBar: AppBar(title: const Text("Migraine Prototype")),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: .center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('You have pushed the button this many times:'),
+
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              "Age: ${calculateAge()}",
+              style: const TextStyle(fontSize: 22),
+            ),
+
+            const SizedBox(height: 30),
+
+            SwitchListTile(
+              title: const Text("Had Migraine Today"),
+              value: hadMigraine,
+              onChanged: (val) {
+                setState(() {
+                  hadMigraine = val;
+                });
+              },
+            ),
+
+            if (hadMigraine) ...[
+              const SizedBox(height: 20),
+
+              const Text("Intensity"),
+              Slider(
+                min: 1,
+                max: 10,
+                divisions: 9,
+                label: intensity.toInt().toString(),
+                value: intensity,
+                onChanged: (val) {
+                  setState(() {
+                    intensity = val;
+                  });
+                },
+              ),
+            ],
+
+            const SizedBox(height: 40),
+
+            Center(
+              child: ElevatedButton(
+                onPressed: saveEntry,
+                child: const Text("Save Today"),
+              ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
