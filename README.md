@@ -1,2 +1,5 @@
 # Migraine Tracker
-Did not really start coding stage yet
+Log your migraines and track them and see statistics and more!
+
+> [!NOTE]
+> App is in early stages of development, more to come!
