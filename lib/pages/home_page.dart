@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({
+    super.key,
+    required this.dob,
+    this.name,
+  });
+
+  final DateTime dob;
+  final String? name;
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  DateTime dob = DateTime(2006, 11, 09);
   bool hadMigraine = false;
   double intensity = 5;
 
   int calculateAge() {
     DateTime today = DateTime.now();
-    int age = today.year - dob.year;
+    int age = today.year - widget.dob.year;
 
-    if (today.month < dob.month ||
-        (today.month == dob.month && today.day < dob.day)) {
+    if (today.month < widget.dob.month ||
+        (today.month == widget.dob.month && today.day < widget.dob.day)) {
       age--;
     }
     return age;
@@ -44,6 +50,13 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (widget.name != null && widget.name!.isNotEmpty) ...[
+              Text(
+                "Hello, ${widget.name}",
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 10),
+            ],
             Text(
               "Age: ${calculateAge()}",
               style: const TextStyle(fontSize: 22),
