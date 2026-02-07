@@ -14,8 +14,55 @@ class MigraineApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const background = Color(0xFF0F1115);
+    const darkScheme = ColorScheme.dark(
+      primary: Color(0xFF4FD1C5),
+      secondary: Color(0xFFF6AE2D),
+      surface: Color(0xFF171A21),
+      error: Color(0xFFF97066),
+      onPrimary: Color(0xFF0B0D10),
+      onSecondary: Color(0xFF0B0D10),
+      onSurface: Color(0xFFF5F7FA),
+      onError: Color(0xFF0B0D10),
+    );
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.dark,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: darkScheme,
+        scaffoldBackgroundColor: background,
+        appBarTheme: AppBarTheme(
+          backgroundColor: darkScheme.surface,
+          foregroundColor: darkScheme.onSurface,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        cardTheme: CardThemeData(
+          color: darkScheme.surface,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: darkScheme.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          backgroundColor: darkScheme.surface,
+          contentTextStyle: TextStyle(color: darkScheme.onSurface),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: darkScheme.surface,
+          selectedItemColor: darkScheme.primary,
+          unselectedItemColor: darkScheme.onSurface.withValues(alpha: 0.6),
+        ),
+      ),
       home: const AppShell(),
     );
   }
