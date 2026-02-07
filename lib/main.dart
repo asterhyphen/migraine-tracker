@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'pages/home_page.dart';
+import 'pages/settings_page.dart';
+import 'pages/stats_page.dart';
 
 void main() {
   runApp(const MigraineApp());
@@ -11,103 +14,57 @@ class MigraineApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const HomeScreen(),
+      home: const AppShell(),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class AppShell extends StatefulWidget {
+  const AppShell({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<AppShell> createState() => _AppShellState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _AppShellState extends State<AppShell> {
+  int _currentIndex = 0;
 
-  DateTime dob = DateTime(2006, 11, 09); 
-  bool hadMigraine = false;
-  double intensity = 5;
+  final List<Widget> _pages = const [
+    HomePage(),
+    StatsPage(),
+    SettingsPage(),
+  ];
 
-  int calculateAge() {
-    DateTime today = DateTime.now();
-    int age = today.year - dob.year;
-
-    if (today.month < dob.month ||
-        (today.month == dob.month && today.day < dob.day)) {
-      age--;
-    }
-    return age;
-  }
-
-  void saveEntry() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          hadMigraine
-              ? "Migraine logged. Intensity: ${intensity.toInt()}"
-              : "No migraine today logged",
-        ),
-      ),
-    );
+  void _onNavTap(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      appBar: AppBar(title: const Text("Migraine Prototype")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            Text(
-              "Age: ${calculateAge()}",
-              style: const TextStyle(fontSize: 22),
-            ),
-
-            const SizedBox(height: 30),
-
-            SwitchListTile(
-              title: const Text("Had Migraine Today"),
-              value: hadMigraine,
-              onChanged: (val) {
-                setState(() {
-                  hadMigraine = val;
-                });
-              },
-            ),
-
-            if (hadMigraine) ...[
-              const SizedBox(height: 20),
-
-              const Text("Intensity"),
-              Slider(
-                min: 1,
-                max: 10,
-                divisions: 9,
-                label: intensity.toInt().toString(),
-                value: intensity,
-                onChanged: (val) {
-                  setState(() {
-                    intensity = val;
-                  });
-                },
-              ),
-            ],
-
-            const SizedBox(height: 40),
-
-            Center(
-              child: ElevatedButton(
-                onPressed: saveEntry,
-                child: const Text("Save Today"),
-              ),
-            ),
-          ],
-        ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onNavTap,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: "Home",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: "Stats",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: "Settings",
+          ),
+        ],
       ),
     );
   }
