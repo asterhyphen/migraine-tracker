@@ -37,7 +37,7 @@ class _SettingsPageState extends State<SettingsPage> {
   String _formatDate(DateTime date) {
     final mm = date.month.toString().padLeft(2, '0');
     final dd = date.day.toString().padLeft(2, '0');
-    return "${date.year}-$mm-$dd";
+    return "$dd-$mm-${date.year}";
   }
 
   Future<void> _pickDob() async {
@@ -57,9 +57,9 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Name cannot be empty.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Name cannot be empty.")));
       return;
     }
     setState(() {
@@ -70,9 +70,9 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       _saving = false;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Profile updated.")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Profile updated.")));
   }
 
   @override
@@ -105,10 +105,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     style: const TextStyle(fontSize: 16),
                   ),
                 ),
-                TextButton(
-                  onPressed: _pickDob,
-                  child: const Text("Edit"),
-                ),
+                TextButton(onPressed: _pickDob, child: const Text("Edit")),
               ],
             ),
             const Spacer(),

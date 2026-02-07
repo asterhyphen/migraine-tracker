@@ -31,9 +31,7 @@ class _StatsPageState extends State<StatsPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final monthStats = _buildMonthlyStats();
@@ -44,13 +42,8 @@ class _StatsPageState extends State<StatsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Migraine Stats"),
-        actions: const [
-          IconButton(
-            onPressed: null,
-            icon: Icon(Icons.menu),
-          ),
-        ],
+        title: const Text("Statistics"),
+        actions: const [IconButton(onPressed: null, icon: Icon(Icons.menu))],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -109,7 +102,9 @@ class _StatsPageState extends State<StatsPage> {
     for (int i = 3; i >= 0; i--) {
       final month = DateTime(now.year, now.month - i);
       final count = _entries
-          .where((e) => e.date.year == month.year && e.date.month == month.month)
+          .where(
+            (e) => e.date.year == month.year && e.date.month == month.month,
+          )
           .length;
       data.add(_BarDatum(_monthLabel(month), count.toDouble()));
     }
@@ -122,14 +117,14 @@ class _StatsPageState extends State<StatsPage> {
     for (int i = 3; i >= 0; i--) {
       final month = DateTime(now.year, now.month - i);
       final monthEntries = _entries
-          .where((e) => e.date.year == month.year && e.date.month == month.month)
+          .where(
+            (e) => e.date.year == month.year && e.date.month == month.month,
+          )
           .toList();
       final avg = monthEntries.isEmpty
           ? 0.0
-          : monthEntries
-                  .map((e) => e.intensity)
-                  .reduce((a, b) => a + b) /
-              monthEntries.length;
+          : monthEntries.map((e) => e.intensity).reduce((a, b) => a + b) /
+                monthEntries.length;
       data.add(_BarDatum(_monthLabel(month), avg));
     }
     return data;
@@ -145,9 +140,7 @@ class _StatsPageState extends State<StatsPage> {
     final total = counts.values.fold<int>(0, (sum, v) => sum + v);
     final sorted = counts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    return sorted
-        .map((e) => _CauseDatum(e.key, e.value, total))
-        .toList();
+    return sorted.map((e) => _CauseDatum(e.key, e.value, total)).toList();
   }
 
   double _painkillerUsage() {
@@ -176,10 +169,7 @@ class _StatsPageState extends State<StatsPage> {
 }
 
 class _ChartCard extends StatelessWidget {
-  const _ChartCard({
-    required this.title,
-    required this.child,
-  });
+  const _ChartCard({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -195,10 +185,7 @@ class _ChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           SizedBox(height: 140, child: child),
         ],
@@ -242,10 +229,7 @@ class _BarChart extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                datum.label,
-                style: const TextStyle(fontSize: 12),
-              ),
+              Text(datum.label, style: const TextStyle(fontSize: 12)),
             ],
           ),
         );
@@ -361,7 +345,8 @@ class _LinePainter extends CustomPainter {
     for (int i = 0; i < values.length; i++) {
       final x = step * i;
       final y =
-          size.height - (values[i] / (maxVal == 0 ? 1.0 : maxVal)) * size.height;
+          size.height -
+          (values[i] / (maxVal == 0 ? 1.0 : maxVal)) * size.height;
       if (i == 0) {
         path.moveTo(x, y);
       } else {
