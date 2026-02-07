@@ -19,7 +19,12 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
 
   final List<String> causes = const [
     "Stress",
-    "Lack of Sleep",
+    "Smoke",
+    "Food contents",
+    "AC",
+    "Dehydration",
+    "Odour",
+    "Sleep related",
     "Screen Time",
     "Skipped Meal",
     "Weather",
