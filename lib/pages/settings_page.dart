@@ -75,6 +75,18 @@ class _SettingsPageState extends State<SettingsPage> {
     ).showSnackBar(const SnackBar(content: Text("Profile updated.")));
   }
 
+  void _importData() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Import not wired yet.")),
+    );
+  }
+
+  void _exportData() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Export not wired yet.")),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,6 +118,29 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 TextButton(onPressed: _pickDob, child: const Text("Edit")),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              "Data",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _importData,
+                    child: const Text("Import"),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _exportData,
+                    child: const Text("Export"),
+                  ),
+                ),
               ],
             ),
             const Spacer(),
