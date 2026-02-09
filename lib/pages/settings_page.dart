@@ -1,4 +1,13 @@
+import 'dart:io';
+
+import 'package:csv/csv.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../data/migraine_db.dart';
+import '../data/migraine_entry.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -20,6 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _nameController;
   late DateTime _dob;
   bool _saving = false;
+  bool _busy = false;
 
   @override
   void initState() {
@@ -75,16 +85,168 @@ class _SettingsPageState extends State<SettingsPage> {
     ).showSnackBar(const SnackBar(content: Text("Profile updated.")));
   }
 
-  void _importData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Import not wired yet.")),
-    );
+  Future<void> _importData() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+    });
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+      );
+      if (result == null || result.files.single.path == null) {
+        return;
+      }
+
+      final file = File(result.files.single.path!);
+      final content = await file.readAsString();
+      final rows = const CsvToListConverter(eol: '\n').convert(content);
+      if (rows.isEmpty) return;
+
+      final startIndex = _looksLikeHeader(rows.first) ? 1 : 0;
+      final entries = <MigraineEntry>[];
+      for (int i = startIndex; i < rows.length; i++) {
+        final row = rows[i];
+        if (row.length < 7) continue;
+        final entry = _entryFromRow(row);
+        if (entry != null) entries.add(entry);
+      }
+
+      await MigraineDb.instance.insertEntries(entries);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Imported ${entries.length} entries.")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Import failed: $e")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
   }
 
-  void _exportData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Export not wired yet.")),
-    );
+  Future<void> _exportData() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+    });
+
+    try {
+      final entries = await MigraineDb.instance.getMigraineEntriesOnly();
+      final rows = <List<dynamic>>[
+        [
+          'date',
+          'had_migraine',
+          'intensity',
+          'painkillers',
+          'medication',
+          'notes',
+          'causes'
+        ],
+      ];
+
+      for (final entry in entries) {
+        rows.add([
+          entry.date.toIso8601String(),
+          entry.hadMigraine ? 1 : 0,
+          entry.intensity,
+          entry.painkillers ? 1 : 0,
+          entry.medication,
+          entry.notes,
+          entry.causes.join('|'),
+        ]);
+      }
+
+      final csv = const ListToCsvConverter().convert(rows);
+      final dir = await _resolveDownloadDir();
+      if (dir == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Download folder unavailable.")),
+        );
+        return;
+      }
+
+      final timestamp = DateTime.now()
+          .toIso8601String()
+          .replaceAll(':', '')
+          .replaceAll('-', '')
+          .replaceAll('.', '');
+      final path = "${dir.path}/migraine_export_$timestamp.csv";
+      final file = File(path);
+      await file.writeAsString(csv);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Exported to $path")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Export failed: $e")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
+  }
+
+  bool _looksLikeHeader(List<dynamic> row) {
+    if (row.isEmpty) return false;
+    final first = row.first.toString().toLowerCase();
+    return first.contains('date');
+  }
+
+  MigraineEntry? _entryFromRow(List<dynamic> row) {
+    try {
+      final date = DateTime.parse(row[0].toString());
+      final hadMigraine = row[1].toString() == '1';
+      final intensity = int.tryParse(row[2].toString()) ?? 0;
+      final painkillers = row[3].toString() == '1';
+      final medication = row[4].toString();
+      final notes = row[5].toString();
+      final causes =
+          row[6].toString().split('|').where((c) => c.isNotEmpty).toList();
+      return MigraineEntry(
+        date: date,
+        hadMigraine: hadMigraine,
+        intensity: intensity,
+        painkillers: painkillers,
+        medication: medication,
+        notes: notes,
+        causes: causes,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Directory?> _resolveDownloadDir() async {
+    if (Platform.isAndroid) {
+      final status = await Permission.storage.request();
+      if (!status.isGranted) return null;
+
+      final downloadDir = Directory('/storage/emulated/0/Download');
+      if (await downloadDir.exists()) return downloadDir;
+      final fallback = await getExternalStorageDirectory();
+      return fallback;
+    }
+
+    if (Platform.isIOS) {
+      return getApplicationDocumentsDirectory();
+    }
+
+    return getDownloadsDirectory();
   }
 
   @override
@@ -130,15 +292,15 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _importData,
+                    onPressed: _busy ? null : _importData,
                     child: const Text("Import"),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _exportData,
-                    child: const Text("Export"),
+                    onPressed: _busy ? null : _exportData,
+                    child: Text(_busy ? "Working..." : "Export"),
                   ),
                 ),
               ],

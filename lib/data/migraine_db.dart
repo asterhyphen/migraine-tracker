@@ -69,6 +69,16 @@ class MigraineDb {
     return rows.map(MigraineEntry.fromMap).toList();
   }
 
+  Future<void> insertEntries(List<MigraineEntry> entries) async {
+    if (entries.isEmpty) return;
+    final db = await database;
+    final batch = db.batch();
+    for (final entry in entries) {
+      batch.insert('migraine_entries', entry.toMap());
+    }
+    await batch.commit(noResult: true);
+  }
+
   Future<List<MigraineEntry>> getEntriesForMonth(DateTime month) async {
     final db = await database;
     final start = DateTime(month.year, month.month);
