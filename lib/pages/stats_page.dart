@@ -39,6 +39,9 @@ class _StatsPageState extends State<StatsPage> {
     final causes = _buildCauseStats();
     final painkillerPercent = _painkillerUsage();
     final intensitySeries = _entries.take(6).map((e) => e.intensity).toList();
+    final summary = _buildSummary();
+    final recent = _entries.take(6).toList();
+    final weekly = _buildWeeklyCounts();
 
     return Scaffold(
       appBar: AppBar(
@@ -50,6 +53,22 @@ class _StatsPageState extends State<StatsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            _SectionTitle(title: "Summary"),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: summary.map((item) {
+                return _InsightCard(
+                  title: item.title,
+                  value: item.value,
+                  subtitle: item.subtitle,
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+            _SectionTitle(title: "Trends"),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -90,6 +109,14 @@ class _StatsPageState extends State<StatsPage> {
               title: "Recent Intensity",
               child: _LineChart(values: intensitySeries),
             ),
+            const SizedBox(height: 20),
+            _SectionTitle(title: "Weekly Pulse"),
+            const SizedBox(height: 12),
+            _WeeklyRow(data: weekly),
+            const SizedBox(height: 20),
+            _SectionTitle(title: "Recent Logs"),
+            const SizedBox(height: 12),
+            _RecentList(entries: recent),
           ],
         ),
       ),
@@ -166,6 +193,85 @@ class _StatsPageState extends State<StatsPage> {
     ];
     return labels[month.month - 1];
   }
+
+  List<_SummaryItem> _buildSummary() {
+    if (_entries.isEmpty) {
+      return [
+        _SummaryItem("Total Entries", "0", "Log your first migraine"),
+        _SummaryItem("Avg. Intensity", "-", "No data yet"),
+        _SummaryItem("Top Cause", "-", "No data yet"),
+        _SummaryItem("Painkiller Rate", "0%", "Across all logs"),
+      ];
+    }
+
+    final total = _entries.length;
+    final avgIntensity =
+        _entries.map((e) => e.intensity).reduce((a, b) => a + b) / total;
+    final maxIntensity =
+        _entries.map((e) => e.intensity).reduce((a, b) => a > b ? a : b);
+    final minIntensity =
+        _entries.map((e) => e.intensity).reduce((a, b) => a < b ? a : b);
+
+    final causeCounts = <String, int>{};
+    for (final entry in _entries) {
+      for (final cause in entry.causes) {
+        causeCounts[cause] = (causeCounts[cause] ?? 0) + 1;
+      }
+    }
+    String topCause = "No cause tagged";
+    if (causeCounts.isNotEmpty) {
+      final sorted = causeCounts.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      topCause = sorted.first.key;
+    }
+
+    final painkillerRate = (_painkillerUsage() * 100).round();
+
+    return [
+      _SummaryItem("Total Entries", "$total", "Max $maxIntensity • Min $minIntensity"),
+      _SummaryItem(
+        "Avg. Intensity",
+        avgIntensity.toStringAsFixed(1),
+        "Across all logs",
+      ),
+      _SummaryItem("Top Cause", topCause, "Most frequent trigger"),
+      _SummaryItem("Painkiller Rate", "$painkillerRate%", "Across all logs"),
+    ];
+  }
+
+  List<_WeeklyDatum> _buildWeeklyCounts() {
+    final now = DateTime.now();
+    final List<_WeeklyDatum> data = [];
+    for (int i = 6; i >= 0; i--) {
+      final day = DateTime(now.year, now.month, now.day - i);
+      final count = _entries.where((e) {
+        return e.date.year == day.year &&
+            e.date.month == day.month &&
+            e.date.day == day.day;
+      }).length;
+      data.add(_WeeklyDatum(_weekdayLabel(day), count));
+    }
+    return data;
+  }
+
+  String _weekdayLabel(DateTime date) {
+    const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    return labels[date.weekday % 7];
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    );
+  }
 }
 
 class _ChartCard extends StatelessWidget {
@@ -188,6 +294,61 @@ class _ChartCard extends StatelessWidget {
           Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           SizedBox(height: 140, child: child),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryItem {
+  _SummaryItem(this.title, this.value, this.subtitle);
+
+  final String title;
+  final String value;
+  final String subtitle;
+}
+
+class _InsightCard extends StatelessWidget {
+  const _InsightCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String value;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              color: scheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
         ],
       ),
     );
@@ -358,4 +519,116 @@ class _LinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class _WeeklyDatum {
+  _WeeklyDatum(this.label, this.count);
+
+  final String label;
+  final int count;
+}
+
+class _WeeklyRow extends StatelessWidget {
+  const _WeeklyRow({required this.data});
+
+  final List<_WeeklyDatum> data;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: data.map((datum) {
+        final height = (datum.count * 12).clamp(6, 60).toDouble();
+        return Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Container(
+                height: height,
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white12,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                datum.label,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _RecentList extends StatelessWidget {
+  const _RecentList({required this.entries});
+
+  final List<MigraineEntry> entries;
+
+  String _formatDate(DateTime date) {
+    final mm = date.month.toString().padLeft(2, '0');
+    final dd = date.day.toString().padLeft(2, '0');
+    return "$dd-$mm-${date.year}";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (entries.isEmpty) {
+      return const Text("No entries yet.");
+    }
+    return Column(
+      children: entries.map((entry) {
+        final causes = entry.causes.isEmpty
+            ? "No causes tagged"
+            : entry.causes.join(" • ");
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white12,
+                ),
+                child: Center(
+                  child: Text(
+                    entry.intensity.toString(),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _formatDate(entry.date),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      causes,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
 }
