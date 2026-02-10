@@ -49,6 +49,24 @@ class MigraineDb {
     return db.insert('migraine_entries', entry.toMap());
   }
 
+  Future<int> updateEntry(MigraineEntry entry) async {
+    if (entry.id == null) {
+      return insertEntry(entry);
+    }
+    final db = await database;
+    return db.update(
+      'migraine_entries',
+      entry.toMap(),
+      where: 'id = ?',
+      whereArgs: [entry.id],
+    );
+  }
+
+  Future<int> deleteEntry(int id) async {
+    final db = await database;
+    return db.delete('migraine_entries', where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<List<MigraineEntry>> getAllEntries() async {
     final db = await database;
     final rows = await db.query(
@@ -90,5 +108,20 @@ class MigraineDb {
       orderBy: 'date DESC',
     );
     return rows.map(MigraineEntry.fromMap).toList();
+  }
+
+  Future<MigraineEntry?> getEntryForDate(DateTime date) async {
+    final db = await database;
+    final start = DateTime(date.year, date.month, date.day);
+    final end = start.add(const Duration(days: 1));
+    final rows = await db.query(
+      'migraine_entries',
+      where: 'date >= ? AND date < ? AND had_migraine = ?',
+      whereArgs: [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch, 1],
+      orderBy: 'date DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return MigraineEntry.fromMap(rows.first);
   }
 }

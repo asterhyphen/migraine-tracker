@@ -21,6 +21,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool _loading = true;
   MigraineEntry? _lastEntry;
+  MigraineEntry? _todayEntry;
   int _monthCount = 0;
   int _streakDays = 0;
   int _yearCount = 0;
@@ -44,7 +45,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _openLogMigraine() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const LogMigrainePage()),
+      MaterialPageRoute(
+        builder: (_) => LogMigrainePage(entry: _todayEntry),
+      ),
     );
     await _loadStats();
   }
@@ -58,6 +61,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadStats() async {
     final now = DateTime.now();
     final monthEntries = await MigraineDb.instance.getEntriesForMonth(now);
+    final todayEntry = await MigraineDb.instance.getEntryForDate(now);
     final all = await MigraineDb.instance.getMigraineEntriesOnly();
     MigraineEntry? last;
     if (all.isNotEmpty) {
@@ -66,6 +70,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _monthCount = monthEntries.length;
       _lastEntry = last;
+      _todayEntry = todayEntry;
       _streakDays = _daysSince(last?.date);
       _yearCount = all.where((e) => e.date.year == now.year).length;
       _loading = false;
@@ -106,7 +111,9 @@ class _HomePageState extends State<HomePage> {
                   ? "Welcome!"
                   : "Welcome, ${widget.name}!",
               subtitle: "Age ${calculateAge()} • Track migraines with clarity.",
-              primaryLabel: "Log Today's Migraine",
+              primaryLabel: _todayEntry == null
+                  ? "Log Today's Migraine"
+                  : "Edit Today's Migraine",
               primaryAction: _openLogMigraine,
               secondaryLabel: "View History",
               secondaryAction: _openHistory,

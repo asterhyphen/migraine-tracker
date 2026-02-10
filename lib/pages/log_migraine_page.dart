@@ -4,7 +4,9 @@ import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 
 class LogMigrainePage extends StatefulWidget {
-  const LogMigrainePage({super.key});
+  const LogMigrainePage({super.key, this.entry});
+
+  final MigraineEntry? entry;
 
   @override
   State<LogMigrainePage> createState() => _LogMigrainePageState();
@@ -16,6 +18,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
   bool tookPainkillers = false;
   final TextEditingController medicationController = TextEditingController();
   final TextEditingController notesController = TextEditingController();
+  DateTime? _entryDate;
 
   final List<String> causes = const [
     "Stress",
@@ -32,6 +35,21 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
   ];
 
   final Set<String> selectedCauses = {};
+
+  @override
+  void initState() {
+    super.initState();
+    final entry = widget.entry;
+    if (entry != null) {
+      hadMigraine = entry.hadMigraine;
+      intensity = entry.intensity.toDouble();
+      tookPainkillers = entry.painkillers;
+      medicationController.text = entry.medication;
+      notesController.text = entry.notes;
+      selectedCauses.addAll(entry.causes);
+      _entryDate = entry.date;
+    }
+  }
 
   @override
   void dispose() {
@@ -58,8 +76,10 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       return;
     }
 
+    final now = DateTime.now();
     final entry = MigraineEntry(
-      date: DateTime.now(),
+      id: widget.entry?.id,
+      date: _entryDate ?? now,
       hadMigraine: true,
       intensity: intensity.toInt(),
       painkillers: tookPainkillers,
@@ -68,25 +88,59 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       causes: selectedCauses.toList(),
     );
 
-    MigraineDb.instance.insertEntry(entry).then((_) {
+    MigraineDb.instance.updateEntry(entry).then((_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Entry saved.")),
+        SnackBar(
+          content: Text(widget.entry == null ? "Entry saved." : "Entry updated."),
+        ),
       );
       Navigator.of(context).pop();
     });
+  }
+
+  Future<void> _deleteEntry() async {
+    final entry = widget.entry;
+    if (entry?.id == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Delete entry?"),
+          content: const Text("This cannot be undone."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text("Delete"),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) return;
+    await MigraineDb.instance.deleteEntry(entry!.id!);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Entry deleted.")),
+    );
+    Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Log Migraine"),
-        actions: const [
-          IconButton(
-            onPressed: null,
-            icon: Icon(Icons.menu),
-          ),
+        title: Text(widget.entry == null ? "Log Migraine" : "Edit Migraine"),
+        actions: [
+          if (widget.entry != null)
+            IconButton(
+              onPressed: _deleteEntry,
+              icon: const Icon(Icons.delete_outline),
+            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -182,7 +236,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: _saveEntry,
-                child: const Text("Save Entry"),
+                child: Text(widget.entry == null ? "Save Entry" : "Update Entry"),
               ),
             ),
           ],

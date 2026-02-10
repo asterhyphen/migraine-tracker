@@ -181,6 +181,7 @@ class _SettingsPageState extends State<SettingsPage> {
           .replaceAll('-', '')
           .replaceAll('.', '');
       final path = "${dir.path}/migraine_export_$timestamp.csv";
+      await dir.create(recursive: true);
       final file = File(path);
       await file.writeAsString(csv);
       if (!mounted) return;
@@ -236,8 +237,16 @@ class _SettingsPageState extends State<SettingsPage> {
       final status = await Permission.storage.request();
       if (!status.isGranted) return null;
 
+      final candidates = await getExternalStorageDirectories(
+        type: StorageDirectory.downloads,
+      );
+      if (candidates != null && candidates.isNotEmpty) {
+        return candidates.first;
+      }
+
       final downloadDir = Directory('/storage/emulated/0/Download');
       if (await downloadDir.exists()) return downloadDir;
+
       final fallback = await getExternalStorageDirectory();
       return fallback;
     }

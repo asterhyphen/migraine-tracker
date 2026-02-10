@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
+import 'log_migraine_page.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -66,9 +67,51 @@ class _HistoryPageState extends State<HistoryPage> {
                   subtitle: Text(
                     "Intensity ${entry.intensity} • $causes",
                   ),
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => LogMigrainePage(entry: entry),
+                      ),
+                    );
+                    await _loadEntries();
+                  },
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _confirmDelete(entry),
+                  ),
                 );
               },
             ),
     );
+  }
+
+  Future<void> _confirmDelete(MigraineEntry entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Delete entry?"),
+          content: const Text("This cannot be undone."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text("Delete"),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) return;
+    if (entry.id == null) return;
+    await MigraineDb.instance.deleteEntry(entry.id!);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Entry deleted.")),
+    );
+    await _loadEntries();
   }
 }
