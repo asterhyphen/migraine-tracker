@@ -260,71 +260,128 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text("Settings")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Profile",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: "Name",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _SectionHeader(title: "Profile"),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: Column(
               children: [
-                Expanded(
-                  child: Text(
-                    "Date of birth: ${_formatDate(_dob)}",
-                    style: const TextStyle(fontSize: 16),
+                ListTile(
+                  leading: const Icon(Icons.person_outline),
+                  title: const Text("Name"),
+                  subtitle: TextField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      hintText: "Your name",
+                      border: InputBorder.none,
+                    ),
                   ),
                 ),
-                TextButton(onPressed: _pickDob, child: const Text("Edit")),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.cake_outlined),
+                  title: const Text("Date of birth"),
+                  subtitle: Text(_formatDate(_dob)),
+                  trailing: TextButton(
+                    onPressed: _pickDob,
+                    child: const Text("Edit"),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 24),
-            const Text(
-              "Data",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            Row(
+          ),
+          const SizedBox(height: 20),
+          _SectionHeader(title: "Data"),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: Column(
               children: [
-                Expanded(
-                  child: OutlinedButton(
+                ListTile(
+                  leading: const Icon(Icons.upload_file_outlined),
+                  title: const Text("Import data"),
+                  subtitle: const Text("Restore from a CSV backup"),
+                  trailing: OutlinedButton(
                     onPressed: _busy ? null : _importData,
-                    child: const Text("Import"),
+                    child: Text(_busy ? "Working..." : "Import"),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton(
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.download_outlined),
+                  title: const Text("Export data"),
+                  subtitle: const Text("Save CSV to Downloads"),
+                  trailing: OutlinedButton(
                     onPressed: _busy ? null : _exportData,
                     child: Text(_busy ? "Working..." : "Export"),
                   ),
                 ),
               ],
             ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
+          ),
+          const SizedBox(height: 24),
+          _SectionHeader(title: "Save Changes"),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: ListTile(
+              leading: Icon(Icons.save_outlined, color: scheme.primary),
+              title: const Text("Save profile"),
+              subtitle: const Text("Apply name and date of birth updates"),
+              trailing: FilledButton(
                 onPressed: _saving ? null : _save,
                 child: Text(_saving ? "Saving..." : "Save"),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Exports are stored in your Downloads folder.",
+            style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.6)),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title.toUpperCase(),
+      style: TextStyle(
+        letterSpacing: 1.1,
+        fontSize: 12,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white12),
+        color: Theme.of(context).colorScheme.surface,
+      ),
+      child: child,
     );
   }
 }
