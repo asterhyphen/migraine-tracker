@@ -46,7 +46,6 @@ class _StatsPageState extends State<StatsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Statistics"),
-        actions: const [IconButton(onPressed: null, icon: Icon(Icons.menu))],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
