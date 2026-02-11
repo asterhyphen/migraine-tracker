@@ -64,6 +64,37 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  Future<void> _editName() async {
+    final controller = TextEditingController(text: _nameController.text);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Edit name"),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: "Name"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+    if (result == null || result.isEmpty) return;
+    setState(() {
+      _nameController.text = result;
+    });
+  }
+
   Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
@@ -266,31 +297,46 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _SettingsCard(
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: scheme.primary.withValues(alpha: 0.2),
+                child: Text(
+                  _nameController.text.isEmpty
+                      ? "?"
+                      : _nameController.text[0].toUpperCase(),
+                  style: TextStyle(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              title: Text(
+                _nameController.text.isEmpty ? "Your Profile" : _nameController.text,
+              ),
+              subtitle: Text("DOB ${_formatDate(_dob)}"),
+            ),
+          ),
+          const SizedBox(height: 20),
           _SectionHeader(title: "Profile"),
           const SizedBox(height: 12),
           _SettingsCard(
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.person_outline),
-                  title: const Text("Name"),
-                  subtitle: TextField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      hintText: "Your name",
-                      border: InputBorder.none,
-                    ),
-                  ),
+                _SettingsRow(
+                  icon: Icons.person_outline,
+                  title: "Name",
+                  value: _nameController.text.isEmpty
+                      ? "Not set"
+                      : _nameController.text,
+                  onTap: _editName,
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.cake_outlined),
-                  title: const Text("Date of birth"),
-                  subtitle: Text(_formatDate(_dob)),
-                  trailing: TextButton(
-                    onPressed: _pickDob,
-                    child: const Text("Edit"),
-                  ),
+                _SettingsRow(
+                  icon: Icons.cake_outlined,
+                  title: "Date of birth",
+                  value: _formatDate(_dob),
+                  onTap: _pickDob,
                 ),
               ],
             ),
@@ -301,24 +347,20 @@ class _SettingsPageState extends State<SettingsPage> {
           _SettingsCard(
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.upload_file_outlined),
-                  title: const Text("Import data"),
-                  subtitle: const Text("Restore from a CSV backup"),
-                  trailing: OutlinedButton(
-                    onPressed: _busy ? null : _importData,
-                    child: Text(_busy ? "Working..." : "Import"),
-                  ),
+                _SettingsRow(
+                  icon: Icons.upload_file_outlined,
+                  title: "Import data",
+                  value: "Restore from CSV backup",
+                  enabled: !_busy,
+                  onTap: _importData,
                 ),
                 const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.download_outlined),
-                  title: const Text("Export data"),
-                  subtitle: const Text("Save CSV to Downloads"),
-                  trailing: OutlinedButton(
-                    onPressed: _busy ? null : _exportData,
-                    child: Text(_busy ? "Working..." : "Export"),
-                  ),
+                _SettingsRow(
+                  icon: Icons.download_outlined,
+                  title: "Export data",
+                  value: _busy ? "Working..." : "Save CSV to Downloads",
+                  enabled: !_busy,
+                  onTap: _exportData,
                 ),
               ],
             ),
@@ -382,6 +424,41 @@ class _SettingsCard extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
       ),
       child: child,
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  const _SettingsRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String title;
+  final String value;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ListTile(
+      enabled: enabled,
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(
+        value,
+        style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.65)),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: scheme.onSurface.withValues(alpha: 0.45),
+      ),
+      onTap: enabled ? onTap : null,
     );
   }
 }
