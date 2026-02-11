@@ -16,7 +16,6 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
   bool hadMigraine = true;
   double intensity = 5;
   bool tookPainkillers = false;
-  final TextEditingController medicationController = TextEditingController();
   final TextEditingController notesController = TextEditingController();
   DateTime? _entryDate;
 
@@ -44,7 +43,6 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       hadMigraine = entry.hadMigraine;
       intensity = entry.intensity.toDouble();
       tookPainkillers = entry.painkillers;
-      medicationController.text = entry.medication;
       notesController.text = entry.notes;
       selectedCauses.addAll(entry.causes);
       _entryDate = entry.date;
@@ -53,7 +51,6 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
 
   @override
   void dispose() {
-    medicationController.dispose();
     notesController.dispose();
     super.dispose();
   }
@@ -83,7 +80,6 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       hadMigraine: true,
       intensity: intensity.toInt(),
       painkillers: tookPainkillers,
-      medication: medicationController.text.trim(),
       notes: notesController.text.trim(),
       causes: selectedCauses.toList(),
     );
@@ -196,15 +192,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
               },
             ),
             const SizedBox(height: 12),
-            const Text("Medication"),
             const SizedBox(height: 6),
-            TextField(
-              controller: medicationController,
-              decoration: const InputDecoration(
-                hintText: "e.g. Ibuprofen",
-                border: OutlineInputBorder(),
-              ),
-            ),
             const SizedBox(height: 16),
             const Text("Probable Cause"),
             const SizedBox(height: 8),

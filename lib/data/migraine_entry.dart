@@ -5,7 +5,6 @@ class MigraineEntry {
     required this.hadMigraine,
     required this.intensity,
     required this.painkillers,
-    required this.medication,
     required this.notes,
     required this.causes,
   });
@@ -15,7 +14,6 @@ class MigraineEntry {
   final bool hadMigraine;
   final int intensity;
   final bool painkillers;
-  final String medication;
   final String notes;
   final List<String> causes;
 
@@ -26,7 +24,6 @@ class MigraineEntry {
       'had_migraine': hadMigraine ? 1 : 0,
       'intensity': intensity,
       'painkillers': painkillers ? 1 : 0,
-      'medication': medication,
       'notes': notes,
       'causes': causes.join(','),
     };
@@ -39,7 +36,6 @@ class MigraineEntry {
       hadMigraine: (map['had_migraine'] as int) == 1,
       intensity: (map['intensity'] as int?) ?? 0,
       painkillers: (map['painkillers'] as int?) == 1,
-      medication: (map['medication'] as String?) ?? '',
       notes: (map['notes'] as String?) ?? '',
       causes: _parseCauses(map['causes'] as String?),
     );

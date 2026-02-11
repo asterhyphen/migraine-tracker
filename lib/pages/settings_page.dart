@@ -178,7 +178,6 @@ class _SettingsPageState extends State<SettingsPage> {
           'had_migraine',
           'intensity',
           'painkillers',
-          'medication',
           'notes',
           'causes'
         ],
@@ -190,7 +189,6 @@ class _SettingsPageState extends State<SettingsPage> {
           entry.hadMigraine ? 1 : 0,
           entry.intensity,
           entry.painkillers ? 1 : 0,
-          entry.medication,
           entry.notes,
           entry.causes.join('|'),
         ]);
@@ -245,7 +243,6 @@ class _SettingsPageState extends State<SettingsPage> {
       final hadMigraine = row[1].toString() == '1';
       final intensity = int.tryParse(row[2].toString()) ?? 0;
       final painkillers = row[3].toString() == '1';
-      final medication = row[4].toString();
       final notes = row[5].toString();
       final causes =
           row[6].toString().split('|').where((c) => c.isNotEmpty).toList();
@@ -254,7 +251,6 @@ class _SettingsPageState extends State<SettingsPage> {
         hadMigraine: hadMigraine,
         intensity: intensity,
         painkillers: painkillers,
-        medication: medication,
         notes: notes,
         causes: causes,
       );

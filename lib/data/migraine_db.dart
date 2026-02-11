@@ -35,7 +35,6 @@ class MigraineDb {
             had_migraine INTEGER NOT NULL,
             intensity INTEGER NOT NULL,
             painkillers INTEGER NOT NULL,
-            medication TEXT NOT NULL,
             notes TEXT NOT NULL,
             causes TEXT NOT NULL
           )
