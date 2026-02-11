@@ -265,18 +265,22 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<Directory?> _resolveDownloadDir() async {
     if (Platform.isAndroid) {
+      // Prefer the public Download folder path explicitly.
+      final preferred = Directory('/storage/emulated/0/Download');
+      try {
+        await preferred.create(recursive: true);
+        if (await preferred.exists()) return preferred;
+      } catch (_) {}
+
       final status = await Permission.storage.request();
-      if (!status.isGranted) return null;
-
-      final candidates = await getExternalStorageDirectories(
-        type: StorageDirectory.downloads,
-      );
-      if (candidates != null && candidates.isNotEmpty) {
-        return candidates.first;
+      if (status.isGranted) {
+        final candidates = await getExternalStorageDirectories(
+          type: StorageDirectory.downloads,
+        );
+        if (candidates != null && candidates.isNotEmpty) {
+          return candidates.first;
+        }
       }
-
-      final downloadDir = Directory('/storage/emulated/0/Download');
-      if (await downloadDir.exists()) return downloadDir;
 
       final fallback = await getExternalStorageDirectory();
       return fallback;
