@@ -1,6 +1,11 @@
+import 'dart:async';
+
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'data/migraine_db.dart';
 import 'pages/home_page.dart';
+import 'pages/log_migraine_page.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/stats_page.dart';
@@ -80,11 +85,75 @@ class _AppShellState extends State<AppShell> {
   bool _loadingProfile = true;
   String? _name;
   DateTime? _dob;
+  late final AppLinks _appLinks;
+  StreamSubscription<Uri>? _appLinkSubscription;
+  bool _pendingOpenLog = false;
+  bool _linkInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    _setupDeepLinks();
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _appLinkSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _setupDeepLinks() async {
+    _appLinks = AppLinks();
+
+    if (!_linkInitialized) {
+      _linkInitialized = true;
+      final initialUri = await _appLinks.getInitialLink();
+      if (initialUri != null) {
+        _handleIncomingLink(initialUri);
+      }
+    }
+
+    _appLinkSubscription = _appLinks.uriLinkStream.listen((uri) {
+      _handleIncomingLink(uri);
+    });
+  }
+
+  void _handleIncomingLink(Uri uri) {
+    final isLogLink = uri.scheme == 'migraine-tracker' &&
+        (uri.host == 'log' || uri.path == '/log');
+
+    if (!isLogLink) return;
+
+    if (_loadingProfile || _name == null || _dob == null) {
+      _pendingOpenLog = true;
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _openLogFromExternalAction();
+    });
+  }
+
+  Future<void> _openLogFromExternalAction() async {
+    final todayEntry = await MigraineDb.instance.getEntryForDate(DateTime.now());
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LogMigrainePage(entry: todayEntry),
+      ),
+    );
+  }
+
+  void _processPendingAction() {
+    if (!_pendingOpenLog) return;
+    if (_loadingProfile || _name == null || _dob == null) return;
+    _pendingOpenLog = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _openLogFromExternalAction();
+    });
   }
 
   Future<void> _loadProfile() async {
@@ -98,6 +167,7 @@ class _AppShellState extends State<AppShell> {
           : DateTime.fromMillisecondsSinceEpoch(dobMillis);
       _loadingProfile = false;
     });
+    _processPendingAction();
   }
 
   Future<void> _saveProfile(String name, DateTime dob) async {
@@ -108,6 +178,7 @@ class _AppShellState extends State<AppShell> {
       _name = name;
       _dob = dob;
     });
+    _processPendingAction();
   }
 
   void _onNavTap(int index) {
