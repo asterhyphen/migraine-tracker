@@ -42,7 +42,7 @@ class MigraineApp extends StatelessWidget {
           backgroundColor: darkScheme.surface,
           foregroundColor: darkScheme.onSurface,
           elevation: 0,
-          centerTitle: true,
+          centerTitle: false,
         ),
         cardTheme: CardThemeData(
           color: darkScheme.surface,
