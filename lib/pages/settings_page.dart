@@ -365,20 +365,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          _SectionHeader(title: "Save Changes"),
-          const SizedBox(height: 12),
-          _SettingsCard(
-            child: ListTile(
-              leading: Icon(Icons.save_outlined, color: scheme.primary),
-              title: const Text("Save profile"),
-              subtitle: const Text("Apply name and date of birth updates"),
-              trailing: FilledButton(
-                onPressed: _saving ? null : _save,
-                child: Text(_saving ? "Saving..." : "Save"),
-              ),
-            ),
-          ),
           const SizedBox(height: 16),
           Text(
             "Exports are stored in your Downloads folder.",
