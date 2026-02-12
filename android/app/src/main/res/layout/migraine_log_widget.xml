@@ -28,7 +28,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:text="Tap to open today's migraine form."
+        android:text="Tap to log today's migraine"
         android:textColor="#B7BDC9"
         android:textSize="12sp" />
 
