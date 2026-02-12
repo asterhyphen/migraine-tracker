@@ -48,11 +48,16 @@ class _StatsPageState extends State<StatsPage> {
         title: const Text("Statistics"),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _SectionTitle(title: "Summary"),
+            _DashboardHeader(totalEntries: _entries.length),
+            const SizedBox(height: 24),
+            const _SectionTitle(
+              title: "Summary",
+              subtitle: "High-level indicators across all logs",
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 12,
@@ -66,7 +71,10 @@ class _StatsPageState extends State<StatsPage> {
               }).toList(),
             ),
             const SizedBox(height: 20),
-            _SectionTitle(title: "Trends"),
+            const _SectionTitle(
+              title: "Trends",
+              subtitle: "Patterns across month, causes, and intensity",
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -109,11 +117,17 @@ class _StatsPageState extends State<StatsPage> {
               child: _LineChart(values: intensitySeries),
             ),
             const SizedBox(height: 20),
-            _SectionTitle(title: "Weekly Pulse"),
+            const _SectionTitle(
+              title: "Weekly Pulse",
+              subtitle: "Daily migraine counts over the last 7 days",
+            ),
             const SizedBox(height: 12),
             _WeeklyRow(data: weekly),
             const SizedBox(height: 20),
-            _SectionTitle(title: "Recent Logs"),
+            const _SectionTitle(
+              title: "Recent Logs",
+              subtitle: "Latest entries for quick review",
+            ),
             const SizedBox(height: 12),
             _RecentList(entries: recent),
           ],
@@ -259,16 +273,98 @@ class _StatsPageState extends State<StatsPage> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader({required this.totalEntries});
 
-  final String title;
+  final int totalEntries;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.20)),
+        gradient: LinearGradient(
+          colors: [
+            scheme.surface,
+            scheme.tertiary.withValues(alpha: 0.14),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.primary.withValues(alpha: 0.15),
+            ),
+            child: Icon(Icons.analytics_rounded, color: scheme.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Stats Overview",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "$totalEntries total logged migraines",
+                  style: TextStyle(
+                    color: scheme.onSurface.withValues(alpha: 0.68),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          subtitle,
+          style: TextStyle(
+            color: scheme.onSurface.withValues(alpha: 0.62),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -281,11 +377,13 @@ class _ChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+        color: scheme.surface.withValues(alpha: 0.74),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,11 +420,12 @@ class _InsightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      width: 160,
-      padding: const EdgeInsets.all(12),
+      width: 170,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+        color: scheme.surface.withValues(alpha: 0.74),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,7 +529,10 @@ class _CauseList extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: item.percent,
                   minHeight: 6,
-                  backgroundColor: Colors.white10,
+                  backgroundColor: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.12),
                 ),
               ),
             ],
@@ -461,7 +563,10 @@ class _Gauge extends StatelessWidget {
           LinearProgressIndicator(
             value: value,
             minHeight: 8,
-            backgroundColor: Colors.white10,
+            backgroundColor: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withValues(alpha: 0.12),
           ),
         ],
       ),
@@ -545,7 +650,7 @@ class _WeeklyRow extends StatelessWidget {
                 height: height,
                 margin: const EdgeInsets.symmetric(horizontal: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white12,
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
@@ -587,8 +692,11 @@ class _RecentList extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.13),
+            ),
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.72),
           ),
           child: Row(
             children: [
@@ -597,7 +705,10 @@ class _RecentList extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white12,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.18),
                 ),
                 child: Center(
                   child: Text(

@@ -102,7 +102,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(title: const Text("Home")),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -118,49 +118,46 @@ class _HomePageState extends State<HomePage> {
               secondaryLabel: "View History",
               secondaryAction: _openHistory,
             ),
-            const SizedBox(height: 20),
-            _SectionTitle(title: "At a Glance"),
+            const SizedBox(height: 24),
+            const _SectionTitle(
+              title: "At a Glance",
+              subtitle: "Current period highlights",
+            ),
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
               children: [
-                Expanded(
-                  child: _StatCard(
-                    title: "Last Migraine",
-                    value: lastText,
-                  ),
+                _StatCard(
+                  title: "Last Migraine",
+                  value: lastText,
+                  icon: Icons.schedule_rounded,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _StatCard(
-                    title: "This Month",
-                    value: "$_monthCount",
-                    suffix: "events",
-                  ),
+                _StatCard(
+                  title: "This Month",
+                  value: "$_monthCount",
+                  suffix: "events",
+                  icon: Icons.calendar_month_rounded,
+                ),
+                _StatCard(
+                  title: "Current Streak",
+                  value: "$_streakDays",
+                  suffix: "days",
+                  icon: Icons.bolt_rounded,
+                ),
+                _StatCard(
+                  title: "This Year",
+                  value: "$_yearCount",
+                  suffix: "events",
+                  icon: Icons.insights_rounded,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    title: "Current Streak",
-                    value: "$_streakDays",
-                    suffix: "days",
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _StatCard(
-                    title: "This Year",
-                    value: "$_yearCount",
-                    suffix: "events",
-                  ),
-                ),
-              ],
+            const SizedBox(height: 24),
+            const _SectionTitle(
+              title: "Last Entry",
+              subtitle: "Most recent recorded migraine",
             ),
-            const SizedBox(height: 20),
-            _SectionTitle(title: "Last Entry"),
             const SizedBox(height: 12),
             _DetailCard(
               title: _lastEntry == null ? "No entries yet" : "Latest log",
@@ -216,29 +213,55 @@ class _HeroCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.20)),
         gradient: LinearGradient(
           colors: [
             scheme.surface,
-            scheme.surface.withValues(alpha: 0.7),
+            scheme.tertiary.withValues(alpha: 0.14),
           ],
-          begin: Alignment.topLeft,
+          begin: Alignment.topCenter,
           end: Alignment.bottomRight,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              "Daily Tracker",
+              style: TextStyle(
+                color: scheme.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
             style: TextStyle(
-              color: scheme.onSurface.withValues(alpha: 0.7),
+              color: scheme.onSurface.withValues(alpha: 0.76),
             ),
           ),
           const SizedBox(height: 16),
@@ -266,15 +289,36 @@ class _HeroCard extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
+  const _SectionTitle({
+    required this.title,
+    required this.subtitle,
+  });
 
   final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          subtitle,
+          style: TextStyle(
+            color: scheme.onSurface.withValues(alpha: 0.62),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -283,25 +327,40 @@ class _StatCard extends StatelessWidget {
   const _StatCard({
     required this.title,
     required this.value,
+    required this.icon,
     this.suffix,
   });
 
   final String title;
   final String value;
+  final IconData icon;
   final String? suffix;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 150, maxWidth: 220),
+      child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+        color: scheme.surface.withValues(alpha: 0.72),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.primary.withValues(alpha: 0.14),
+            ),
+            child: Icon(icon, size: 16, color: scheme.primary),
+          ),
+          const SizedBox(height: 8),
           Text(
             title,
             style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
@@ -325,6 +384,7 @@ class _StatCard extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -342,11 +402,13 @@ class _DetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+        color: scheme.surface.withValues(alpha: 0.72),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

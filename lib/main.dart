@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'data/migraine_db.dart';
 import 'pages/home_page.dart';
@@ -19,16 +20,36 @@ class MigraineApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const background = Color(0xFF0F1115);
+    const background = Color(0xFF090D14);
     const darkScheme = ColorScheme.dark(
-      primary: Color(0xFF4FD1C5),
-      secondary: Color(0xFFF6AE2D),
-      surface: Color(0xFF171A21),
-      error: Color(0xFFF97066),
-      onPrimary: Color(0xFF0B0D10),
-      onSecondary: Color(0xFF0B0D10),
-      onSurface: Color(0xFFF5F7FA),
-      onError: Color(0xFF0B0D10),
+      primary: Color(0xFF65E0C2),
+      secondary: Color(0xFFFFC26F),
+      tertiary: Color(0xFF7E9DFF),
+      surface: Color(0xFF111927),
+      error: Color(0xFFFF6D7A),
+      onPrimary: Color(0xFF04110D),
+      onSecondary: Color(0xFF1C1200),
+      onSurface: Color(0xFFE8ECF5),
+      onError: Color(0xFF2D0208),
+    );
+
+    final baseText = GoogleFonts.plusJakartaSansTextTheme(
+      ThemeData.dark().textTheme,
+    ).apply(
+      bodyColor: darkScheme.onSurface,
+      displayColor: darkScheme.onSurface,
+    );
+    final textTheme = GoogleFonts.spaceGroteskTextTheme(baseText).copyWith(
+      titleLarge: GoogleFonts.spaceGrotesk(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: darkScheme.onSurface,
+      ),
+      titleMedium: GoogleFonts.spaceGrotesk(
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        color: darkScheme.onSurface,
+      ),
     );
 
     return MaterialApp(
@@ -38,24 +59,80 @@ class MigraineApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: darkScheme,
         scaffoldBackgroundColor: background,
+        textTheme: textTheme,
         appBarTheme: AppBarTheme(
           backgroundColor: darkScheme.surface,
           foregroundColor: darkScheme.onSurface,
           elevation: 0,
           centerTitle: false,
+          titleTextStyle: textTheme.titleLarge,
         ),
         cardTheme: CardThemeData(
           color: darkScheme.surface,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: darkScheme.primary.withValues(alpha: 0.10)),
           ),
+        ),
+        dividerTheme: DividerThemeData(
+          color: darkScheme.onSurface.withValues(alpha: 0.10),
+          thickness: 1,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: darkScheme.surface,
+          fillColor: darkScheme.surface.withValues(alpha: 0.95),
+          hintStyle: TextStyle(
+            color: darkScheme.onSurface.withValues(alpha: 0.5),
+            fontWeight: FontWeight.w500,
+          ),
+          labelStyle: TextStyle(
+            color: darkScheme.onSurface.withValues(alpha: 0.75),
+            fontWeight: FontWeight.w600,
+          ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: darkScheme.onSurface.withValues(alpha: 0.12)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: darkScheme.onSurface.withValues(alpha: 0.12)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: darkScheme.primary.withValues(alpha: 0.70)),
+          ),
+        ),
+        chipTheme: ChipThemeData(
+          backgroundColor: darkScheme.surface.withValues(alpha: 0.90),
+          selectedColor: darkScheme.primary.withValues(alpha: 0.20),
+          disabledColor: darkScheme.surface.withValues(alpha: 0.50),
+          side: BorderSide(color: darkScheme.onSurface.withValues(alpha: 0.15)),
+          labelStyle: TextStyle(color: darkScheme.onSurface),
+          secondaryLabelStyle: TextStyle(color: darkScheme.onSurface),
+          brightness: Brightness.dark,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: darkScheme.primary,
+            foregroundColor: darkScheme.onPrimary,
+            textStyle: const TextStyle(fontWeight: FontWeight.w700),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: darkScheme.onSurface,
+            side: BorderSide(color: darkScheme.onSurface.withValues(alpha: 0.20)),
+            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
         snackBarTheme: SnackBarThemeData(
@@ -66,6 +143,9 @@ class MigraineApp extends StatelessWidget {
           backgroundColor: darkScheme.surface,
           selectedItemColor: darkScheme.primary,
           unselectedItemColor: darkScheme.onSurface.withValues(alpha: 0.6),
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          type: BottomNavigationBarType.fixed,
         ),
       ),
       home: const AppShell(),
