@@ -28,7 +28,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _nameController;
   late DateTime _dob;
-  bool _saving = false;
   bool _busy = false;
 
   @override
@@ -62,6 +61,7 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       _dob = picked;
     });
+    await _saveProfileInline();
   }
 
   Future<void> _editName() async {
@@ -93,24 +93,20 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       _nameController.text = result;
     });
+    await _saveProfileInline();
   }
 
-  Future<void> _save() async {
+  Future<void> _saveProfileInline() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Name cannot be empty.")));
       return;
     }
-    setState(() {
-      _saving = true;
-    });
     await widget.onSave(name, _dob);
     if (!mounted) return;
-    setState(() {
-      _saving = false;
-    });
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text("Profile updated.")));
@@ -363,20 +359,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   onTap: _exportData,
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          _SectionHeader(title: "Profile"),
-          const SizedBox(height: 12),
-          _SettingsCard(
-            child: ListTile(
-              leading: const Icon(Icons.save_outlined),
-              title: const Text("Save profile changes"),
-              subtitle: const Text("Apply name and date of birth updates"),
-              trailing: FilledButton(
-                onPressed: _saving ? null : _save,
-                child: Text(_saving ? "Saving..." : "Save"),
-              ),
             ),
           ),
           const SizedBox(height: 16),
