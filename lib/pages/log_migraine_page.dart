@@ -65,7 +65,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
     });
   }
 
-  void _saveEntry() {
+  Future<void> _saveEntry() async {
     if (!hadMigraine) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("No migraine to save.")),
@@ -84,7 +84,8 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       causes: selectedCauses.toList(),
     );
 
-    MigraineDb.instance.updateEntry(entry).then((_) {
+    try {
+      await MigraineDb.instance.updateEntry(entry);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -92,7 +93,12 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
         ),
       );
       Navigator.of(context).pop();
-    });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Save failed: $e")),
+      );
+    }
   }
 
   Future<void> _deleteEntry() async {

@@ -9,7 +9,7 @@ class MigraineDb {
   static final MigraineDb instance = MigraineDb._();
 
   static const _dbName = 'migraine_tracker.db';
-  static const _dbVersion = 1;
+  static const _dbVersion = 2;
 
   Database? _db;
 
@@ -39,6 +39,35 @@ class MigraineDb {
             causes TEXT NOT NULL
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          // Legacy schema had `medication` as NOT NULL. Rebuild to the
+          // current schema so inserts from current app versions succeed.
+          await db.transaction((txn) async {
+            await txn.execute('''
+              CREATE TABLE migraine_entries_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date INTEGER NOT NULL,
+                had_migraine INTEGER NOT NULL,
+                intensity INTEGER NOT NULL,
+                painkillers INTEGER NOT NULL,
+                notes TEXT NOT NULL,
+                causes TEXT NOT NULL
+              )
+            ''');
+            await txn.execute('''
+              INSERT INTO migraine_entries_new
+              (id, date, had_migraine, intensity, painkillers, notes, causes)
+              SELECT id, date, had_migraine, intensity, painkillers, notes, causes
+              FROM migraine_entries
+            ''');
+            await txn.execute('DROP TABLE migraine_entries');
+            await txn.execute(
+              'ALTER TABLE migraine_entries_new RENAME TO migraine_entries',
+            );
+          });
+        }
       },
     );
   }

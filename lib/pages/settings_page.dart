@@ -140,7 +140,7 @@ class _SettingsPageState extends State<SettingsPage> {
       final entries = <MigraineEntry>[];
       for (int i = startIndex; i < rows.length; i++) {
         final row = rows[i];
-        if (row.length < 7) continue;
+        if (row.length < 6) continue;
         final entry = _entryFromRow(row);
         if (entry != null) entries.add(entry);
       }
@@ -243,9 +243,9 @@ class _SettingsPageState extends State<SettingsPage> {
       final hadMigraine = row[1].toString() == '1';
       final intensity = int.tryParse(row[2].toString()) ?? 0;
       final painkillers = row[3].toString() == '1';
-      final notes = row[5].toString();
+      final notes = row[4].toString();
       final causes =
-          row[6].toString().split('|').where((c) => c.isNotEmpty).toList();
+          row[5].toString().split('|').where((c) => c.isNotEmpty).toList();
       return MigraineEntry(
         date: date,
         hadMigraine: hadMigraine,
@@ -363,6 +363,20 @@ class _SettingsPageState extends State<SettingsPage> {
                   onTap: _exportData,
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _SectionHeader(title: "Profile"),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: ListTile(
+              leading: const Icon(Icons.save_outlined),
+              title: const Text("Save profile changes"),
+              subtitle: const Text("Apply name and date of birth updates"),
+              trailing: FilledButton(
+                onPressed: _saving ? null : _save,
+                child: Text(_saving ? "Saving..." : "Save"),
+              ),
             ),
           ),
           const SizedBox(height: 16),
