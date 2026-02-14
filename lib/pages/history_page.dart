@@ -40,12 +40,6 @@ class _HistoryPageState extends State<HistoryPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Migraine History"),
-        actions: const [
-          IconButton(
-            onPressed: null,
-            icon: Icon(Icons.menu),
-          ),
-        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
