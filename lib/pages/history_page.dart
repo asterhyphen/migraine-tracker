@@ -41,6 +41,11 @@ class _HistoryPageState extends State<HistoryPage> {
       appBar: AppBar(
         title: const Text("Migraine History"),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _logMissedDay,
+        icon: const Icon(Icons.edit_calendar_outlined),
+        label: const Text("Log missed day"),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView.separated(
@@ -105,6 +110,30 @@ class _HistoryPageState extends State<HistoryPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Entry deleted.")),
+    );
+    await _loadEntries();
+  }
+
+  Future<void> _logMissedDay() async {
+    final now = DateTime.now();
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: yesterday,
+      firstDate: DateTime(1900),
+      lastDate: now,
+    );
+    if (picked == null) return;
+
+    final existing = await MigraineDb.instance.getEntryForDate(picked);
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LogMigrainePage(
+          entry: existing,
+          initialDate: existing == null ? picked : null,
+        ),
+      ),
     );
     await _loadEntries();
   }

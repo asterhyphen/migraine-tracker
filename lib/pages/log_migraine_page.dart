@@ -4,9 +4,14 @@ import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 
 class LogMigrainePage extends StatefulWidget {
-  const LogMigrainePage({super.key, this.entry});
+  const LogMigrainePage({
+    super.key,
+    this.entry,
+    this.initialDate,
+  });
 
   final MigraineEntry? entry;
+  final DateTime? initialDate;
 
   @override
   State<LogMigrainePage> createState() => _LogMigrainePageState();
@@ -39,6 +44,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
   void initState() {
     super.initState();
     final entry = widget.entry;
+    _entryDate = widget.initialDate ?? DateTime.now();
     if (entry != null) {
       hadMigraine = entry.hadMigraine;
       intensity = entry.intensity.toDouble();
@@ -47,6 +53,27 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       selectedCauses.addAll(entry.causes);
       _entryDate = entry.date;
     }
+  }
+
+  Future<void> _pickEntryDate() async {
+    if (widget.entry != null) return;
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _entryDate ?? now,
+      firstDate: DateTime(1900),
+      lastDate: now,
+    );
+    if (picked == null) return;
+    setState(() {
+      _entryDate = picked;
+    });
+  }
+
+  String _formatDate(DateTime date) {
+    final mm = date.month.toString().padLeft(2, '0');
+    final dd = date.day.toString().padLeft(2, '0');
+    return "$dd-$mm-${date.year}";
   }
 
   @override
@@ -73,10 +100,13 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       return;
     }
 
-    final now = DateTime.now();
+    final targetDate = _entryDate ?? DateTime.now();
+    final existingForDate = widget.entry == null
+        ? await MigraineDb.instance.getEntryForDate(targetDate)
+        : null;
     final entry = MigraineEntry(
-      id: widget.entry?.id,
-      date: _entryDate ?? now,
+      id: widget.entry?.id ?? existingForDate?.id,
+      date: targetDate,
       hadMigraine: true,
       intensity: intensity.toInt(),
       painkillers: tookPainkillers,
@@ -89,7 +119,11 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.entry == null ? "Entry saved." : "Entry updated."),
+          content: Text(
+            (widget.entry != null || existingForDate != null)
+                ? "Entry updated."
+                : "Entry saved.",
+          ),
         ),
       );
       Navigator.of(context).pop();
@@ -150,6 +184,19 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.calendar_today_outlined),
+              title: const Text("Entry date"),
+              subtitle: Text(_formatDate(_entryDate ?? DateTime.now())),
+              trailing: widget.entry == null
+                  ? TextButton(
+                      onPressed: _pickEntryDate,
+                      child: const Text("Change"),
+                    )
+                  : null,
+            ),
+            const SizedBox(height: 8),
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text("Migraine Today?"),
