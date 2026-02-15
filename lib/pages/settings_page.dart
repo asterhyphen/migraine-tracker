@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:nfc_manager/nfc_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -10,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 import '../utils/date_utils.dart';
+import 'log_migraine_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -152,6 +155,27 @@ class _SettingsPageState extends State<SettingsPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Profile picture updated.")),
+    );
+  }
+
+  Future<void> _openNfcDialog(_NfcMode mode) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return _NfcActionDialog(
+          mode: mode,
+          onDetectedOpenLog: () async {
+            final todayEntry = await MigraineDb.instance.getEntryForDate(DateTime.now());
+            if (!mounted) return;
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => LogMigrainePage(entry: todayEntry),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -458,6 +482,28 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const SizedBox(height: 20),
+          _SectionHeader(title: "NFC"),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: Column(
+              children: [
+                _SettingsRow(
+                  icon: Icons.nfc_rounded,
+                  title: "Write NFC chip",
+                  value: "Write shortcut to open logging screen",
+                  onTap: () => _openNfcDialog(_NfcMode.write),
+                ),
+                const Divider(height: 1),
+                _SettingsRow(
+                  icon: Icons.nfc_outlined,
+                  title: "Scan NFC chip",
+                  value: "Open log/edit screen when detected",
+                  onTap: () => _openNfcDialog(_NfcMode.scan),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
           _SectionHeader(title: "Data"),
           const SizedBox(height: 12),
           _SettingsCard(
@@ -561,6 +607,257 @@ class _SettingsRow extends StatelessWidget {
         color: scheme.onSurface.withValues(alpha: 0.45),
       ),
       onTap: enabled ? onTap : null,
+    );
+  }
+}
+
+enum _NfcMode { write, scan }
+
+enum _NfcStatus { detecting, notDetected, success, error, unavailable }
+
+class _NfcActionDialog extends StatefulWidget {
+  const _NfcActionDialog({
+    required this.mode,
+    required this.onDetectedOpenLog,
+  });
+
+  final _NfcMode mode;
+  final Future<void> Function() onDetectedOpenLog;
+
+  @override
+  State<_NfcActionDialog> createState() => _NfcActionDialogState();
+}
+
+class _NfcActionDialogState extends State<_NfcActionDialog>
+    with SingleTickerProviderStateMixin {
+  static const _nfcUri = 'migraine-tracker://log';
+  late final AnimationController _pulseController;
+  _NfcStatus _status = _NfcStatus.detecting;
+  String _message = 'Detecting NFC chip...';
+  Timer? _timeout;
+  bool _completed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+    _startNfc();
+  }
+
+  @override
+  void dispose() {
+    _timeout?.cancel();
+    _pulseController.dispose();
+    NfcManager.instance.stopSession();
+    super.dispose();
+  }
+
+  Future<void> _startNfc() async {
+    final available = await NfcManager.instance.isAvailable();
+    if (!mounted) return;
+    if (!available) {
+      setState(() {
+        _status = _NfcStatus.unavailable;
+        _message = 'NFC not available on this device.';
+      });
+      return;
+    }
+
+    _completed = false;
+    setState(() {
+      _status = _NfcStatus.detecting;
+      _message = widget.mode == _NfcMode.write
+          ? 'Hold NFC chip near phone to write.'
+          : 'Hold NFC chip near phone to scan.';
+    });
+
+    _timeout?.cancel();
+    _timeout = Timer(const Duration(seconds: 8), () async {
+      if (_completed || !mounted) return;
+      await NfcManager.instance.stopSession();
+      if (!mounted) return;
+      setState(() {
+        _status = _NfcStatus.notDetected;
+        _message = 'Not detected';
+      });
+    });
+
+    NfcManager.instance.startSession(
+      onDiscovered: (tag) async {
+        if (_completed) return;
+        _completed = true;
+        _timeout?.cancel();
+        try {
+          if (widget.mode == _NfcMode.write) {
+            final ndef = Ndef.from(tag);
+            if (ndef == null || !ndef.isWritable) {
+              throw Exception('Tag not writable');
+            }
+            final msg = NdefMessage([
+              NdefRecord.createUri(Uri.parse(_nfcUri)),
+            ]);
+            await ndef.write(msg);
+            await NfcManager.instance.stopSession();
+            if (!mounted) return;
+            setState(() {
+              _status = _NfcStatus.success;
+              _message = 'NFC chip written successfully.';
+            });
+          } else {
+            await NfcManager.instance.stopSession();
+            if (!mounted) return;
+            setState(() {
+              _status = _NfcStatus.success;
+              _message = 'Detected. Opening log screen...';
+            });
+            await widget.onDetectedOpenLog();
+          }
+        } catch (e) {
+          await NfcManager.instance.stopSession(errorMessage: e.toString());
+          if (!mounted) return;
+          setState(() {
+            _status = _NfcStatus.error;
+            _message = 'Error: $e';
+          });
+        }
+      },
+    );
+  }
+
+  Future<void> _scanAgain() async {
+    await _startNfc();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isError = _status == _NfcStatus.notDetected || _status == _NfcStatus.error;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.mode == _NfcMode.write ? 'Write NFC' : 'Scan NFC',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _NfcPulse(
+              controller: _pulseController,
+              color: isError ? Colors.redAccent : scheme.primary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isError ? Colors.redAccent : scheme.onSurface,
+                fontWeight: isError ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (_status == _NfcStatus.notDetected || _status == _NfcStatus.error)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _scanAgain,
+                      child: const Text('Scan again'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Close'),
+                    ),
+                  ),
+                ],
+              ),
+            if (_status == _NfcStatus.success || _status == _NfcStatus.unavailable)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NfcPulse extends StatelessWidget {
+  const _NfcPulse({
+    required this.controller,
+    required this.color,
+  });
+
+  final AnimationController controller;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 110,
+      height: 110,
+      child: AnimatedBuilder(
+        animation: controller,
+        builder: (context, child) {
+          final t = controller.value;
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              _ring(0.75 + t * 0.9, (1 - t) * 0.32),
+              _ring(0.45 + t * 0.7, (1 - t) * 0.22),
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color.withValues(alpha: 0.2),
+                ),
+                child: Icon(Icons.nfc, color: color),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _ring(double scale, double alpha) {
+    return Transform.scale(
+      scale: scale,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: color.withValues(alpha: alpha.clamp(0.0, 1.0)),
+            width: 2,
+          ),
+        ),
+      ),
     );
   }
 }

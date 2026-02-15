@@ -20,6 +20,7 @@ dependencies:
   app_links: ^6.3.3
   google_fonts: ^6.3.0
   package_info_plus: ^8.1.2
+  nfc_manager: ^3.5.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
