@@ -126,34 +126,43 @@ class _HomePageState extends State<HomePage> {
               subtitle: "Current period highlights",
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _StatCard(
-                  title: "Last Migraine",
-                  value: lastText,
-                  icon: Icons.schedule_rounded,
-                ),
-                _StatCard(
-                  title: "This Month",
-                  value: "$_monthCount",
-                  suffix: "events",
-                  icon: Icons.calendar_month_rounded,
-                ),
-                _StatCard(
-                  title: "Current Streak",
-                  value: "$_streakDays",
-                  suffix: "days",
-                  icon: Icons.bolt_rounded,
-                ),
-                _StatCard(
-                  title: "This Year",
-                  value: "$_yearCount",
-                  suffix: "events",
-                  icon: Icons.insights_rounded,
-                ),
-              ],
+            SizedBox(
+              height: 148,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _StatCard(
+                    title: "Last Migraine",
+                    value: lastText,
+                    icon: Icons.schedule_rounded,
+                  ),
+                  _StatCard(
+                    title: "This Month",
+                    value: "$_monthCount",
+                    suffix: "events",
+                    icon: Icons.calendar_month_rounded,
+                  ),
+                  _StatCard(
+                    title: "Current Streak",
+                    value: "$_streakDays",
+                    suffix: "days",
+                    icon: Icons.bolt_rounded,
+                  ),
+                  _StatCard(
+                    title: "This Year",
+                    value: "$_yearCount",
+                    suffix: "events",
+                    icon: Icons.insights_rounded,
+                  ),
+                ]
+                    .map(
+                      (card) => Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: card,
+                      ),
+                    )
+                    .toList(),
+              ),
             ),
             const SizedBox(height: 24),
             const _SectionTitle(
@@ -345,13 +354,27 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 150, maxWidth: 220),
+      constraints: const BoxConstraints(minWidth: 172, maxWidth: 172),
       child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
-        color: scheme.surface.withValues(alpha: 0.72),
+        gradient: LinearGradient(
+          colors: [
+            scheme.surface.withValues(alpha: 0.98),
+            scheme.surface.withValues(alpha: 0.75),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,21 +391,35 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             title,
-            style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: scheme.onSurface.withValues(alpha: 0.72),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                value,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              Expanded(
+                child: Text(
+                  value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+                ),
               ),
               if (suffix != null) ...[
                 const SizedBox(width: 6),
                 Text(
                   suffix!,
-                  style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
+                  style: TextStyle(
+                    color: scheme.onSurface.withValues(alpha: 0.68),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ],
