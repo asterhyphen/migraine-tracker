@@ -213,6 +213,7 @@ class _StatsPageState extends State<StatsPage> {
       return [
         _SummaryItem("Total Entries", "0", "Log your first migraine"),
         _SummaryItem("Avg. Intensity", "-", "No data yet"),
+        _SummaryItem("Highest Pain Day", "-", "No data yet"),
         _SummaryItem("Top Cause", "-", "No data yet"),
         _SummaryItem("Painkiller Rate", "0%", "Across all logs"),
       ];
@@ -240,6 +241,12 @@ class _StatsPageState extends State<StatsPage> {
     }
 
     final painkillerRate = (_painkillerUsage() * 100).round();
+    final highestPainEntry = _entries.reduce((a, b) {
+      if (a.intensity == b.intensity) {
+        return a.date.isAfter(b.date) ? a : b;
+      }
+      return a.intensity > b.intensity ? a : b;
+    });
 
     return [
       _SummaryItem("Total Entries", "$total", "Max $maxIntensity • Min $minIntensity"),
@@ -247,6 +254,11 @@ class _StatsPageState extends State<StatsPage> {
         "Avg. Intensity",
         avgIntensity.toStringAsFixed(1),
         "Across all logs",
+      ),
+      _SummaryItem(
+        "Highest Pain Day",
+        formatDdMmYyyy(highestPainEntry.date),
+        "Intensity ${highestPainEntry.intensity}/10",
       ),
       _SummaryItem("Top Cause", topCause, "Most frequent trigger"),
       _SummaryItem("Painkiller Rate", "$painkillerRate%", "Across all logs"),
