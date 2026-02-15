@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
+import '../utils/date_utils.dart';
 
 class LogMigrainePage extends StatefulWidget {
   const LogMigrainePage({
@@ -71,9 +72,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
   }
 
   String _formatDate(DateTime date) {
-    final mm = date.month.toString().padLeft(2, '0');
-    final dd = date.day.toString().padLeft(2, '0');
-    return "$dd-$mm-${date.year}";
+    return formatDdMmYyyy(date);
   }
 
   @override

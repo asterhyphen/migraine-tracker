@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
+import '../utils/date_utils.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -44,9 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   String _formatDate(DateTime date) {
-    final mm = date.month.toString().padLeft(2, '0');
-    final dd = date.day.toString().padLeft(2, '0');
-    return "$dd-$mm-${date.year}";
+    return formatDdMmYyyy(date);
   }
 
   Future<void> _pickDob() async {
@@ -181,7 +180,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
       for (final entry in entries) {
         rows.add([
-          entry.date.toIso8601String(),
+          formatDdMmYyyy(entry.date),
           entry.hadMigraine ? 1 : 0,
           entry.intensity,
           entry.painkillers ? 1 : 0,
@@ -235,7 +234,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   MigraineEntry? _entryFromRow(List<dynamic> row) {
     try {
-      final date = DateTime.parse(row[0].toString());
+      final parsedDate = parseFlexibleDate(row[0].toString());
+      if (parsedDate == null) return null;
       final hadMigraine = row[1].toString() == '1';
       final intensity = int.tryParse(row[2].toString()) ?? 0;
       final painkillers = row[3].toString() == '1';
@@ -243,7 +243,7 @@ class _SettingsPageState extends State<SettingsPage> {
       final causes =
           row[5].toString().split('|').where((c) => c.isNotEmpty).toList();
       return MigraineEntry(
-        date: date,
+        date: parsedDate,
         hadMigraine: hadMigraine,
         intensity: intensity,
         painkillers: painkillers,

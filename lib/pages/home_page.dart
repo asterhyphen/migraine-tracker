@@ -3,6 +3,7 @@ import 'history_page.dart';
 import 'log_migraine_page.dart';
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
+import '../utils/date_utils.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -184,9 +185,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _formatDate(DateTime date) {
-    final mm = date.month.toString().padLeft(2, '0');
-    final dd = date.day.toString().padLeft(2, '0');
-    return "$dd-$mm-${date.year}";
+    return formatDdMmYyyy(date);
   }
 }
 

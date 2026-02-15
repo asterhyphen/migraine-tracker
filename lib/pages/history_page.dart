@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
+import '../utils/date_utils.dart';
 import 'log_migraine_page.dart';
 
 class HistoryPage extends StatefulWidget {
@@ -30,9 +31,7 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   String _formatDate(DateTime date) {
-    final mm = date.month.toString().padLeft(2, '0');
-    final dd = date.day.toString().padLeft(2, '0');
-    return "${date.year}-$mm-$dd";
+    return formatDdMmYyyy(date);
   }
 
   @override

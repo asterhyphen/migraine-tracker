@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/date_utils.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
@@ -24,9 +25,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   String _formatDate(DateTime date) {
-    final mm = date.month.toString().padLeft(2, '0');
-    final dd = date.day.toString().padLeft(2, '0');
-    return "${date.year}-$mm-$dd";
+    return formatDdMmYyyy(date);
   }
 
   Future<void> _pickDob() async {
