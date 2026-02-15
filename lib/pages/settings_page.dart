@@ -318,23 +318,81 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           _SettingsCard(
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: scheme.primary.withValues(alpha: 0.2),
-                child: Text(
-                  _nameController.text.isEmpty
-                      ? "?"
-                      : _nameController.text[0].toUpperCase(),
-                  style: TextStyle(
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w700,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+              child: Row(
+                children: [
+                  InkWell(
+                    borderRadius: BorderRadius.circular(40),
+                    onTap: _editName,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        CircleAvatar(
+                          radius: 32,
+                          backgroundColor: scheme.primary.withValues(alpha: 0.2),
+                          child: Text(
+                            _nameController.text.isEmpty
+                                ? "?"
+                                : _nameController.text[0].toUpperCase(),
+                            style: TextStyle(
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 24,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: scheme.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: scheme.surface,
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.edit,
+                              size: 13,
+                              color: scheme.onPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _nameController.text.isEmpty
+                              ? "Your Profile"
+                              : _nameController.text,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "DOB ${_formatDate(_dob)}",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: scheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              title: Text(
-                _nameController.text.isEmpty ? "Your Profile" : _nameController.text,
-              ),
-              subtitle: Text("DOB ${_formatDate(_dob)}"),
             ),
           ),
           const SizedBox(height: 20),
