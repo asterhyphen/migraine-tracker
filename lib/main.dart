@@ -458,6 +458,39 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
+  bool _isBirthdayToday() {
+    if (_dob == null) return false;
+    final now = DateTime.now();
+    return now.month == _dob!.month && now.day == _dob!.day;
+  }
+
+  ThemeData _birthdayTheme(BuildContext context) {
+    final base = Theme.of(context);
+    final scheme = base.colorScheme;
+    final birthdayScheme = scheme.copyWith(
+      primary: const Color(0xFFFF8A3D),
+      secondary: const Color(0xFFFFC857),
+      tertiary: const Color(0xFFFF6FCF),
+    );
+    return base.copyWith(
+      colorScheme: birthdayScheme,
+      appBarTheme: base.appBarTheme.copyWith(
+        backgroundColor: birthdayScheme.surface,
+        foregroundColor: birthdayScheme.onSurface,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: birthdayScheme.primary,
+          foregroundColor: birthdayScheme.onPrimary,
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      bottomNavigationBarTheme: base.bottomNavigationBarTheme.copyWith(
+        selectedItemColor: birthdayScheme.primary,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loadingProfile) {
@@ -484,7 +517,7 @@ class _AppShellState extends State<AppShell> {
       ),
     ];
 
-    return Scaffold(
+    final scaffold = Scaffold(
       body: pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -505,5 +538,13 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
     );
+
+    if (_isBirthdayToday()) {
+      return Theme(
+        data: _birthdayTheme(context),
+        child: scaffold,
+      );
+    }
+    return scaffold;
   }
 }

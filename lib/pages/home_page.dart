@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'history_page.dart';
 import 'log_migraine_page.dart';
 import '../data/migraine_db.dart';
@@ -23,12 +24,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  static const _birthdayAnnouncedYearKey = 'birthday_announced_year';
   bool _loading = true;
   bool _birthdayDialogShown = false;
   MigraineEntry? _lastEntry;
   MigraineEntry? _todayEntry;
   int _monthCount = 0;
-  int _streakDays = 0;
   int _yearCount = 0;
 
   @override
@@ -76,7 +77,6 @@ class _HomePageState extends State<HomePage> {
       _monthCount = monthEntries.length;
       _lastEntry = last;
       _todayEntry = todayEntry;
-      _streakDays = _daysSince(last?.date);
       _yearCount = all.where((e) => e.date.year == now.year).length;
       _loading = false;
     });
@@ -90,28 +90,67 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _maybeShowBirthdayDialog() async {
     if (_birthdayDialogShown || !_isBirthdayToday() || !mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    final nowYear = DateTime.now().year;
+    final announcedYear = prefs.getInt(_birthdayAnnouncedYearKey);
+    if (announcedYear == nowYear) return;
+
     _birthdayDialogShown = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await showDialog<void>(
         context: context,
+        barrierDismissible: false,
         builder: (context) {
-          return AlertDialog(
-            title: const Text("Happy Birthday!"),
-            content: Text(
-              widget.name == null || widget.name!.isEmpty
-                  ? "Wishing you a great year ahead!"
-                  : "Happy Birthday, ${widget.name}! Wishing you a great year ahead!",
+          final scheme = Theme.of(context).colorScheme;
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text("Tadaa!"),
-              ),
-            ],
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
+                      Text(
+                        "Happy Birthday!",
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        widget.name == null || widget.name!.isEmpty
+                            ? "Wishing you a great year ahead!"
+                            : "Happy Birthday, ${widget.name}! Wishing you a great year ahead!",
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Icon(Icons.celebration_rounded, color: scheme.secondary),
+                          const SizedBox(width: 8),
+                          Icon(Icons.auto_awesome, color: scheme.primary),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 6,
+                  left: 6,
+                  child: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ],
+            ),
           );
         },
       );
+      await prefs.setInt(_birthdayAnnouncedYearKey, nowYear);
     });
   }
 
@@ -318,7 +357,7 @@ class _HeroCard extends StatelessWidget {
                 ),
                 if (isBirthday) ...[
                   const SizedBox(width: 8),
-                  const _TadaaBadge(),
+                  const _PartyCrackersBadge(),
                 ],
               ],
             ),
@@ -394,14 +433,14 @@ class _BirthdayBanner extends StatelessWidget {
   }
 }
 
-class _TadaaBadge extends StatefulWidget {
-  const _TadaaBadge();
+class _PartyCrackersBadge extends StatefulWidget {
+  const _PartyCrackersBadge();
 
   @override
-  State<_TadaaBadge> createState() => _TadaaBadgeState();
+  State<_PartyCrackersBadge> createState() => _PartyCrackersBadgeState();
 }
 
-class _TadaaBadgeState extends State<_TadaaBadge>
+class _PartyCrackersBadgeState extends State<_PartyCrackersBadge>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
@@ -439,13 +478,13 @@ class _TadaaBadgeState extends State<_TadaaBadge>
                 color: scheme.secondary.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: Text(
-                "Tadaa",
-                style: TextStyle(
-                  color: scheme.onSurface,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.celebration, size: 14, color: scheme.onSurface),
+                  const SizedBox(width: 4),
+                  Icon(Icons.auto_awesome, size: 14, color: scheme.onSurface),
+                ],
               ),
             ),
           ),
