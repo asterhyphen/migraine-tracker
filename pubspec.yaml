@@ -28,6 +28,10 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
+dependency_overrides:
+  nfc_manager:
+    path: third_party/nfc_manager
+
 flutter:
   uses-material-design: true
 

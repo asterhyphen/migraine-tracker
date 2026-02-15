@@ -489,15 +489,15 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 _SettingsRow(
                   icon: Icons.nfc_rounded,
-                  title: "Write NFC chip",
-                  value: "Write shortcut to open logging screen",
+                  title: "Program NFC tag",
+                  value: "Save app shortcut on a tag (one-time setup)",
                   onTap: () => _openNfcDialog(_NfcMode.write),
                 ),
                 const Divider(height: 1),
                 _SettingsRow(
                   icon: Icons.nfc_outlined,
-                  title: "Scan NFC chip",
-                  value: "Open log/edit screen when detected",
+                  title: "Use NFC tag",
+                  value: "Tap a programmed tag to open log/edit screen",
                   onTap: () => _openNfcDialog(_NfcMode.scan),
                 ),
               ],
@@ -670,8 +670,8 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
     setState(() {
       _status = _NfcStatus.detecting;
       _message = widget.mode == _NfcMode.write
-          ? 'Hold NFC chip near phone to write.'
-          : 'Hold NFC chip near phone to scan.';
+          ? 'Hold an NFC tag near your phone to program it with the app shortcut.'
+          : 'Hold a previously programmed NFC tag near your phone to open logging.';
     });
 
     _timeout?.cancel();
@@ -704,14 +704,14 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
             if (!mounted) return;
             setState(() {
               _status = _NfcStatus.success;
-              _message = 'NFC chip written successfully.';
+              _message = 'NFC tag programmed. You can now tap it to open logging.';
             });
           } else {
             await NfcManager.instance.stopSession();
             if (!mounted) return;
             setState(() {
               _status = _NfcStatus.success;
-              _message = 'Detected. Opening log screen...';
+              _message = 'Tag detected. Opening log/edit screen...';
             });
             await widget.onDetectedOpenLog();
           }
@@ -747,7 +747,9 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
               children: [
                 Expanded(
                   child: Text(
-                    widget.mode == _NfcMode.write ? 'Write NFC' : 'Scan NFC',
+                    widget.mode == _NfcMode.write
+                        ? 'Program NFC Tag'
+                        : 'Scan NFC Tag',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
