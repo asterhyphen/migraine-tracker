@@ -534,12 +534,18 @@ class _CauseList extends StatelessWidget {
       return const Center(child: Text("No causes logged"));
     }
     return Column(
-      children: data.take(4).map((item) {
+      children: data.take(3).map((item) {
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
             children: [
-              Expanded(child: Text(item.label)),
+              Expanded(
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               SizedBox(
                 width: 60,
                 child: LinearProgressIndicator(
