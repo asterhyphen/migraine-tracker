@@ -16,11 +16,15 @@ class SettingsPage extends StatefulWidget {
     required this.initialName,
     required this.initialDob,
     required this.onSave,
+    required this.isDarkTheme,
+    required this.onThemeChanged,
   });
 
   final String initialName;
   final DateTime initialDob;
   final Future<void> Function(String name, DateTime dob) onSave;
+  final bool isDarkTheme;
+  final Future<void> Function(bool isDark) onThemeChanged;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -29,6 +33,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _nameController;
   late DateTime _dob;
+  late bool _isDarkTheme;
   bool _busy = false;
 
   @override
@@ -36,6 +41,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
     _dob = widget.initialDob;
+    _isDarkTheme = widget.isDarkTheme;
   }
 
   @override
@@ -109,6 +115,13 @@ class _SettingsPageState extends State<SettingsPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text("Profile updated.")));
+  }
+
+  Future<void> _toggleTheme(bool value) async {
+    setState(() {
+      _isDarkTheme = value;
+    });
+    await widget.onThemeChanged(value);
   }
 
   Future<void> _importData() async {
@@ -335,6 +348,18 @@ class _SettingsPageState extends State<SettingsPage> {
                   onTap: _pickDob,
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _SectionHeader(title: "Appearance"),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: SwitchListTile(
+              value: _isDarkTheme,
+              onChanged: _toggleTheme,
+              title: const Text("Dark theme"),
+              subtitle: Text(_isDarkTheme ? "Enabled (default)" : "Light mode"),
+              secondary: const Icon(Icons.dark_mode_outlined),
             ),
           ),
           const SizedBox(height: 20),
