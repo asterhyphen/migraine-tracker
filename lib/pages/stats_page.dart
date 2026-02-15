@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 import '../utils/date_utils.dart';
+import '../widgets/wavy_surface.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
@@ -294,54 +295,56 @@ class _DashboardHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.primary.withValues(alpha: 0.20)),
-        gradient: LinearGradient(
-          colors: [
-            scheme.surface,
-            scheme.tertiary.withValues(alpha: 0.14),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.primary.withValues(alpha: 0.15),
-            ),
-            child: Icon(Icons.analytics_rounded, color: scheme.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Stats Overview",
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "$totalEntries total logged migraines",
-                  style: TextStyle(
-                    color: scheme.onSurface.withValues(alpha: 0.68),
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return WavySurface(
+      borderRadius: BorderRadius.circular(18),
+      borderColor: scheme.primary.withValues(alpha: 0.20),
+      gradient: LinearGradient(
+        colors: [
+          scheme.surface,
+          scheme.tertiary.withValues(alpha: 0.14),
         ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomRight,
+      ),
+      waveColorA: scheme.primary.withValues(alpha: 0.10),
+      waveColorB: scheme.secondary.withValues(alpha: 0.08),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.primary.withValues(alpha: 0.15),
+              ),
+              child: Icon(Icons.analytics_rounded, color: scheme.primary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Stats Overview",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "$totalEntries total logged migraines",
+                    style: TextStyle(
+                      color: scheme.onSurface.withValues(alpha: 0.68),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

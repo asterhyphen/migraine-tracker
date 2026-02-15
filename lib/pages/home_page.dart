@@ -4,6 +4,7 @@ import 'log_migraine_page.dart';
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 import '../utils/date_utils.dart';
+import '../widgets/wavy_surface.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -209,79 +210,84 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.primary.withValues(alpha: 0.20)),
-        gradient: LinearGradient(
-          colors: [
-            scheme.surface,
-            scheme.tertiary.withValues(alpha: 0.14),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.primary.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
+    return WavySurface(
+      borderRadius: BorderRadius.circular(20),
+      borderColor: scheme.primary.withValues(alpha: 0.20),
+      gradient: LinearGradient(
+        colors: [
+          scheme.surface,
+          scheme.tertiary.withValues(alpha: 0.14),
         ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomRight,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(999),
+      waveColorA: scheme.primary.withValues(alpha: 0.10),
+      waveColorB: scheme.secondary.withValues(alpha: 0.08),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: scheme.primary.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-            child: Text(
-              "Daily Tracker",
-              style: TextStyle(
-                color: scheme.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(999),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  fontSize: 28,
+              child: Text(
+                "Daily Tracker",
+                style: TextStyle(
+                  color: scheme.primary,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: TextStyle(
-              color: scheme.onSurface.withValues(alpha: 0.76),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton(
-                  onPressed: primaryAction,
-                  child: Text(primaryLabel),
-                ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: scheme.onSurface.withValues(alpha: 0.76),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: secondaryAction,
-                  child: Text(secondaryLabel),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: primaryAction,
+                    child: Text(primaryLabel),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: secondaryAction,
+                    child: Text(secondaryLabel),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
