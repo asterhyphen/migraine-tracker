@@ -191,12 +191,6 @@ class _HomePageState extends State<HomePage> {
                     icon: Icons.calendar_month_rounded,
                   ),
                   _StatCard(
-                    title: "Current Streak",
-                    value: "$_streakDays",
-                    suffix: "days",
-                    icon: Icons.bolt_rounded,
-                  ),
-                  _StatCard(
                     title: "This Year",
                     value: "$_yearCount",
                     suffix: "events",

@@ -18,3 +18,6 @@ commit:
 
 %:
 	@:
+
+push:
+	git push origin main
