@@ -16,14 +16,18 @@ class SettingsPage extends StatefulWidget {
     super.key,
     required this.initialName,
     required this.initialDob,
+    required this.initialProfileImagePath,
     required this.onSave,
+    required this.onProfileImageChanged,
     required this.isDarkTheme,
     required this.onThemeChanged,
   });
 
   final String initialName;
   final DateTime initialDob;
+  final String? initialProfileImagePath;
   final Future<void> Function(String name, DateTime dob) onSave;
+  final Future<void> Function(String? imagePath) onProfileImageChanged;
   final bool isDarkTheme;
   final Future<void> Function(bool isDark) onThemeChanged;
 
@@ -35,6 +39,7 @@ class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _nameController;
   late DateTime _dob;
   late bool _isDarkTheme;
+  String? _profileImagePath;
   String _appVersion = '-';
   bool _busy = false;
 
@@ -44,6 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _nameController = TextEditingController(text: widget.initialName);
     _dob = widget.initialDob;
     _isDarkTheme = widget.isDarkTheme;
+    _profileImagePath = widget.initialProfileImagePath;
     _loadAppVersion();
   }
 
@@ -133,6 +139,20 @@ class _SettingsPageState extends State<SettingsPage> {
       _isDarkTheme = value;
     });
     await widget.onThemeChanged(value);
+  }
+
+  Future<void> _pickProfileImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result == null || result.files.single.path == null) return;
+    final selectedPath = result.files.single.path!;
+    setState(() {
+      _profileImagePath = selectedPath;
+    });
+    await widget.onProfileImageChanged(selectedPath);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Profile picture updated.")),
+    );
   }
 
   Future<void> _importData() async {
@@ -324,23 +344,29 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   InkWell(
                     borderRadius: BorderRadius.circular(40),
-                    onTap: _editName,
+                    onTap: _pickProfileImage,
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
                         CircleAvatar(
                           radius: 32,
                           backgroundColor: scheme.primary.withValues(alpha: 0.2),
-                          child: Text(
-                            _nameController.text.isEmpty
-                                ? "?"
-                                : _nameController.text[0].toUpperCase(),
-                            style: TextStyle(
-                              color: scheme.primary,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 24,
-                            ),
-                          ),
+                          backgroundImage: _profileImagePath != null &&
+                                  _profileImagePath!.isNotEmpty
+                              ? FileImage(File(_profileImagePath!))
+                              : null,
+                          child: _profileImagePath == null || _profileImagePath!.isEmpty
+                              ? Text(
+                                  _nameController.text.isEmpty
+                                      ? "?"
+                                      : _nameController.text[0].toUpperCase(),
+                                  style: TextStyle(
+                                    color: scheme.primary,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 24,
+                                  ),
+                                )
+                              : null,
                         ),
                         Positioned(
                           right: -2,

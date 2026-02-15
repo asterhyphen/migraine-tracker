@@ -340,6 +340,7 @@ class _AppShellState extends State<AppShell> {
   bool _loadingProfile = true;
   String? _name;
   DateTime? _dob;
+  String? _profileImagePath;
   late final AppLinks _appLinks;
   StreamSubscription<Uri>? _appLinkSubscription;
   bool _pendingOpenLog = false;
@@ -415,11 +416,13 @@ class _AppShellState extends State<AppShell> {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('user_name');
     final dobMillis = prefs.getInt('user_dob');
+    final profileImagePath = prefs.getString('user_profile_image');
     setState(() {
       _name = name;
       _dob = dobMillis == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(dobMillis);
+      _profileImagePath = profileImagePath;
       _loadingProfile = false;
     });
     _processPendingAction();
@@ -434,6 +437,19 @@ class _AppShellState extends State<AppShell> {
       _dob = dob;
     });
     _processPendingAction();
+  }
+
+  Future<void> _saveProfileImage(String? imagePath) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (imagePath == null || imagePath.trim().isEmpty) {
+      await prefs.remove('user_profile_image');
+    } else {
+      await prefs.setString('user_profile_image', imagePath);
+    }
+    if (!mounted) return;
+    setState(() {
+      _profileImagePath = imagePath;
+    });
   }
 
   void _onNavTap(int index) {
@@ -460,7 +476,9 @@ class _AppShellState extends State<AppShell> {
       SettingsPage(
         initialName: _name!,
         initialDob: _dob!,
+        initialProfileImagePath: _profileImagePath,
         onSave: _saveProfile,
+        onProfileImageChanged: _saveProfileImage,
         isDarkTheme: widget.isDarkTheme,
         onThemeChanged: widget.onThemeChanged,
       ),
