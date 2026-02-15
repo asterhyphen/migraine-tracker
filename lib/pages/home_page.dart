@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'history_page.dart';
 import 'log_migraine_page.dart';
@@ -22,6 +24,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _loading = true;
+  bool _birthdayDialogShown = false;
   MigraineEntry? _lastEntry;
   MigraineEntry? _todayEntry;
   int _monthCount = 0;
@@ -77,6 +80,39 @@ class _HomePageState extends State<HomePage> {
       _yearCount = all.where((e) => e.date.year == now.year).length;
       _loading = false;
     });
+    _maybeShowBirthdayDialog();
+  }
+
+  bool _isBirthdayToday() {
+    final now = DateTime.now();
+    return now.month == widget.dob.month && now.day == widget.dob.day;
+  }
+
+  Future<void> _maybeShowBirthdayDialog() async {
+    if (_birthdayDialogShown || !_isBirthdayToday() || !mounted) return;
+    _birthdayDialogShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Happy Birthday!"),
+            content: Text(
+              widget.name == null || widget.name!.isEmpty
+                  ? "Wishing you a great year ahead!"
+                  : "Happy Birthday, ${widget.name}! Wishing you a great year ahead!",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("Tadaa!"),
+              ),
+            ],
+          );
+        },
+      );
+    });
   }
 
   int _daysSince(DateTime? date) {
@@ -100,6 +136,7 @@ class _HomePageState extends State<HomePage> {
     final lastDetails = _lastEntry == null
         ? "Log your first migraine to see details."
         : "Intensity ${_lastEntry!.intensity} • ${_formatDate(_lastEntry!.date)}";
+    final isBirthday = _isBirthdayToday();
 
     return Scaffold(
       appBar: AppBar(title: const Text("Home")),
@@ -109,17 +146,28 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _HeroCard(
-              title: widget.name == null || widget.name!.isEmpty
-                  ? "Welcome!"
-                  : "Welcome, ${widget.name}!",
-              subtitle: "Age ${calculateAge()} • Track migraines with clarity.",
+              title: isBirthday
+                  ? (widget.name == null || widget.name!.isEmpty
+                        ? "Happy Birthday!"
+                        : "Happy Birthday, ${widget.name}!")
+                  : (widget.name == null || widget.name!.isEmpty
+                        ? "Welcome!"
+                        : "Welcome, ${widget.name}!"),
+              subtitle: isBirthday
+                  ? "Today is your day. Take it easy and stay hydrated."
+                  : "Age ${calculateAge()} • Track migraines with clarity.",
               primaryLabel: _todayEntry == null
                   ? "Log Today's Migraine"
                   : "Edit Today's Migraine",
               primaryAction: _openLogMigraine,
               secondaryLabel: "View History",
               secondaryAction: _openHistory,
+              isBirthday: isBirthday,
             ),
+            if (isBirthday) ...[
+              const SizedBox(height: 14),
+              const _BirthdayBanner(),
+            ],
             const SizedBox(height: 24),
             const _SectionTitle(
               title: "At a Glance",
@@ -207,6 +255,7 @@ class _HeroCard extends StatelessWidget {
     required this.primaryAction,
     required this.secondaryLabel,
     required this.secondaryAction,
+    required this.isBirthday,
   });
 
   final String title;
@@ -215,6 +264,7 @@ class _HeroCard extends StatelessWidget {
   final VoidCallback primaryAction;
   final String secondaryLabel;
   final VoidCallback secondaryAction;
+  final bool isBirthday;
 
   @override
   Widget build(BuildContext context) {
@@ -224,14 +274,22 @@ class _HeroCard extends StatelessWidget {
       borderColor: scheme.primary.withValues(alpha: 0.20),
       gradient: LinearGradient(
         colors: [
-          scheme.surface,
-          scheme.tertiary.withValues(alpha: 0.14),
+          isBirthday
+              ? scheme.secondary.withValues(alpha: 0.22)
+              : scheme.surface,
+          isBirthday
+              ? scheme.tertiary.withValues(alpha: 0.24)
+              : scheme.tertiary.withValues(alpha: 0.14),
         ],
         begin: Alignment.topCenter,
         end: Alignment.bottomRight,
       ),
-      waveColorA: scheme.primary.withValues(alpha: 0.10),
-      waveColorB: scheme.secondary.withValues(alpha: 0.08),
+      waveColorA: isBirthday
+          ? scheme.primary.withValues(alpha: 0.18)
+          : scheme.primary.withValues(alpha: 0.10),
+      waveColorB: isBirthday
+          ? scheme.secondary.withValues(alpha: 0.16)
+          : scheme.secondary.withValues(alpha: 0.08),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
@@ -247,20 +305,28 @@ class _HeroCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                "Daily Tracker",
-                style: TextStyle(
-                  color: scheme.primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    isBirthday ? "Birthday Mode" : "Daily Tracker",
+                    style: TextStyle(
+                      color: scheme.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-              ),
+                if (isBirthday) ...[
+                  const SizedBox(width: 8),
+                  const _TadaaBadge(),
+                ],
+              ],
             ),
             const SizedBox(height: 12),
             Text(
@@ -298,6 +364,99 @@ class _HeroCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _BirthdayBanner extends StatelessWidget {
+  const _BirthdayBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.secondary.withValues(alpha: 0.35)),
+        color: scheme.secondary.withValues(alpha: 0.14),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.celebration_rounded, color: scheme.secondary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Happy Birthday! Take it easy today and keep your migraine log up to date.",
+              style: TextStyle(
+                color: scheme.onSurface.withValues(alpha: 0.9),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TadaaBadge extends StatefulWidget {
+  const _TadaaBadge();
+
+  @override
+  State<_TadaaBadge> createState() => _TadaaBadgeState();
+}
+
+class _TadaaBadgeState extends State<_TadaaBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = _controller.value;
+        final angle = math.sin(t * math.pi * 2) * 0.12;
+        final scale = 1 + (math.sin(t * math.pi) * 0.08);
+        return Transform.rotate(
+          angle: angle,
+          child: Transform.scale(
+            scale: scale,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: scheme.secondary.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                "Tadaa",
+                style: TextStyle(
+                  color: scheme.onSurface,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
