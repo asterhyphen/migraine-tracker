@@ -123,7 +123,7 @@ class _StatsPageState extends State<StatsPage> {
               subtitle: "Daily migraine counts over the last 7 days",
             ),
             const SizedBox(height: 12),
-            _WeeklyRow(data: weekly),
+            _WeeklyGraph(data: weekly),
             const SizedBox(height: 20),
             const _SectionTitle(
               title: "Recent Logs",
@@ -633,38 +633,125 @@ class _WeeklyDatum {
   final int count;
 }
 
-class _WeeklyRow extends StatelessWidget {
-  const _WeeklyRow({required this.data});
+class _WeeklyGraph extends StatelessWidget {
+  const _WeeklyGraph({required this.data});
 
   final List<_WeeklyDatum> data;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: data.map((datum) {
-        final height = (datum.count * 12).clamp(6, 60).toDouble();
-        return Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Container(
-                height: height,
-                margin: const EdgeInsets.symmetric(horizontal: 6),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(6),
-                ),
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+        color: scheme.surface.withValues(alpha: 0.74),
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 130,
+            child: CustomPaint(
+              painter: _WeeklyGraphPainter(
+                data: data,
+                color: scheme.primary,
               ),
-              const SizedBox(height: 6),
-              Text(
-                datum.label,
-                style: const TextStyle(fontSize: 12),
-              ),
-            ],
+              child: const SizedBox.expand(),
+            ),
           ),
-        );
-      }).toList(),
+          const SizedBox(height: 8),
+          Row(
+            children: data
+                .map(
+                  (d) => Expanded(
+                    child: Text(
+                      d.label,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ),
     );
+  }
+}
+
+class _WeeklyGraphPainter extends CustomPainter {
+  _WeeklyGraphPainter({
+    required this.data,
+    required this.color,
+  });
+
+  final List<_WeeklyDatum> data;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (data.length < 2) return;
+
+    final maxCount =
+        data.map((d) => d.count).reduce((a, b) => a > b ? a : b).toDouble();
+    final normalizedMax = maxCount == 0 ? 1.0 : maxCount;
+
+    final axisPaint = Paint()
+      ..color = Colors.white24
+      ..strokeWidth = 1;
+    canvas.drawLine(
+      Offset(0, size.height - 1),
+      Offset(size.width, size.height - 1),
+      axisPaint,
+    );
+
+    final linePaint = Paint()
+      ..color = color
+      ..strokeWidth = 2.2
+      ..style = PaintingStyle.stroke;
+
+    final fillPaint = Paint()
+      ..color = color.withValues(alpha: 0.14)
+      ..style = PaintingStyle.fill;
+
+    final stepX = size.width / (data.length - 1);
+    final linePath = Path();
+    final fillPath = Path();
+
+    for (int i = 0; i < data.length; i++) {
+      final x = i * stepX;
+      final y = size.height -
+          ((data[i].count / normalizedMax) * (size.height - 12)) -
+          6;
+      if (i == 0) {
+        linePath.moveTo(x, y);
+        fillPath.moveTo(x, size.height);
+        fillPath.lineTo(x, y);
+      } else {
+        linePath.lineTo(x, y);
+        fillPath.lineTo(x, y);
+      }
+    }
+    fillPath.lineTo(size.width, size.height);
+    fillPath.close();
+
+    canvas.drawPath(fillPath, fillPaint);
+    canvas.drawPath(linePath, linePaint);
+
+    final pointPaint = Paint()..color = color;
+    for (int i = 0; i < data.length; i++) {
+      final x = i * stepX;
+      final y = size.height -
+          ((data[i].count / normalizedMax) * (size.height - 12)) -
+          6;
+      canvas.drawCircle(Offset(x, y), 3.2, pointPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WeeklyGraphPainter oldDelegate) {
+    return oldDelegate.data != data || oldDelegate.color != color;
   }
 }
 
