@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -34,6 +35,7 @@ class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _nameController;
   late DateTime _dob;
   late bool _isDarkTheme;
+  String _appVersion = '-';
   bool _busy = false;
 
   @override
@@ -42,6 +44,15 @@ class _SettingsPageState extends State<SettingsPage> {
     _nameController = TextEditingController(text: widget.initialName);
     _dob = widget.initialDob;
     _isDarkTheme = widget.isDarkTheme;
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    setState(() {
+      _appVersion = '${info.version}+${info.buildNumber}';
+    });
   }
 
   @override
@@ -388,7 +399,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           Text(
-            "Exports are stored in your Downloads folder.",
+            "Version $_appVersion\nDeveloped with love by Ahmed.-",
             style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.6)),
             textAlign: TextAlign.center,
           ),
