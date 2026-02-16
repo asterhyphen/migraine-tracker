@@ -12,7 +12,6 @@ import 'package:permission_handler/permission_handler.dart';
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 import '../utils/date_utils.dart';
-import 'log_migraine_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -158,23 +157,12 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _openNfcDialog(_NfcMode mode) async {
+  Future<void> _openNfcDialog() async {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) {
-        return _NfcActionDialog(
-          mode: mode,
-          onDetectedOpenLog: () async {
-            final todayEntry = await MigraineDb.instance.getEntryForDate(DateTime.now());
-            if (!mounted) return;
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => LogMigrainePage(entry: todayEntry),
-              ),
-            );
-          },
-        );
+        return const _NfcActionDialog();
       },
     );
   }
@@ -490,15 +478,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 _SettingsRow(
                   icon: Icons.nfc_rounded,
                   title: "Program NFC tag",
-                  value: "Save app shortcut on a tag (one-time setup)",
-                  onTap: () => _openNfcDialog(_NfcMode.write),
-                ),
-                const Divider(height: 1),
-                _SettingsRow(
-                  icon: Icons.nfc_outlined,
-                  title: "Use NFC tag",
-                  value: "Tap a programmed tag to open log/edit screen",
-                  onTap: () => _openNfcDialog(_NfcMode.scan),
+                  value: "One-time setup. Then tap tag from Home/Lock screen to open logging directly.",
+                  onTap: _openNfcDialog,
                 ),
               ],
             ),
@@ -611,18 +592,10 @@ class _SettingsRow extends StatelessWidget {
   }
 }
 
-enum _NfcMode { write, scan }
-
 enum _NfcStatus { detecting, notDetected, success, error, unavailable }
 
 class _NfcActionDialog extends StatefulWidget {
-  const _NfcActionDialog({
-    required this.mode,
-    required this.onDetectedOpenLog,
-  });
-
-  final _NfcMode mode;
-  final Future<void> Function() onDetectedOpenLog;
+  const _NfcActionDialog();
 
   @override
   State<_NfcActionDialog> createState() => _NfcActionDialogState();
@@ -669,9 +642,7 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
     _completed = false;
     setState(() {
       _status = _NfcStatus.detecting;
-      _message = widget.mode == _NfcMode.write
-          ? 'Hold an NFC tag near your phone to program it with the app shortcut.'
-          : 'Hold a previously programmed NFC tag near your phone to open logging.';
+      _message = 'Hold an NFC tag near your phone to program it with the app shortcut.';
     });
 
     _timeout?.cancel();
@@ -691,30 +662,20 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
         _completed = true;
         _timeout?.cancel();
         try {
-          if (widget.mode == _NfcMode.write) {
-            final ndef = Ndef.from(tag);
-            if (ndef == null || !ndef.isWritable) {
-              throw Exception('Tag not writable');
-            }
-            final msg = NdefMessage([
-              NdefRecord.createUri(Uri.parse(_nfcUri)),
-            ]);
-            await ndef.write(msg);
-            await NfcManager.instance.stopSession();
-            if (!mounted) return;
-            setState(() {
-              _status = _NfcStatus.success;
-              _message = 'NFC tag programmed. You can now tap it to open logging.';
-            });
-          } else {
-            await NfcManager.instance.stopSession();
-            if (!mounted) return;
-            setState(() {
-              _status = _NfcStatus.success;
-              _message = 'Tag detected. Opening log/edit screen...';
-            });
-            await widget.onDetectedOpenLog();
+          final ndef = Ndef.from(tag);
+          if (ndef == null || !ndef.isWritable) {
+            throw Exception('Tag not writable');
           }
+          final msg = NdefMessage([
+            NdefRecord.createUri(Uri.parse(_nfcUri)),
+          ]);
+          await ndef.write(msg);
+          await NfcManager.instance.stopSession();
+          if (!mounted) return;
+          setState(() {
+            _status = _NfcStatus.success;
+            _message = 'NFC tag programmed. You can now tap it from Home/Lock screen to open logging.';
+          });
         } catch (e) {
           await NfcManager.instance.stopSession(errorMessage: e.toString());
           if (!mounted) return;
@@ -747,9 +708,7 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
               children: [
                 Expanded(
                   child: Text(
-                    widget.mode == _NfcMode.write
-                        ? 'Program NFC Tag'
-                        : 'Scan NFC Tag',
+                    'Program NFC Tag',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
