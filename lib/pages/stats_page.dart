@@ -33,7 +33,7 @@ class _StatsPageState extends State<StatsPage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const _StatsLoadingView();
     }
 
     final monthStats = _buildMonthlyStats();
@@ -49,90 +49,96 @@ class _StatsPageState extends State<StatsPage> {
       appBar: AppBar(
         title: const Text("Statistics"),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _DashboardHeader(totalEntries: _entries.length),
-            const SizedBox(height: 24),
-            const _SectionTitle(
-              title: "Summary",
-              subtitle: "High-level indicators across all logs",
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: summary.map((item) {
-                return _InsightCard(
-                  title: item.title,
-                  value: item.value,
-                  subtitle: item.subtitle,
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-            const _SectionTitle(
-              title: "Trends",
-              subtitle: "Patterns across month, causes, and intensity",
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _ChartCard(
-                    title: "Monthly Frequency",
-                    child: _BarChart(data: monthStats),
-                  ),
+      body: RefreshIndicator(
+        onRefresh: _loadStats,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: _entries.isEmpty
+              ? const _StatsEmptyState()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _DashboardHeader(totalEntries: _entries.length),
+                    const SizedBox(height: 24),
+                    const _SectionTitle(
+                      title: "Summary",
+                      subtitle: "High-level indicators across all logs",
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: summary.map((item) {
+                        return _InsightCard(
+                          title: item.title,
+                          value: item.value,
+                          subtitle: item.subtitle,
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+                    const _SectionTitle(
+                      title: "Trends",
+                      subtitle: "Patterns across month, causes, and intensity",
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ChartCard(
+                            title: "Monthly Frequency",
+                            child: _BarChart(data: monthStats),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ChartCard(
+                            title: "Causes",
+                            child: _CauseList(data: causes),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ChartCard(
+                            title: "Painkiller Usage",
+                            child: _Gauge(value: painkillerPercent),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ChartCard(
+                            title: "Avg. Intensity",
+                            child: _BarChart(data: avgStats),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _ChartCard(
+                      title: "Recent Intensity",
+                      child: _LineChart(values: intensitySeries),
+                    ),
+                    const SizedBox(height: 20),
+                    const _SectionTitle(
+                      title: "Weekly Pulse",
+                      subtitle: "Daily migraine counts over the last 7 days",
+                    ),
+                    const SizedBox(height: 12),
+                    _WeeklyGraph(data: weekly),
+                    const SizedBox(height: 20),
+                    const _SectionTitle(
+                      title: "Recent Logs",
+                      subtitle: "Latest entries for quick review",
+                    ),
+                    const SizedBox(height: 12),
+                    _RecentList(entries: recent),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ChartCard(
-                    title: "Causes",
-                    child: _CauseList(data: causes),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _ChartCard(
-                    title: "Painkiller Usage",
-                    child: _Gauge(value: painkillerPercent),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ChartCard(
-                    title: "Avg. Intensity",
-                    child: _BarChart(data: avgStats),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _ChartCard(
-              title: "Recent Intensity",
-              child: _LineChart(values: intensitySeries),
-            ),
-            const SizedBox(height: 20),
-            const _SectionTitle(
-              title: "Weekly Pulse",
-              subtitle: "Daily migraine counts over the last 7 days",
-            ),
-            const SizedBox(height: 12),
-            _WeeklyGraph(data: weekly),
-            const SizedBox(height: 20),
-            const _SectionTitle(
-              title: "Recent Logs",
-              subtitle: "Latest entries for quick review",
-            ),
-            const SizedBox(height: 12),
-            _RecentList(entries: recent),
-          ],
         ),
       ),
     );
@@ -284,6 +290,105 @@ class _StatsPageState extends State<StatsPage> {
   String _weekdayLabel(DateTime date) {
     const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     return labels[date.weekday % 7];
+  }
+}
+
+class _StatsLoadingView extends StatelessWidget {
+  const _StatsLoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Statistics")),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        children: const [
+          _StatsSkeletonBox(height: 80, radius: 18),
+          SizedBox(height: 24),
+          _StatsSkeletonBox(height: 18, width: 120),
+          SizedBox(height: 12),
+          _StatsSkeletonBox(height: 200, radius: 14),
+          SizedBox(height: 16),
+          _StatsSkeletonBox(height: 170, radius: 14),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatsEmptyState extends StatelessWidget {
+  const _StatsEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+        color: scheme.surface.withValues(alpha: 0.72),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.insights_outlined, size: 36, color: scheme.primary),
+          const SizedBox(height: 10),
+          Text(
+            "No stats yet",
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "Log your first migraine entry to unlock trends, triggers, and intensity charts.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.72)),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            "Tip: Pull down to refresh after adding new logs.",
+            style: TextStyle(
+              fontSize: 12,
+              color: scheme.onSurface.withValues(alpha: 0.58),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatsSkeletonBox extends StatelessWidget {
+  const _StatsSkeletonBox({
+    required this.height,
+    this.width = double.infinity,
+    this.radius = 10,
+  });
+
+  final double height;
+  final double width;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        height: height,
+        width: width,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(radius),
+          gradient: LinearGradient(
+            colors: [
+              scheme.surface.withValues(alpha: 0.85),
+              scheme.surface.withValues(alpha: 0.56),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

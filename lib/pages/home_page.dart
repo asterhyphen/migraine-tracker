@@ -164,9 +164,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const _HomeLoadingView();
     }
 
     final lastText = _lastEntry == null
@@ -179,97 +177,107 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text("Home")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _HeroCard(
-              title: isBirthday
-                  ? (widget.name == null || widget.name!.isEmpty
-                        ? "Happy Birthday!"
-                        : "Happy Birthday, ${widget.name}!")
-                  : (widget.name == null || widget.name!.isEmpty
-                        ? "Welcome!"
-                        : "Welcome, ${widget.name}!"),
-              subtitle: isBirthday
-                  ? "Today is your day. Take it easy and stay hydrated."
-                  : "Age ${calculateAge()} • Track migraines with clarity.",
-              primaryLabel: _todayEntry == null
-                  ? "Log Today's Migraine"
-                  : "Edit Today's Migraine",
-              primaryAction: _openLogMigraine,
-              secondaryLabel: "View History",
-              secondaryAction: _openHistory,
-              isBirthday: isBirthday,
-            ),
-            if (isBirthday) ...[
-              const SizedBox(height: 14),
-              const _BirthdayBanner(),
-            ],
-            const SizedBox(height: 24),
-            const _SectionTitle(
-              title: "At a Glance",
-              subtitle: "Current period highlights",
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 148,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _StatCard(
-                    title: "Last Migraine",
-                    value: lastText,
-                    icon: Icons.schedule_rounded,
-                  ),
-                  _StatCard(
-                    title: "This Month",
-                    value: "$_monthCount",
-                    suffix: "events",
-                    icon: Icons.calendar_month_rounded,
-                  ),
-                  _StatCard(
-                    title: "This Year",
-                    value: "$_yearCount",
-                    suffix: "events",
-                    icon: Icons.insights_rounded,
-                  ),
-                ]
-                    .map(
-                      (card) => Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: card,
-                      ),
-                    )
-                    .toList(),
+      body: RefreshIndicator(
+        onRefresh: _loadStats,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _HeroCard(
+                title: isBirthday
+                    ? (widget.name == null || widget.name!.isEmpty
+                          ? "Happy Birthday!"
+                          : "Happy Birthday, ${widget.name}!")
+                    : (widget.name == null || widget.name!.isEmpty
+                          ? "Welcome!"
+                          : "Welcome, ${widget.name}!"),
+                subtitle: isBirthday
+                    ? "Today is your day. Take it easy and stay hydrated."
+                    : "Age ${calculateAge()} • Track migraines with clarity.",
+                primaryLabel: _todayEntry == null
+                    ? "Log Today's Migraine"
+                    : "Edit Today's Migraine",
+                primaryAction: _openLogMigraine,
+                secondaryLabel: "View History",
+                secondaryAction: _openHistory,
+                isBirthday: isBirthday,
               ),
-            ),
-            const SizedBox(height: 24),
-            const _SectionTitle(
-              title: "Last Entry",
-              subtitle: "Most recent recorded migraine",
-            ),
-            const SizedBox(height: 12),
-            _DetailCard(
-              title: _lastEntry == null ? "No entries yet" : "Latest log",
-              subtitle: lastDetails,
-              trailing: _lastEntry == null
-                  ? null
-                  : Text(
-                      _lastEntry!.causes.isEmpty
-                          ? "No causes tagged"
-                          : _lastEntry!.causes.join(" • "),
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.7),
+              if (isBirthday) ...[
+                const SizedBox(height: 14),
+                const _BirthdayBanner(),
+              ],
+              const SizedBox(height: 24),
+              const _SectionTitle(
+                title: "At a Glance",
+                subtitle: "Current period highlights",
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 148,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _StatCard(
+                      title: "Last Migraine",
+                      value: lastText,
+                      icon: Icons.schedule_rounded,
+                    ),
+                    _StatCard(
+                      title: "This Month",
+                      value: "$_monthCount",
+                      suffix: "events",
+                      icon: Icons.calendar_month_rounded,
+                    ),
+                    _StatCard(
+                      title: "This Year",
+                      value: "$_yearCount",
+                      suffix: "events",
+                      icon: Icons.insights_rounded,
+                    ),
+                  ]
+                      .map(
+                        (card) => Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: card,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const _SectionTitle(
+                title: "Last Entry",
+                subtitle: "Most recent recorded migraine",
+              ),
+              const SizedBox(height: 12),
+              _lastEntry == null
+                  ? _EmptyStateCard(
+                      icon: Icons.note_add_outlined,
+                      title: "No migraine logs yet",
+                      subtitle: "Start with your first entry to unlock trends and insights.",
+                      actionLabel: "Log now",
+                      onAction: _openLogMigraine,
+                    )
+                  : _DetailCard(
+                      title: "Latest log",
+                      subtitle: lastDetails,
+                      trailing: Text(
+                        _lastEntry!.causes.isEmpty
+                            ? "No causes tagged"
+                            : _lastEntry!.causes.join(" • "),
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.7),
+                        ),
                       ),
                     ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -277,6 +285,67 @@ class _HomePageState extends State<HomePage> {
 
   String _formatDate(DateTime date) {
     return formatDdMmYyyy(date);
+  }
+}
+
+class _HomeLoadingView extends StatelessWidget {
+  const _HomeLoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Home")),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: const [
+            _SkeletonBox(height: 210, radius: 20),
+            SizedBox(height: 24),
+            _SkeletonBox(height: 18, width: 140),
+            SizedBox(height: 12),
+            _SkeletonBox(height: 148, radius: 14),
+            SizedBox(height: 24),
+            _SkeletonBox(height: 18, width: 120),
+            SizedBox(height: 12),
+            _SkeletonBox(height: 96, radius: 14),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SkeletonBox extends StatelessWidget {
+  const _SkeletonBox({
+    required this.height,
+    this.width = double.infinity,
+    this.radius = 10,
+  });
+
+  final double height;
+  final double width;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(radius),
+          gradient: LinearGradient(
+            colors: [
+              scheme.surface.withValues(alpha: 0.85),
+              scheme.surface.withValues(alpha: 0.55),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -664,6 +733,60 @@ class _DetailCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(child: trailing!),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyStateCard extends StatelessWidget {
+  const _EmptyStateCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+        color: scheme.surface.withValues(alpha: 0.72),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: scheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.72)),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.tonal(
+            onPressed: onAction,
+            child: Text(actionLabel),
+          ),
         ],
       ),
     );

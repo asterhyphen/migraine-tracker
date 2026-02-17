@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
@@ -176,6 +177,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
     try {
       await MigraineDb.instance.updateEntry(entry);
       if (!mounted) return;
+      HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -220,6 +222,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
     if (confirmed != true) return;
     await MigraineDb.instance.deleteEntry(entry!.id!);
     if (!mounted) return;
+    HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Entry deleted.")),
     );

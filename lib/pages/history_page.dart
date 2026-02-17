@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
@@ -47,38 +48,50 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.separated(
-              padding: const EdgeInsets.all(20),
-              itemCount: _entries.length,
-              separatorBuilder: (context, index) => const Divider(),
-              itemBuilder: (context, index) {
-                final entry = _entries[index];
-                final causes = entry.causes.isEmpty
-                    ? "No cause tagged"
-                    : entry.causes.join(", ");
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    _formatDate(entry.date),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    "Intensity ${entry.intensity} • $causes",
-                  ),
-                  onTap: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => LogMigrainePage(entry: entry),
-                      ),
-                    );
-                    await _loadEntries();
-                  },
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () => _confirmDelete(entry),
-                  ),
-                );
-              },
+          : RefreshIndicator(
+              onRefresh: _loadEntries,
+              child: _entries.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(20),
+                      children: [
+                        _HistoryEmptyState(onLogMissedDay: _logMissedDay),
+                      ],
+                    )
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(20),
+                      itemCount: _entries.length,
+                      separatorBuilder: (context, index) => const Divider(),
+                      itemBuilder: (context, index) {
+                        final entry = _entries[index];
+                        final causes = entry.causes.isEmpty
+                            ? "No cause tagged"
+                            : entry.causes.join(", ");
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            _formatDate(entry.date),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(
+                            "Intensity ${entry.intensity} • $causes",
+                          ),
+                          onTap: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => LogMigrainePage(entry: entry),
+                              ),
+                            );
+                            await _loadEntries();
+                          },
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _confirmDelete(entry),
+                          ),
+                        );
+                      },
+                    ),
             ),
     );
   }
@@ -107,6 +120,7 @@ class _HistoryPageState extends State<HistoryPage> {
     if (entry.id == null) return;
     await MigraineDb.instance.deleteEntry(entry.id!);
     if (!mounted) return;
+    HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Entry deleted.")),
     );
@@ -135,5 +149,49 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
     );
     await _loadEntries();
+  }
+}
+
+class _HistoryEmptyState extends StatelessWidget {
+  const _HistoryEmptyState({required this.onLogMissedDay});
+
+  final VoidCallback onLogMissedDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+        color: scheme.surface.withValues(alpha: 0.72),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.history_toggle_off_rounded, color: scheme.primary),
+              const SizedBox(width: 8),
+              const Text(
+                "No history yet",
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "When you log entries, they will appear here for quick edit and review.",
+            style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.72)),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.tonal(
+            onPressed: onLogMissedDay,
+            child: const Text("Log missed day"),
+          ),
+        ],
+      ),
+    );
   }
 }
