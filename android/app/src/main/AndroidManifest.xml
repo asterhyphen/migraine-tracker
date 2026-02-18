@@ -36,6 +36,25 @@
                     android:scheme="migraine-tracker"
                     android:host="log" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data
+                    android:scheme="migraine-tracker"
+                    android:host="log" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data
+                    android:scheme="migraine-tracker"
+                    android:path="log" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="migraine-tracker" />
+            </intent-filter>
         </activity>
         <receiver
             android:name=".MigraineLogWidgetProvider"

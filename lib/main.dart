@@ -376,8 +376,11 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _handleIncomingLink(Uri uri) {
+    final normalizedPath = uri.path.replaceAll(RegExp(r'^/+|/+$'), '');
     final isLogLink = uri.scheme == 'migraine-tracker' &&
-        (uri.host == 'log' || uri.path == '/log');
+        (uri.host == 'log' ||
+            normalizedPath == 'log' ||
+            (uri.host.isEmpty && uri.path == 'log'));
 
     if (!isLogLink) return;
 
