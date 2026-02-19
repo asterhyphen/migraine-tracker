@@ -58,36 +58,33 @@ class _HistoryPageState extends State<HistoryPage> {
                         _HistoryEmptyState(onLogMissedDay: _logMissedDay),
                       ],
                     )
-                  : ListView.separated(
+                  : ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(20),
-                      itemCount: _entries.length,
-                      separatorBuilder: (context, index) => const Divider(),
+                      itemCount: _entries.length + 1,
                       itemBuilder: (context, index) {
-                        final entry = _entries[index];
-                        final causes = entry.causes.isEmpty
-                            ? "No cause tagged"
-                            : entry.causes.join(", ");
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            _formatDate(entry.date),
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(
-                            "Intensity ${entry.intensity} • $causes",
-                          ),
-                          onTap: () async {
-                            await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => LogMigrainePage(entry: entry),
-                              ),
-                            );
-                            await _loadEntries();
-                          },
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () => _confirmDelete(entry),
+                        if (index == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: _HistorySummaryCard(entries: _entries),
+                          );
+                        }
+
+                        final entry = _entries[index - 1];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _HistoryEntryCard(
+                            entry: entry,
+                            formatDate: _formatDate,
+                            onTap: () async {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => LogMigrainePage(entry: entry),
+                                ),
+                              );
+                              await _loadEntries();
+                            },
+                            onDelete: () => _confirmDelete(entry),
                           ),
                         );
                       },
@@ -191,6 +188,147 @@ class _HistoryEmptyState extends StatelessWidget {
             child: const Text("Log missed day"),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HistorySummaryCard extends StatelessWidget {
+  const _HistorySummaryCard({required this.entries});
+
+  final List<MigraineEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final latest = entries.first;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+        gradient: LinearGradient(
+          colors: [
+            scheme.surface.withValues(alpha: 0.86),
+            scheme.surface.withValues(alpha: 0.70),
+          ],
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.primary.withValues(alpha: 0.18),
+            ),
+            child: Icon(Icons.history_rounded, color: scheme.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "${entries.length} total entries",
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "Latest: ${formatDdMmYyyy(latest.date)}",
+                  style: TextStyle(
+                    color: scheme.onSurface.withValues(alpha: 0.68),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryEntryCard extends StatelessWidget {
+  const _HistoryEntryCard({
+    required this.entry,
+    required this.formatDate,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  final MigraineEntry entry;
+  final String Function(DateTime) formatDate;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final causes = entry.causes.isEmpty
+        ? "No cause tagged"
+        : entry.causes.take(3).join(" • ");
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+            color: scheme.surface.withValues(alpha: 0.72),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: scheme.primary.withValues(alpha: 0.15),
+                ),
+                child: Center(
+                  child: Text(
+                    entry.intensity.toString(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: scheme.primary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      formatDate(entry.date),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      causes,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.72)),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete_outline),
+                tooltip: "Delete entry",
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
