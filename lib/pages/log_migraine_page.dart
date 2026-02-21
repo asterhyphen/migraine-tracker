@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/cause_prefs.dart';
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 import '../utils/date_utils.dart';
@@ -33,25 +34,14 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
   late Set<String> _initialCauses;
   late DateTime _initialEntryDate;
 
-  final List<String> causes = const [
-    "Stress",
-    "Smoke",
-    "Food contents",
-    "AC",
-    "Dehydration",
-    "Odour",
-    "Sleep related",
-    "Screen Time",
-    "Skipped Meal",
-    "Weather",
-    "Other",
-  ];
+  List<String> _causes = List<String>.from(CausePrefs.defaultCauses);
 
   final Set<String> selectedCauses = {};
 
   @override
   void initState() {
     super.initState();
+    _loadCauseOptions();
     final entry = widget.entry;
     _entryDate = widget.initialDate ?? DateTime.now();
     if (entry != null) {
@@ -72,6 +62,14 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       (_entryDate ?? DateTime.now()).month,
       (_entryDate ?? DateTime.now()).day,
     );
+  }
+
+  Future<void> _loadCauseOptions() async {
+    final loaded = await CausePrefs.loadCauses();
+    if (!mounted) return;
+    setState(() {
+      _causes = loaded;
+    });
   }
 
   Future<void> _pickEntryDate() async {
@@ -325,7 +323,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: causes.map((cause) {
+                children: _displayCauses().map((cause) {
                   final selected = selectedCauses.contains(cause);
                   return ChoiceChip(
                     label: Text(cause),
@@ -358,5 +356,15 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
         ),
       ),
     );
+  }
+
+  List<String> _displayCauses() {
+    final ordered = <String>[..._causes];
+    for (final selected in selectedCauses) {
+      if (!ordered.contains(selected)) {
+        ordered.add(selected);
+      }
+    }
+    return ordered;
   }
 }

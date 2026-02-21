@@ -167,9 +167,10 @@ class _HomePageState extends State<HomePage> {
       return const _HomeLoadingView();
     }
 
+    final lastDays = _daysSince(_lastEntry?.date);
     final lastText = _lastEntry == null
         ? "No entries"
-        : "${_daysSince(_lastEntry!.date)} days ago";
+        : (lastDays == 0 ? "Today" : "$lastDays days ago");
     final lastDetails = _lastEntry == null
         ? "Log your first migraine to see details."
         : "Intensity ${_lastEntry!.intensity} • ${_formatDate(_lastEntry!.date)}";
