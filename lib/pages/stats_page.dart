@@ -15,6 +15,8 @@ class StatsPage extends StatefulWidget {
 class _StatsPageState extends State<StatsPage> {
   bool _loading = true;
   List<MigraineEntry> _entries = [];
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  List<DateTime> _monthOptions = [];
 
   @override
   void initState() {
@@ -24,8 +26,16 @@ class _StatsPageState extends State<StatsPage> {
 
   Future<void> _loadStats() async {
     final entries = await MigraineDb.instance.getMigraineEntriesOnly();
+    final monthOptions = _buildMonthOptions(entries);
+    final hasSelected = monthOptions.any(
+      (m) => m.year == _selectedMonth.year && m.month == _selectedMonth.month,
+    );
     setState(() {
       _entries = entries;
+      _monthOptions = monthOptions;
+      if (!hasSelected) {
+        _selectedMonth = monthOptions.first;
+      }
       _loading = false;
     });
   }
@@ -36,14 +46,27 @@ class _StatsPageState extends State<StatsPage> {
       return const _StatsLoadingView();
     }
 
-    final monthStats = _buildMonthlyStats();
-    final avgStats = _buildMonthlyAverages();
-    final causes = _buildCauseStats();
-    final painkillerPercent = _painkillerUsage();
-    final intensitySeries = _entries.take(6).map((e) => e.intensity).toList();
-    final summary = _buildSummary();
-    final recent = _entries.take(6).toList();
-    final weekly = _buildWeeklyCounts();
+    final filtered = _entries.where((e) {
+      return e.date.year == _selectedMonth.year &&
+          e.date.month == _selectedMonth.month;
+    }).toList();
+    final monthStats = _buildWeeklyFrequency(filtered, _selectedMonth);
+    final avgStats = _buildWeeklyAverages(filtered, _selectedMonth);
+    final causes = _buildCauseStats(filtered);
+    final painkillerPercent = _painkillerUsage(filtered);
+    final intensitySeries =
+        filtered.reversed.map((e) => e.intensity).toList().take(14).toList();
+    final summary = _buildSummary(filtered);
+    final recent = filtered.take(8).toList();
+    final weekly = _buildWeeklyCounts(filtered, _selectedMonth);
+    final overallAvg = _entries.isEmpty
+        ? 0.0
+        : _entries.map((e) => e.intensity).reduce((a, b) => a + b) /
+            _entries.length;
+    final selectedAvg = filtered.isEmpty
+        ? 0.0
+        : filtered.map((e) => e.intensity).reduce((a, b) => a + b) /
+            filtered.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -59,11 +82,30 @@ class _StatsPageState extends State<StatsPage> {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _DashboardHeader(totalEntries: _entries.length),
+                    _MonthFilterCard(
+                      selectedMonth: _selectedMonth,
+                      options: _monthOptions,
+                      onChanged: (month) {
+                        setState(() {
+                          _selectedMonth = month;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _DashboardHeader(
+                      totalEntries: filtered.length,
+                      monthLabel: _monthLabelFull(_selectedMonth),
+                    ),
                     const SizedBox(height: 24),
+                    if (filtered.isEmpty) ...[
+                      _SelectedMonthEmptyState(
+                        monthLabel: _monthLabelFull(_selectedMonth),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                     const _SectionTitle(
                       title: "Summary",
-                      subtitle: "High-level indicators across all logs",
+                      subtitle: "High-level indicators for selected month",
                     ),
                     const SizedBox(height: 12),
                     Wrap(
@@ -87,7 +129,7 @@ class _StatsPageState extends State<StatsPage> {
                       children: [
                         Expanded(
                           child: _ChartCard(
-                            title: "Monthly Frequency",
+                            title: "Weekly Frequency",
                             child: _BarChart(data: monthStats),
                           ),
                         ),
@@ -112,7 +154,7 @@ class _StatsPageState extends State<StatsPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _ChartCard(
-                            title: "Avg. Intensity",
+                            title: "Weekly Avg. Intensity",
                             child: _BarChart(data: avgStats),
                           ),
                         ),
@@ -120,13 +162,28 @@ class _StatsPageState extends State<StatsPage> {
                     ),
                     const SizedBox(height: 16),
                     _ChartCard(
-                      title: "Recent Intensity",
-                      child: _LineChart(values: intensitySeries),
+                      title: "Intensity Graph",
+                      child: Column(
+                        children: [
+                          Expanded(child: _LineChart(values: intensitySeries)),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Overall avg ${overallAvg.toStringAsFixed(1)} • ${_monthLabel(_selectedMonth)} avg ${selectedAvg.toStringAsFixed(1)}",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.65),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 20),
                     const _SectionTitle(
                       title: "Weekly Pulse",
-                      subtitle: "Daily migraine counts over the last 7 days",
+                      subtitle: "Daily migraine counts for final week of selected month",
                     ),
                     const SizedBox(height: 12),
                     _WeeklyGraph(data: weekly),
@@ -144,43 +201,60 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  List<_BarDatum> _buildMonthlyStats() {
-    final now = DateTime.now();
-    final List<_BarDatum> data = [];
-    for (int i = 3; i >= 0; i--) {
-      final month = DateTime(now.year, now.month - i);
-      final count = _entries
-          .where(
-            (e) => e.date.year == month.year && e.date.month == month.month,
-          )
-          .length;
-      data.add(_BarDatum(_monthLabel(month), count.toDouble()));
+  List<_BarDatum> _buildWeeklyFrequency(
+    List<MigraineEntry> source,
+    DateTime month,
+  ) {
+    final counts = List<int>.filled(5, 0);
+    for (final entry in source) {
+      if (entry.date.year != month.year || entry.date.month != month.month) {
+        continue;
+      }
+      final bucket = ((entry.date.day - 1) / 7).floor().clamp(0, 4);
+      counts[bucket] += 1;
     }
-    return data;
+    return List<_BarDatum>.generate(
+      5,
+      (i) => _BarDatum("W${i + 1}", counts[i].toDouble()),
+    );
   }
 
-  List<_BarDatum> _buildMonthlyAverages() {
-    final now = DateTime.now();
-    final List<_BarDatum> data = [];
-    for (int i = 3; i >= 0; i--) {
-      final month = DateTime(now.year, now.month - i);
-      final monthEntries = _entries
-          .where(
-            (e) => e.date.year == month.year && e.date.month == month.month,
-          )
-          .toList();
-      final avg = monthEntries.isEmpty
-          ? 0.0
-          : monthEntries.map((e) => e.intensity).reduce((a, b) => a + b) /
-                monthEntries.length;
-      data.add(_BarDatum(_monthLabel(month), avg));
+  List<_BarDatum> _buildWeeklyAverages(
+    List<MigraineEntry> source,
+    DateTime month,
+  ) {
+    final buckets = List<List<int>>.generate(5, (_) => []);
+    for (final entry in source) {
+      if (entry.date.year != month.year || entry.date.month != month.month) {
+        continue;
+      }
+      final bucket = ((entry.date.day - 1) / 7).floor().clamp(0, 4);
+      buckets[bucket].add(entry.intensity);
     }
-    return data;
+    return List<_BarDatum>.generate(5, (i) {
+      final values = buckets[i];
+      if (values.isEmpty) return _BarDatum("W${i + 1}", 0);
+      final avg = values.reduce((a, b) => a + b) / values.length;
+      return _BarDatum("W${i + 1}", avg);
+    });
   }
 
-  List<_CauseDatum> _buildCauseStats() {
+  List<DateTime> _buildMonthOptions(List<MigraineEntry> entries) {
+    final set = <String, DateTime>{};
+    final now = DateTime.now();
+    set["${now.year}-${now.month}"] = DateTime(now.year, now.month);
+    for (final e in entries) {
+      final month = DateTime(e.date.year, e.date.month);
+      set["${month.year}-${month.month}"] = month;
+    }
+    final months = set.values.toList()
+      ..sort((a, b) => b.compareTo(a));
+    return months;
+  }
+
+  List<_CauseDatum> _buildCauseStats(List<MigraineEntry> source) {
     final Map<String, int> counts = {};
-    for (final entry in _entries) {
+    for (final entry in source) {
       for (final cause in entry.causes) {
         counts[cause] = (counts[cause] ?? 0) + 1;
       }
@@ -191,10 +265,10 @@ class _StatsPageState extends State<StatsPage> {
     return sorted.map((e) => _CauseDatum(e.key, e.value, total)).toList();
   }
 
-  double _painkillerUsage() {
-    if (_entries.isEmpty) return 0;
-    final used = _entries.where((e) => e.painkillers).length;
-    return used / _entries.length;
+  double _painkillerUsage(List<MigraineEntry> source) {
+    if (source.isEmpty) return 0;
+    final used = source.where((e) => e.painkillers).length;
+    return used / source.length;
   }
 
   String _monthLabel(DateTime month) {
@@ -215,27 +289,31 @@ class _StatsPageState extends State<StatsPage> {
     return labels[month.month - 1];
   }
 
-  List<_SummaryItem> _buildSummary() {
-    if (_entries.isEmpty) {
+  String _monthLabelFull(DateTime month) {
+    return "${_monthLabel(month)} ${month.year}";
+  }
+
+  List<_SummaryItem> _buildSummary(List<MigraineEntry> source) {
+    if (source.isEmpty) {
       return [
-        _SummaryItem("Total Entries", "0", "Log your first migraine"),
+        _SummaryItem("Total Entries", "0", "No logs in selected month"),
         _SummaryItem("Avg. Intensity", "-", "No data yet"),
         _SummaryItem("Highest Pain Day", "-", "No data yet"),
         _SummaryItem("Top Cause", "-", "No data yet"),
-        _SummaryItem("Painkiller Rate", "0%", "Across all logs"),
+        _SummaryItem("Painkiller Rate", "0%", "For selected month"),
       ];
     }
 
-    final total = _entries.length;
+    final total = source.length;
     final avgIntensity =
-        _entries.map((e) => e.intensity).reduce((a, b) => a + b) / total;
+        source.map((e) => e.intensity).reduce((a, b) => a + b) / total;
     final maxIntensity =
-        _entries.map((e) => e.intensity).reduce((a, b) => a > b ? a : b);
+        source.map((e) => e.intensity).reduce((a, b) => a > b ? a : b);
     final minIntensity =
-        _entries.map((e) => e.intensity).reduce((a, b) => a < b ? a : b);
+        source.map((e) => e.intensity).reduce((a, b) => a < b ? a : b);
 
     final causeCounts = <String, int>{};
-    for (final entry in _entries) {
+    for (final entry in source) {
       for (final cause in entry.causes) {
         causeCounts[cause] = (causeCounts[cause] ?? 0) + 1;
       }
@@ -247,8 +325,8 @@ class _StatsPageState extends State<StatsPage> {
       topCause = sorted.first.key;
     }
 
-    final painkillerRate = (_painkillerUsage() * 100).round();
-    final highestPainEntry = _entries.reduce((a, b) {
+    final painkillerRate = (_painkillerUsage(source) * 100).round();
+    final highestPainEntry = source.reduce((a, b) {
       if (a.intensity == b.intensity) {
         return a.date.isAfter(b.date) ? a : b;
       }
@@ -260,7 +338,7 @@ class _StatsPageState extends State<StatsPage> {
       _SummaryItem(
         "Avg. Intensity",
         avgIntensity.toStringAsFixed(1),
-        "Across all logs",
+        "For selected month",
       ),
       _SummaryItem(
         "Highest Pain Day",
@@ -268,16 +346,20 @@ class _StatsPageState extends State<StatsPage> {
         "Intensity ${highestPainEntry.intensity}/10",
       ),
       _SummaryItem("Top Cause", topCause, "Most frequent trigger"),
-      _SummaryItem("Painkiller Rate", "$painkillerRate%", "Across all logs"),
+      _SummaryItem("Painkiller Rate", "$painkillerRate%", "For selected month"),
     ];
   }
 
-  List<_WeeklyDatum> _buildWeeklyCounts() {
-    final now = DateTime.now();
+  List<_WeeklyDatum> _buildWeeklyCounts(
+    List<MigraineEntry> source,
+    DateTime month,
+  ) {
+    final daysInMonth = DateUtils.getDaysInMonth(month.year, month.month);
+    final start = daysInMonth > 7 ? daysInMonth - 6 : 1;
     final List<_WeeklyDatum> data = [];
-    for (int i = 6; i >= 0; i--) {
-      final day = DateTime(now.year, now.month, now.day - i);
-      final count = _entries.where((e) {
+    for (int dayNum = start; dayNum <= daysInMonth; dayNum++) {
+      final day = DateTime(month.year, month.month, dayNum);
+      final count = source.where((e) {
         return e.date.year == day.year &&
             e.date.month == day.month &&
             e.date.day == day.day;
@@ -392,10 +474,107 @@ class _StatsSkeletonBox extends StatelessWidget {
   }
 }
 
+class _MonthFilterCard extends StatelessWidget {
+  const _MonthFilterCard({
+    required this.selectedMonth,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final DateTime selectedMonth;
+  final List<DateTime> options;
+  final ValueChanged<DateTime> onChanged;
+
+  String _monthLabel(DateTime month) {
+    const labels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return "${labels[month.month - 1]} ${month.year}";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+        color: scheme.surface.withValues(alpha: 0.74),
+      ),
+      child: DropdownButtonFormField<DateTime>(
+        initialValue: selectedMonth,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: "Filter by month",
+          border: OutlineInputBorder(),
+        ),
+        items: options
+            .map(
+              (month) => DropdownMenuItem<DateTime>(
+                value: month,
+                child: Text(_monthLabel(month)),
+              ),
+            )
+            .toList(),
+        onChanged: (value) {
+          if (value != null) onChanged(value);
+        },
+      ),
+    );
+  }
+}
+
+class _SelectedMonthEmptyState extends StatelessWidget {
+  const _SelectedMonthEmptyState({required this.monthLabel});
+
+  final String monthLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+        color: scheme.surface.withValues(alpha: 0.74),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.event_busy_outlined, color: scheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "No entries for $monthLabel. Showing empty monthly stats.",
+              style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.72)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DashboardHeader extends StatelessWidget {
-  const _DashboardHeader({required this.totalEntries});
+  const _DashboardHeader({
+    required this.totalEntries,
+    required this.monthLabel,
+  });
 
   final int totalEntries;
+  final String monthLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -439,7 +618,7 @@ class _DashboardHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "$totalEntries total logged migraines",
+                    "$totalEntries logged migraines • $monthLabel",
                     style: TextStyle(
                       color: scheme.onSurface.withValues(alpha: 0.68),
                       fontSize: 13,
@@ -588,6 +767,7 @@ class _BarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final maxValue = data.isEmpty
         ? 1.0
         : data.map((e) => e.value).reduce((a, b) => a > b ? a : b);
@@ -604,7 +784,14 @@ class _BarChart extends StatelessWidget {
                 height: height,
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white12,
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      scheme.primary.withValues(alpha: 0.85),
+                      scheme.tertiary.withValues(alpha: 0.75),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -711,24 +898,35 @@ class _LineChart extends StatelessWidget {
     if (values.isEmpty) {
       return const Center(child: Text("No entries yet"));
     }
+    final scheme = Theme.of(context).colorScheme;
     return CustomPaint(
-      painter: _LinePainter(values: values),
+      painter: _LinePainter(
+        values: values,
+        lineColor: scheme.primary,
+        pointColor: scheme.secondary,
+      ),
       child: const SizedBox.expand(),
     );
   }
 }
 
 class _LinePainter extends CustomPainter {
-  _LinePainter({required this.values});
+  _LinePainter({
+    required this.values,
+    required this.lineColor,
+    required this.pointColor,
+  });
 
   final List<int> values;
+  final Color lineColor;
+  final Color pointColor;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (values.length < 2) return;
     final maxVal = values.reduce((a, b) => a > b ? a : b).toDouble();
     final paint = Paint()
-      ..color = Colors.white70
+      ..color = lineColor
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
@@ -746,6 +944,14 @@ class _LinePainter extends CustomPainter {
       }
     }
     canvas.drawPath(path, paint);
+
+    final pointPaint = Paint()..color = pointColor;
+    for (int i = 0; i < values.length; i++) {
+      final x = step * i;
+      final y =
+          size.height - (values[i] / (maxVal == 0 ? 1.0 : maxVal)) * size.height;
+      canvas.drawCircle(Offset(x, y), 2.6, pointPaint);
+    }
   }
 
   @override
