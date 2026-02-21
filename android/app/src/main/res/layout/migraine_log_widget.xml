@@ -3,45 +3,50 @@
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#171A21"
+    android:background="@drawable/widget_surface"
     android:orientation="vertical"
-    android:padding="14dp">
+    android:padding="12dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Migraine Tracker"
-        android:textColor="#4FD1C5"
-        android:textSize="14sp"
+        android:background="@drawable/widget_chip"
+        android:paddingLeft="8dp"
+        android:paddingTop="3dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="3dp"
+        android:text="MIGRAINE TRACKER"
+        android:textColor="#9DEEDF"
+        android:textSize="10sp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Quick Log"
+        android:textColor="#F3F7FF"
+        android:textSize="17sp"
         android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Quick log"
-        android:textColor="#F5F7FA"
-        android:textSize="18sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="Tap to log today's migraine"
-        android:textColor="#B7BDC9"
-        android:textSize="12sp" />
+        android:layout_marginTop="4dp"
+        android:text="Tap to open today's migraine entry"
+        android:textColor="#B6C2D4"
+        android:textSize="12sp"/>
 
     <TextView
         android:id="@+id/widget_log_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:background="#4FD1C5"
+        android:background="@drawable/widget_button"
         android:gravity="center"
-        android:padding="10dp"
-        android:text="Log Migraine"
-        android:textColor="#0B0D10"
+        android:padding="11dp"
+        android:text="Open Log Screen"
+        android:textColor="#07231F"
         android:textSize="14sp"
         android:textStyle="bold" />
 </LinearLayout>

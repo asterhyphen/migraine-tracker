@@ -70,66 +70,22 @@ class _SettingsPageState extends State<SettingsPage> {
     await CausePrefs.saveCauses(_causeOptions);
   }
 
-  Future<void> _addCause() async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
+  Future<void> _openCauseManager() async {
+    final updated = await showModalBottomSheet<List<String>>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Add cause"),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(labelText: "Cause name"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-              child: const Text("Add"),
-            ),
-          ],
-        );
-      },
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _CauseManagerSheet(initialCauses: _causeOptions),
     );
-    if (result == null || result.isEmpty) return;
-    if (_causeOptions.any((c) => c.toLowerCase() == result.toLowerCase())) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Cause already exists.")),
-      );
-      return;
-    }
+    if (updated == null) return;
     setState(() {
-      _causeOptions.add(result);
+      _causeOptions = updated;
     });
     await _saveCauseOptions();
-  }
-
-  Future<void> _deleteCause(int index) async {
-    if (_causeOptions.length <= 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Keep at least one cause option.")),
-      );
-      return;
-    }
-    setState(() {
-      _causeOptions.removeAt(index);
-    });
-    await _saveCauseOptions();
-  }
-
-  Future<void> _moveCause(int index, int delta) async {
-    final next = index + delta;
-    if (next < 0 || next >= _causeOptions.length) return;
-    setState(() {
-      final item = _causeOptions.removeAt(index);
-      _causeOptions.insert(next, item);
-    });
-    await _saveCauseOptions();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Cause options updated.")),
+    );
   }
 
   Future<void> _loadAppVersion() async {
@@ -550,78 +506,11 @@ class _SettingsPageState extends State<SettingsPage> {
           _SectionHeader(title: "Causes"),
           const SizedBox(height: 12),
           _SettingsCard(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Edit migraine causes and order",
-                    style: TextStyle(
-                      color: scheme.onSurface.withValues(alpha: 0.75),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...List.generate(_causeOptions.length, (index) {
-                    final cause = _causeOptions[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.10)),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            "${index + 1}.",
-                            style: TextStyle(
-                              color: scheme.onSurface.withValues(alpha: 0.65),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              cause,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            onPressed: index == 0 ? null : () => _moveCause(index, -1),
-                            icon: const Icon(Icons.keyboard_arrow_up),
-                            tooltip: "Move up",
-                          ),
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            onPressed: index == _causeOptions.length - 1
-                                ? null
-                                : () => _moveCause(index, 1),
-                            icon: const Icon(Icons.keyboard_arrow_down),
-                            tooltip: "Move down",
-                          ),
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () => _deleteCause(index),
-                            icon: const Icon(Icons.delete_outline),
-                            tooltip: "Delete",
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: FilledButton.tonalIcon(
-                      onPressed: _addCause,
-                      icon: const Icon(Icons.add),
-                      label: const Text("Add cause"),
-                    ),
-                  ),
-                ],
-              ),
+            child: _SettingsRow(
+              icon: Icons.tune_rounded,
+              title: "Manage causes",
+              value: "${_causeOptions.length} causes • ${_causeOptions.take(3).join(", ")}",
+              onTap: _openCauseManager,
             ),
           ),
           const SizedBox(height: 20),
@@ -670,6 +559,169 @@ class _SettingsPageState extends State<SettingsPage> {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CauseManagerSheet extends StatefulWidget {
+  const _CauseManagerSheet({required this.initialCauses});
+
+  final List<String> initialCauses;
+
+  @override
+  State<_CauseManagerSheet> createState() => _CauseManagerSheetState();
+}
+
+class _CauseManagerSheetState extends State<_CauseManagerSheet> {
+  late List<String> _causes;
+  final TextEditingController _newCauseController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _causes = List<String>.from(widget.initialCauses);
+  }
+
+  @override
+  void dispose() {
+    _newCauseController.dispose();
+    super.dispose();
+  }
+
+  void _addCause() {
+    final value = _newCauseController.text.trim();
+    if (value.isEmpty) return;
+    final exists = _causes.any((c) => c.toLowerCase() == value.toLowerCase());
+    if (exists) return;
+    setState(() {
+      _causes.add(value);
+      _newCauseController.clear();
+    });
+  }
+
+  void _deleteCause(int index) {
+    if (_causes.length <= 1) return;
+    setState(() {
+      _causes.removeAt(index);
+    });
+  }
+
+  void _moveCause(int index, int delta) {
+    final next = index + delta;
+    if (next < 0 || next >= _causes.length) return;
+    setState(() {
+      final item = _causes.removeAt(index);
+      _causes.insert(next, item);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "Manage Causes",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(_causes),
+                  child: const Text("Done"),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _newCauseController,
+                    decoration: const InputDecoration(
+                      labelText: "Add new cause",
+                    ),
+                    onSubmitted: (_) => _addCause(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.tonal(
+                  onPressed: _addCause,
+                  child: const Text("Add"),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _causes.length,
+                itemBuilder: (context, index) {
+                  final cause = _causes[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: scheme.onSurface.withValues(alpha: 0.12),
+                      ),
+                      color: scheme.surface.withValues(alpha: 0.8),
+                    ),
+                    child: ListTile(
+                      dense: true,
+                      leading: Text(
+                        "${index + 1}",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: scheme.onSurface.withValues(alpha: 0.72),
+                        ),
+                      ),
+                      title: Text(
+                        cause,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: SizedBox(
+                        width: 120,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              onPressed: index == 0 ? null : () => _moveCause(index, -1),
+                              icon: const Icon(Icons.keyboard_arrow_up),
+                            ),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              onPressed: index == _causes.length - 1
+                                  ? null
+                                  : () => _moveCause(index, 1),
+                              icon: const Icon(Icons.keyboard_arrow_down),
+                            ),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () => _deleteCause(index),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
