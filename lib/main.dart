@@ -345,6 +345,9 @@ class _AppShellState extends State<AppShell> {
   StreamSubscription<Uri>? _appLinkSubscription;
   bool _pendingOpenLog = false;
   bool _linkInitialized = false;
+  bool _openingLogFromExternalAction = false;
+  DateTime? _lastHandledLogAt;
+  String? _lastHandledLogKey;
 
   @override
   void initState() {
@@ -384,6 +387,15 @@ class _AppShellState extends State<AppShell> {
 
     if (!isLogLink) return;
 
+    final now = DateTime.now();
+    final logKey = "${uri.scheme}://${uri.host}${uri.path}";
+    final isDuplicate = _lastHandledLogKey == logKey &&
+        _lastHandledLogAt != null &&
+        now.difference(_lastHandledLogAt!).inMilliseconds < 1500;
+    if (isDuplicate) return;
+    _lastHandledLogKey = logKey;
+    _lastHandledLogAt = now;
+
     if (_loadingProfile || _name == null || _dob == null) {
       _pendingOpenLog = true;
       return;
@@ -396,13 +408,19 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> _openLogFromExternalAction() async {
-    final todayEntry = await MigraineDb.instance.getEntryForDate(DateTime.now());
-    if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => LogMigrainePage(entry: todayEntry),
-      ),
-    );
+    if (_openingLogFromExternalAction) return;
+    _openingLogFromExternalAction = true;
+    try {
+      final todayEntry = await MigraineDb.instance.getEntryForDate(DateTime.now());
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => LogMigrainePage(entry: todayEntry),
+        ),
+      );
+    } finally {
+      _openingLogFromExternalAction = false;
+    }
   }
 
   void _processPendingAction() {
