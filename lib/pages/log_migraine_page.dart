@@ -23,6 +23,7 @@ class LogMigrainePage extends StatefulWidget {
 class _LogMigrainePageState extends State<LogMigrainePage> {
   bool hadMigraine = true;
   double intensity = 5;
+  int _lastHapticIntensity = 5;
   bool tookPainkillers = false;
   final TextEditingController notesController = TextEditingController();
   DateTime? _entryDate;
@@ -52,6 +53,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       selectedCauses.addAll(entry.causes);
       _entryDate = entry.date;
     }
+    _lastHapticIntensity = intensity.toInt();
     _initialHadMigraine = hadMigraine;
     _initialIntensity = intensity;
     _initialTookPainkillers = tookPainkillers;
@@ -291,6 +293,11 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
                       label: intensity.toInt().toString(),
                       value: intensity,
                       onChanged: (val) {
+                        final rounded = val.toInt();
+                        if (rounded != _lastHapticIntensity) {
+                          HapticFeedback.selectionClick();
+                          _lastHapticIntensity = rounded;
+                        }
                         setState(() {
                           intensity = val;
                         });
