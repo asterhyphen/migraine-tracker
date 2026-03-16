@@ -13,6 +13,7 @@ import '../data/cause_prefs.dart';
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 import '../utils/date_utils.dart';
+import '../widgets/app_snackbar.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -83,8 +84,10 @@ class _SettingsPageState extends State<SettingsPage> {
     });
     await _saveCauseOptions();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Cause options updated.")),
+    AppSnackBar.showSuccess(
+      context,
+      title: 'Triggers updated',
+      message: 'Your cause options are ready to use in future logs.',
     );
   }
 
@@ -157,16 +160,20 @@ class _SettingsPageState extends State<SettingsPage> {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      AppSnackBar.showInfo(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Name cannot be empty.")));
+        title: 'Name required',
+        message: 'Please add a name before saving your profile.',
+      );
       return;
     }
     await widget.onSave(name, _dob);
     if (!mounted) return;
-    ScaffoldMessenger.of(
+    AppSnackBar.showSuccess(
       context,
-    ).showSnackBar(const SnackBar(content: Text("Profile updated.")));
+      title: 'Profile updated',
+      message: 'Your personal details were saved.',
+    );
   }
 
   Future<void> _toggleTheme(bool value) async {
@@ -185,8 +192,10 @@ class _SettingsPageState extends State<SettingsPage> {
     });
     await widget.onProfileImageChanged(selectedPath);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Profile picture updated.")),
+    AppSnackBar.showSuccess(
+      context,
+      title: 'Photo updated',
+      message: 'Your profile picture has been changed.',
     );
   }
 
@@ -231,13 +240,17 @@ class _SettingsPageState extends State<SettingsPage> {
 
       await MigraineDb.instance.insertEntries(entries);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Imported ${entries.length} entries.")),
+      AppSnackBar.showSuccess(
+        context,
+        title: 'Import complete',
+        message: 'Imported ${entries.length} entries.',
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Import failed: $e")),
+      AppSnackBar.showError(
+        context,
+        title: 'Import failed',
+        message: e.toString(),
       );
     } finally {
       if (mounted) {
@@ -282,8 +295,10 @@ class _SettingsPageState extends State<SettingsPage> {
       final dir = await _resolveDownloadDir();
       if (dir == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Download folder unavailable.")),
+        AppSnackBar.showInfo(
+          context,
+          title: 'Folder unavailable',
+          message: 'The download folder could not be found on this device.',
         );
         return;
       }
@@ -298,13 +313,18 @@ class _SettingsPageState extends State<SettingsPage> {
       final file = File(path);
       await file.writeAsString(csv);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Exported to $path")),
+      AppSnackBar.showSuccess(
+        context,
+        title: 'Export complete',
+        message: 'Saved your backup to $path',
+        duration: const Duration(seconds: 5),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Export failed: $e")),
+      AppSnackBar.showError(
+        context,
+        title: 'Export failed',
+        message: e.toString(),
       );
     } finally {
       if (mounted) {

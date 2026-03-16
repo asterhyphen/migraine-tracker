@@ -5,6 +5,7 @@ import '../data/cause_prefs.dart';
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 import '../utils/date_utils.dart';
+import '../widgets/app_snackbar.dart';
 
 class LogMigrainePage extends StatefulWidget {
   const LogMigrainePage({
@@ -154,8 +155,10 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
 
   Future<void> _saveEntry() async {
     if (!hadMigraine) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No migraine to save.")),
+      AppSnackBar.showInfo(
+        context,
+        title: 'Nothing to save',
+        message: 'Log a migraine first, then save your entry.',
       );
       return;
     }
@@ -178,21 +181,23 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       await MigraineDb.instance.updateEntry(entry);
       if (!mounted) return;
       HapticFeedback.lightImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            (widget.entry != null || existingForDate != null)
-                ? "Entry updated."
-                : "Entry saved.",
-          ),
-        ),
+      AppSnackBar.showSuccess(
+        context,
+        title: (widget.entry != null || existingForDate != null)
+            ? 'Entry updated'
+            : 'Entry added',
+        message: (widget.entry != null || existingForDate != null)
+            ? 'Your migraine log has been refreshed.'
+            : 'Your migraine log has been saved for the day.',
       );
       _skipBackConfirm = true;
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Save failed: $e")),
+      AppSnackBar.showError(
+        context,
+        title: 'Save failed',
+        message: e.toString(),
       );
     }
   }
@@ -223,8 +228,10 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
     await MigraineDb.instance.deleteEntry(entry!.id!);
     if (!mounted) return;
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Entry deleted.")),
+    AppSnackBar.showSuccess(
+      context,
+      title: 'Entry deleted',
+      message: 'The migraine log was removed.',
     );
     _skipBackConfirm = true;
     Navigator.of(context).pop();

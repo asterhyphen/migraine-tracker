@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 import '../utils/date_utils.dart';
+import '../widgets/app_snackbar.dart';
 import 'log_migraine_page.dart';
 
 class HistoryPage extends StatefulWidget {
@@ -118,8 +119,10 @@ class _HistoryPageState extends State<HistoryPage> {
     await MigraineDb.instance.deleteEntry(entry.id!);
     if (!mounted) return;
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Entry deleted.")),
+    AppSnackBar.showSuccess(
+      context,
+      title: 'Entry deleted',
+      message: 'The migraine log was removed from history.',
     );
     await _loadEntries();
   }

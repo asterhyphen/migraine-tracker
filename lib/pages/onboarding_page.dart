@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../utils/date_utils.dart';
+import '../widgets/app_snackbar.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
@@ -46,8 +48,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty || _dob == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter your name and date of birth.")),
+      AppSnackBar.showInfo(
+        context,
+        title: 'Complete your profile',
+        message: 'Please enter your name and date of birth.',
       );
       return;
     }

@@ -164,7 +164,10 @@ class _MigraineAppState extends State<MigraineApp> {
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: darkScheme.surface,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
         contentTextStyle: TextStyle(color: darkScheme.onSurface),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
@@ -292,7 +295,10 @@ class _MigraineAppState extends State<MigraineApp> {
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: lightScheme.surface,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
         contentTextStyle: TextStyle(color: lightScheme.onSurface),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
