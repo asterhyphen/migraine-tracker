@@ -197,6 +197,7 @@ class _HomePageState extends State<HomePage> {
                 subtitle: isBirthday
                     ? "Today is your day. Take it easy and stay hydrated."
                     : "Age ${calculateAge()} • Track migraines with clarity.",
+                onTap: _openLogMigraine,
                 primaryLabel: _todayEntry == null
                     ? "Log Today's Migraine"
                     : "Edit Today's Migraine",
@@ -354,6 +355,7 @@ class _HeroCard extends StatelessWidget {
   const _HeroCard({
     required this.title,
     required this.subtitle,
+    required this.onTap,
     required this.primaryLabel,
     required this.primaryAction,
     required this.secondaryLabel,
@@ -363,6 +365,7 @@ class _HeroCard extends StatelessWidget {
 
   final String title;
   final String subtitle;
+  final VoidCallback onTap;
   final String primaryLabel;
   final VoidCallback primaryAction;
   final String secondaryLabel;
@@ -372,99 +375,106 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return WavySurface(
-      borderRadius: BorderRadius.circular(20),
-      borderColor: scheme.primary.withValues(alpha: 0.20),
-      gradient: LinearGradient(
-        colors: [
-          isBirthday
-              ? scheme.secondary.withValues(alpha: 0.22)
-              : scheme.surface,
-          isBirthday
-              ? scheme.tertiary.withValues(alpha: 0.24)
-              : scheme.tertiary.withValues(alpha: 0.14),
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomRight,
-      ),
-      waveColorA: isBirthday
-          ? scheme.primary.withValues(alpha: 0.18)
-          : scheme.primary.withValues(alpha: 0.10),
-      waveColorB: isBirthday
-          ? scheme.secondary.withValues(alpha: 0.16)
-          : scheme.secondary.withValues(alpha: 0.08),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: WavySurface(
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: scheme.primary.withValues(alpha: 0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+          borderColor: scheme.primary.withValues(alpha: 0.20),
+          gradient: LinearGradient(
+            colors: [
+              isBirthday
+                  ? scheme.secondary.withValues(alpha: 0.22)
+                  : scheme.surface,
+              isBirthday
+                  ? scheme.tertiary.withValues(alpha: 0.24)
+                  : scheme.tertiary.withValues(alpha: 0.14),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomRight,
+          ),
+          waveColorA: isBirthday
+              ? scheme.primary.withValues(alpha: 0.18)
+              : scheme.primary.withValues(alpha: 0.10),
+          waveColorB: isBirthday
+              ? scheme.secondary.withValues(alpha: 0.16)
+              : scheme.secondary.withValues(alpha: 0.08),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: scheme.primary.withValues(alpha: 0.06),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: scheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    isBirthday ? "Birthday Mode" : "Daily Tracker",
-                    style: TextStyle(
-                      color: scheme.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: scheme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        isBirthday ? "Birthday Mode" : "Daily Tracker",
+                        style: TextStyle(
+                          color: scheme.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
+                    if (isBirthday) ...[
+                      const SizedBox(width: 8),
+                      const _PartyCrackersBadge(),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: scheme.onSurface.withValues(alpha: 0.76),
                   ),
                 ),
-                if (isBirthday) ...[
-                  const SizedBox(width: 8),
-                  const _PartyCrackersBadge(),
-                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: primaryAction,
+                        child: Text(primaryLabel),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: secondaryAction,
+                        child: Text(secondaryLabel),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: scheme.onSurface.withValues(alpha: 0.76),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton(
-                    onPressed: primaryAction,
-                    child: Text(primaryLabel),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: secondaryAction,
-                    child: Text(secondaryLabel),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
