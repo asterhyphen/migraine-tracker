@@ -1,52 +1,153 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_surface"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="0dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@drawable/widget_chip"
-        android:paddingLeft="8dp"
-        android:paddingTop="3dp"
-        android:paddingRight="8dp"
-        android:paddingBottom="3dp"
-        android:text="MIGRAINE TRACKER"
-        android:textColor="#9DEEDF"
-        android:textSize="10sp"
-        android:textStyle="bold"/>
+    <View
+        android:layout_width="132dp"
+        android:layout_height="132dp"
+        android:layout_gravity="top|right"
+        android:layout_marginTop="-26dp"
+        android:layout_marginRight="-18dp"
+        android:background="@drawable/widget_orb_primary" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="Quick Log"
-        android:textColor="#F3F7FF"
-        android:textSize="17sp"
-        android:textStyle="bold" />
+    <View
+        android:layout_width="88dp"
+        android:layout_height="88dp"
+        android:layout_gravity="center_vertical|right"
+        android:layout_marginRight="18dp"
+        android:background="@drawable/widget_orb_secondary" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Tap to open today's migraine entry"
-        android:textColor="#B6C2D4"
-        android:textSize="12sp"/>
-
-    <TextView
-        android:id="@+id/widget_log_button"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:background="@drawable/widget_button"
-        android:gravity="center"
-        android:padding="11dp"
-        android:text="Open Log Screen"
-        android:textColor="#07231F"
-        android:textSize="14sp"
-        android:textStyle="bold" />
-</LinearLayout>
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/widget_chip"
+                android:paddingLeft="10dp"
+                android:paddingTop="5dp"
+                android:paddingRight="10dp"
+                android:paddingBottom="5dp"
+                android:text="DAILY TRACKER"
+                android:textColor="#90E7D4"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/widget_soft_pill"
+                android:paddingLeft="10dp"
+                android:paddingTop="5dp"
+                android:paddingRight="10dp"
+                android:paddingBottom="5dp"
+                android:text="Tap to log"
+                android:textColor="#DCE7F8"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Quick Migraine Log"
+            android:textColor="#F5F8FF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:maxLines="2"
+            android:text="Open today's entry fast and keep your tracker current."
+            android:textColor="#AEBED4"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/widget_status_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="12dp"
+            android:paddingTop="11dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="11dp">
+
+            <TextView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/widget_status_icon_bg"
+                android:gravity="center"
+                android:text="+"
+                android:textColor="#86E2CE"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Today's entry"
+                    android:textColor="#EFF5FF"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Ready whenever symptoms begin"
+                    android:textColor="#9EB1CA"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/widget_log_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_button"
+            android:gravity="center"
+            android:paddingLeft="14dp"
+            android:paddingTop="12dp"
+            android:paddingRight="14dp"
+            android:paddingBottom="12dp"
+            android:text="Open Log Screen"
+            android:textColor="#06201B"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</FrameLayout>
