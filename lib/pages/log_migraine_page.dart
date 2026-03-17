@@ -22,18 +22,21 @@ class LogMigrainePage extends StatefulWidget {
 }
 
 class _LogMigrainePageState extends State<LogMigrainePage> {
+  static const _otherCauseLabel = 'Other';
+
   bool hadMigraine = true;
   double intensity = 5;
   int _lastHapticIntensity = 5;
   bool tookPainkillers = false;
   final TextEditingController notesController = TextEditingController();
+  final TextEditingController _otherCauseController = TextEditingController();
   DateTime? _entryDate;
   bool _skipBackConfirm = false;
   late bool _initialHadMigraine;
   late double _initialIntensity;
   late bool _initialTookPainkillers;
   late String _initialNotes;
-  late Set<String> _initialCauses;
+  late Set<String> _initialSavedCauses;
   late DateTime _initialEntryDate;
 
   List<String> _causes = List<String>.from(CausePrefs.defaultCauses);
@@ -51,7 +54,17 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       intensity = entry.intensity.toDouble();
       tookPainkillers = entry.painkillers;
       notesController.text = entry.notes;
-      selectedCauses.addAll(entry.causes);
+      for (final cause in entry.causes) {
+        if (_isSavedOtherCause(cause)) {
+          selectedCauses.add(_otherCauseLabel);
+          final detail = _extractOtherCauseDetail(cause);
+          if (detail.isNotEmpty) {
+            _otherCauseController.text = detail;
+          }
+          continue;
+        }
+        selectedCauses.add(cause);
+      }
       _entryDate = entry.date;
     }
     _lastHapticIntensity = intensity.toInt();
@@ -59,7 +72,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
     _initialIntensity = intensity;
     _initialTookPainkillers = tookPainkillers;
     _initialNotes = notesController.text;
-    _initialCauses = Set<String>.from(selectedCauses);
+    _initialSavedCauses = _buildCausesForSave().toSet();
     _initialEntryDate = DateTime(
       (_entryDate ?? DateTime.now()).year,
       (_entryDate ?? DateTime.now()).month,
@@ -104,8 +117,9 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
     if (intensity.toInt() != _initialIntensity.toInt()) return true;
     if (tookPainkillers != _initialTookPainkillers) return true;
     if (notesController.text.trim() != _initialNotes.trim()) return true;
-    if (!selectedCauses.containsAll(_initialCauses) ||
-        !_initialCauses.containsAll(selectedCauses)) {
+    final currentSavedCauses = _buildCausesForSave().toSet();
+    if (!currentSavedCauses.containsAll(_initialSavedCauses) ||
+        !_initialSavedCauses.containsAll(currentSavedCauses)) {
       return true;
     }
     if (widget.entry == null && currentEntryDate != _initialEntryDate) return true;
@@ -140,6 +154,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
   @override
   void dispose() {
     notesController.dispose();
+    _otherCauseController.dispose();
     super.dispose();
   }
 
@@ -174,7 +189,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       intensity: intensity.toInt(),
       painkillers: tookPainkillers,
       notes: notesController.text.trim(),
-      causes: selectedCauses.toList(),
+      causes: _buildCausesForSave(),
     );
 
     try {
@@ -346,6 +361,18 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
                   );
                 }).toList(),
               ),
+              if (_isOtherSelected) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _otherCauseController,
+                  textInputAction: TextInputAction.done,
+                  decoration: const InputDecoration(
+                    labelText: "What was the other cause? (Optional)",
+                    hintText: "Example: strong perfume, bright sunlight...",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               const Text("Notes"),
               const SizedBox(height: 6),
@@ -380,5 +407,43 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       }
     }
     return ordered;
+  }
+
+  bool get _isOtherSelected => selectedCauses.contains(_otherCauseLabel);
+
+  bool _isSavedOtherCause(String cause) {
+    final trimmed = cause.trim();
+    return trimmed == _otherCauseLabel ||
+        trimmed.toLowerCase().startsWith('${_otherCauseLabel.toLowerCase()}:');
+  }
+
+  String _extractOtherCauseDetail(String cause) {
+    final trimmed = cause.trim();
+    if (trimmed == _otherCauseLabel) return '';
+    final colonIndex = trimmed.indexOf(':');
+    if (colonIndex == -1) return '';
+    return trimmed.substring(colonIndex + 1).trim();
+  }
+
+  List<String> _buildCausesForSave() {
+    final causes = <String>[];
+    for (final cause in selectedCauses) {
+      final trimmed = cause.trim();
+      if (trimmed.isEmpty || trimmed == _otherCauseLabel) continue;
+      causes.add(trimmed);
+    }
+
+    if (_isOtherSelected) {
+      final otherDetail = _sanitizeOtherCauseDetail(_otherCauseController.text);
+      causes.add(
+        otherDetail.isEmpty ? _otherCauseLabel : '$_otherCauseLabel: $otherDetail',
+      );
+    }
+
+    return causes;
+  }
+
+  String _sanitizeOtherCauseDetail(String value) {
+    return value.trim().replaceAll(',', ' ').replaceAll(RegExp(r'\s+'), ' ');
   }
 }
