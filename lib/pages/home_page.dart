@@ -198,6 +198,23 @@ class _HomePageState extends State<HomePage> {
                     ? "Today is your day. Take it easy and stay hydrated."
                     : "Age ${calculateAge()} • Track migraines with clarity.",
                 onTap: _openLogMigraine,
+                statusLabel: _todayEntry == null ? "Needs today's log" : "Today's log is ready",
+                metricItems: [
+                  _HeroMetricData(
+                    icon: _todayEntry == null
+                        ? Icons.edit_note_rounded
+                        : Icons.verified_rounded,
+                    label: _todayEntry == null ? "Today open" : "Logged today",
+                  ),
+                  _HeroMetricData(
+                    icon: Icons.schedule_rounded,
+                    label: _lastEntry == null ? "First log pending" : "Last migraine $lastText",
+                  ),
+                  _HeroMetricData(
+                    icon: Icons.calendar_month_rounded,
+                    label: "$_monthCount this month",
+                  ),
+                ],
                 primaryLabel: _todayEntry == null
                     ? "Log Today's Migraine"
                     : "Edit Today's Migraine",
@@ -356,6 +373,8 @@ class _HeroCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    required this.statusLabel,
+    required this.metricItems,
     required this.primaryLabel,
     required this.primaryAction,
     required this.secondaryLabel,
@@ -366,6 +385,8 @@ class _HeroCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final String statusLabel;
+  final List<_HeroMetricData> metricItems;
   final String primaryLabel;
   final VoidCallback primaryAction;
   final String secondaryLabel;
@@ -402,7 +423,6 @@ class _HeroCard extends StatelessWidget {
               ? scheme.secondary.withValues(alpha: 0.16)
               : scheme.secondary.withValues(alpha: 0.08),
           child: Container(
-            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
@@ -413,69 +433,248 @@ class _HeroCard extends StatelessWidget {
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        isBirthday ? "Birthday Mode" : "Daily Tracker",
-                        style: TextStyle(
-                          color: scheme.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
+                Positioned(
+                  top: -34,
+                  right: -22,
+                  child: Container(
+                    width: 128,
+                    height: 128,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          scheme.primary.withValues(alpha: 0.18),
+                          scheme.primary.withValues(alpha: 0.02),
+                        ],
                       ),
                     ),
-                    if (isBirthday) ...[
-                      const SizedBox(width: 8),
-                      const _PartyCrackersBadge(),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: scheme.onSurface.withValues(alpha: 0.76),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: primaryAction,
-                        child: Text(primaryLabel),
+                Positioned(
+                  top: 56,
+                  right: 26,
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          scheme.tertiary.withValues(alpha: 0.14),
+                          scheme.tertiary.withValues(alpha: 0.01),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: secondaryAction,
-                        child: Text(secondaryLabel),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: scheme.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              isBirthday ? "Birthday Mode" : "Daily Tracker",
+                              style: TextStyle(
+                                color: scheme.primary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          if (isBirthday) ...[
+                            const SizedBox(width: 8),
+                            const _PartyCrackersBadge(),
+                          ],
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: scheme.surface.withValues(alpha: 0.46),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: scheme.onSurface.withValues(alpha: 0.08),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.touch_app_rounded,
+                                  size: 14,
+                                  color: scheme.onSurface.withValues(alpha: 0.72),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "Tap to log",
+                                  style: TextStyle(
+                                    color: scheme.onSurface.withValues(alpha: 0.74),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 14),
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w700,
+                              height: 1.02,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: scheme.onSurface.withValues(alpha: 0.76),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: scheme.surface.withValues(alpha: 0.42),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: scheme.primary.withValues(alpha: 0.16),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: scheme.primary.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.favorite_rounded,
+                                color: scheme.primary,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                statusLabel,
+                                style: TextStyle(
+                                  color: scheme.onSurface.withValues(alpha: 0.88),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: metricItems
+                            .map(
+                              (item) => _HeroMetricChip(
+                                icon: item.icon,
+                                label: item.label,
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: primaryAction,
+                              child: Text(primaryLabel),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: secondaryAction,
+                              child: Text(secondaryLabel),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _HeroMetricData {
+  const _HeroMetricData({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+}
+
+class _HeroMetricChip extends StatelessWidget {
+  const _HeroMetricChip({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: scheme.surface.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: scheme.onSurface.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: scheme.primary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: scheme.onSurface.withValues(alpha: 0.78),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
