@@ -24,6 +24,15 @@ class MigraineApp extends StatefulWidget {
 
 class _MigraineAppState extends State<MigraineApp> {
   static const _themePrefKey = 'theme_dark_mode';
+  static const _pageTransitionsTheme = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: _ContextPageTransitionsBuilder(),
+      TargetPlatform.iOS: _ContextPageTransitionsBuilder(),
+      TargetPlatform.macOS: _ContextPageTransitionsBuilder(),
+      TargetPlatform.windows: _ContextPageTransitionsBuilder(),
+      TargetPlatform.linux: _ContextPageTransitionsBuilder(),
+    },
+  );
   ThemeMode _themeMode = ThemeMode.dark;
 
   @override
@@ -178,6 +187,7 @@ class _MigraineAppState extends State<MigraineApp> {
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
         type: BottomNavigationBarType.fixed,
       ),
+      pageTransitionsTheme: _pageTransitionsTheme,
     );
   }
 
@@ -309,6 +319,7 @@ class _MigraineAppState extends State<MigraineApp> {
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
         type: BottomNavigationBarType.fixed,
       ),
+      pageTransitionsTheme: _pageTransitionsTheme,
     );
   }
 
@@ -545,7 +556,33 @@ class _AppShellState extends State<AppShell> {
     ];
 
     final scaffold = Scaffold(
-      body: pages[_currentIndex],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 320),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          final slide = Tween<Offset>(
+            begin: const Offset(0.05, 0),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            ),
+          );
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: slide,
+              child: child,
+            ),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey(_currentIndex),
+          child: pages[_currentIndex],
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onNavTap,
@@ -573,5 +610,58 @@ class _AppShellState extends State<AppShell> {
       );
     }
     return scaffold;
+  }
+}
+
+class _ContextPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _ContextPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (route.settings.name == null && route.fullscreenDialog) {
+      return child;
+    }
+
+    final fade = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    final slide = Tween<Offset>(
+      begin: const Offset(0.08, 0.02),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ),
+    );
+    final outgoing = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(-0.03, 0),
+    ).animate(
+      CurvedAnimation(
+        parent: secondaryAnimation,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    return SlideTransition(
+      position: outgoing,
+      child: FadeTransition(
+        opacity: fade,
+        child: SlideTransition(
+          position: slide,
+          child: child,
+        ),
+      ),
+    );
   }
 }
