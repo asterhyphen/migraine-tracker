@@ -186,14 +186,7 @@ class _StatsPageState extends State<StatsPage> {
                       subtitle: "Daily migraine counts for final week of selected month",
                     ),
                     const SizedBox(height: 12),
-                    _WeeklyGraph(data: weekly),
-                    const SizedBox(height: 20),
-                    const _SectionTitle(
-                      title: "Recent Logs",
-                      subtitle: "Latest entries for quick review",
-                    ),
-                    const SizedBox(height: 12),
-                    _RecentList(entries: recent),
+                    _WeeklyGraph(data: weekly),    
                   ],
                 ),
         ),
@@ -1087,76 +1080,3 @@ class _WeeklyGraphPainter extends CustomPainter {
   }
 }
 
-class _RecentList extends StatelessWidget {
-  const _RecentList({required this.entries});
-
-  final List<MigraineEntry> entries;
-
-  String _formatDate(DateTime date) {
-    return formatDdMmYyyy(date);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (entries.isEmpty) {
-      return const Text("No entries yet.");
-    }
-    return Column(
-      children: entries.map((entry) {
-        final causes = entry.causes.isEmpty
-            ? "No causes tagged"
-            : entry.causes.join(" • ");
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.13),
-            ),
-            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.72),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.18),
-                ),
-                child: Center(
-                  child: Text(
-                    entry.intensity.toString(),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _formatDate(entry.date),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      causes,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
