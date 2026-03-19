@@ -557,24 +557,43 @@ class _AppShellState extends State<AppShell> {
 
     final scaffold = Scaffold(
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 320),
+        duration: const Duration(milliseconds: 360),
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
         transitionBuilder: (child, animation) {
+          final fade = CurvedAnimation(
+            parent: animation,
+            curve: const Interval(0.12, 1, curve: Curves.easeOutCubic),
+            reverseCurve: Curves.easeInCubic,
+          );
+          final scale = Tween<double>(
+            begin: 0.94,
+            end: 1,
+          ).animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
+            ),
+          );
           final slide = Tween<Offset>(
-            begin: const Offset(0.05, 0),
+            begin: const Offset(0, 0.035),
             end: Offset.zero,
           ).animate(
             CurvedAnimation(
               parent: animation,
               curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
             ),
           );
           return FadeTransition(
-            opacity: animation,
+            opacity: fade,
             child: SlideTransition(
               position: slide,
-              child: child,
+              child: ScaleTransition(
+                scale: scale,
+                child: child,
+              ),
             ),
           );
         },
@@ -630,11 +649,21 @@ class _ContextPageTransitionsBuilder extends PageTransitionsBuilder {
 
     final fade = CurvedAnimation(
       parent: animation,
-      curve: Curves.easeOutCubic,
+      curve: const Interval(0.10, 1, curve: Curves.easeOutCubic),
       reverseCurve: Curves.easeInCubic,
     );
-    final slide = Tween<Offset>(
-      begin: const Offset(0.08, 0.02),
+    final incomingScale = Tween<double>(
+      begin: 0.92,
+      end: 1,
+    ).animate(
+      CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ),
+    );
+    final incomingSlide = Tween<Offset>(
+      begin: const Offset(0, 0.045),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(
@@ -643,9 +672,18 @@ class _ContextPageTransitionsBuilder extends PageTransitionsBuilder {
         reverseCurve: Curves.easeInCubic,
       ),
     );
-    final outgoing = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(-0.03, 0),
+    final outgoingScale = Tween<double>(
+      begin: 1,
+      end: 1.04,
+    ).animate(
+      CurvedAnimation(
+        parent: secondaryAnimation,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    final outgoingFade = Tween<double>(
+      begin: 1,
+      end: 0.72,
     ).animate(
       CurvedAnimation(
         parent: secondaryAnimation,
@@ -653,13 +691,19 @@ class _ContextPageTransitionsBuilder extends PageTransitionsBuilder {
       ),
     );
 
-    return SlideTransition(
-      position: outgoing,
-      child: FadeTransition(
-        opacity: fade,
-        child: SlideTransition(
-          position: slide,
-          child: child,
+    return FadeTransition(
+      opacity: outgoingFade,
+      child: ScaleTransition(
+        scale: outgoingScale,
+        child: FadeTransition(
+          opacity: fade,
+          child: SlideTransition(
+            position: incomingSlide,
+            child: ScaleTransition(
+              scale: incomingScale,
+              child: child,
+            ),
+          ),
         ),
       ),
     );
