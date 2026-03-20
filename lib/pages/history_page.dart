@@ -39,9 +39,7 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Migraine History"),
-      ),
+      appBar: AppBar(title: const Text("Migraine History")),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _logMissedDay,
         icon: const Icon(Icons.edit_calendar_outlined),
@@ -319,7 +317,9 @@ class _HistoryEntryCard extends StatelessWidget {
                       causes,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.72)),
+                      style: TextStyle(
+                        color: scheme.onSurface.withValues(alpha: 0.72),
+                      ),
                     ),
                   ],
                 ),

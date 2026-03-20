@@ -73,12 +73,11 @@ class _MigraineAppState extends State<MigraineApp> {
       onError: Color(0xFF2D0208),
     );
 
-    final baseText = GoogleFonts.plusJakartaSansTextTheme(
-      ThemeData.dark().textTheme,
-    ).apply(
-      bodyColor: darkScheme.onSurface,
-      displayColor: darkScheme.onSurface,
-    );
+    final baseText =
+        GoogleFonts.plusJakartaSansTextTheme(ThemeData.dark().textTheme).apply(
+          bodyColor: darkScheme.onSurface,
+          displayColor: darkScheme.onSurface,
+        );
     final textTheme = GoogleFonts.spaceGroteskTextTheme(baseText).copyWith(
       titleLarge: GoogleFonts.spaceGrotesk(
         fontSize: 20,
@@ -129,15 +128,21 @@ class _MigraineAppState extends State<MigraineApp> {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: darkScheme.onSurface.withValues(alpha: 0.12)),
+          borderSide: BorderSide(
+            color: darkScheme.onSurface.withValues(alpha: 0.12),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: darkScheme.onSurface.withValues(alpha: 0.12)),
+          borderSide: BorderSide(
+            color: darkScheme.onSurface.withValues(alpha: 0.12),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: darkScheme.primary.withValues(alpha: 0.70)),
+          borderSide: BorderSide(
+            color: darkScheme.primary.withValues(alpha: 0.70),
+          ),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -205,12 +210,11 @@ class _MigraineAppState extends State<MigraineApp> {
       onError: Color(0xFFFFFFFF),
     );
 
-    final baseText = GoogleFonts.plusJakartaSansTextTheme(
-      ThemeData.light().textTheme,
-    ).apply(
-      bodyColor: lightScheme.onSurface,
-      displayColor: lightScheme.onSurface,
-    );
+    final baseText =
+        GoogleFonts.plusJakartaSansTextTheme(ThemeData.light().textTheme).apply(
+          bodyColor: lightScheme.onSurface,
+          displayColor: lightScheme.onSurface,
+        );
     final textTheme = GoogleFonts.spaceGroteskTextTheme(baseText).copyWith(
       titleLarge: GoogleFonts.spaceGrotesk(
         fontSize: 20,
@@ -261,15 +265,21 @@ class _MigraineAppState extends State<MigraineApp> {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: lightScheme.onSurface.withValues(alpha: 0.15)),
+          borderSide: BorderSide(
+            color: lightScheme.onSurface.withValues(alpha: 0.15),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: lightScheme.onSurface.withValues(alpha: 0.15)),
+          borderSide: BorderSide(
+            color: lightScheme.onSurface.withValues(alpha: 0.15),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: lightScheme.primary.withValues(alpha: 0.80)),
+          borderSide: BorderSide(
+            color: lightScheme.primary.withValues(alpha: 0.80),
+          ),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -296,7 +306,9 @@ class _MigraineAppState extends State<MigraineApp> {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: lightScheme.onSurface,
-          side: BorderSide(color: lightScheme.onSurface.withValues(alpha: 0.24)),
+          side: BorderSide(
+            color: lightScheme.onSurface.withValues(alpha: 0.24),
+          ),
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           shape: RoundedRectangleBorder(
@@ -397,7 +409,8 @@ class _AppShellState extends State<AppShell> {
 
   void _handleIncomingLink(Uri uri) {
     final normalizedPath = uri.path.replaceAll(RegExp(r'^/+|/+$'), '');
-    final isLogLink = uri.scheme == 'migraine-tracker' &&
+    final isLogLink =
+        uri.scheme == 'migraine-tracker' &&
         (uri.host == 'log' ||
             normalizedPath == 'log' ||
             (uri.host.isEmpty && uri.path == 'log'));
@@ -406,7 +419,8 @@ class _AppShellState extends State<AppShell> {
 
     final now = DateTime.now();
     final logKey = "${uri.scheme}://${uri.host}${uri.path}";
-    final isDuplicate = _lastHandledLogKey == logKey &&
+    final isDuplicate =
+        _lastHandledLogKey == logKey &&
         _lastHandledLogAt != null &&
         now.difference(_lastHandledLogAt!).inMilliseconds < 1500;
     if (isDuplicate) return;
@@ -428,12 +442,12 @@ class _AppShellState extends State<AppShell> {
     if (_openingLogFromExternalAction) return;
     _openingLogFromExternalAction = true;
     try {
-      final todayEntry = await MigraineDb.instance.getEntryForDate(DateTime.now());
+      final todayEntry = await MigraineDb.instance.getEntryForDate(
+        DateTime.now(),
+      );
       if (!mounted) return;
       await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => LogMigrainePage(entry: todayEntry),
-        ),
+        MaterialPageRoute(builder: (_) => LogMigrainePage(entry: todayEntry)),
       );
     } finally {
       _openingLogFromExternalAction = false;
@@ -532,9 +546,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     if (_loadingProfile) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_name == null || _dob == null) {
@@ -566,34 +578,29 @@ class _AppShellState extends State<AppShell> {
             curve: const Interval(0.12, 1, curve: Curves.easeOutCubic),
             reverseCurve: Curves.easeInCubic,
           );
-          final scale = Tween<double>(
-            begin: 0.94,
-            end: 1,
-          ).animate(
+          final scale = Tween<double>(begin: 0.94, end: 1).animate(
             CurvedAnimation(
               parent: animation,
               curve: Curves.easeOutCubic,
               reverseCurve: Curves.easeInCubic,
             ),
           );
-          final slide = Tween<Offset>(
-            begin: const Offset(0, 0.035),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-              reverseCurve: Curves.easeInCubic,
-            ),
-          );
+          final slide =
+              Tween<Offset>(
+                begin: const Offset(0, 0.035),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                  reverseCurve: Curves.easeInCubic,
+                ),
+              );
           return FadeTransition(
             opacity: fade,
             child: SlideTransition(
               position: slide,
-              child: ScaleTransition(
-                scale: scale,
-                child: child,
-              ),
+              child: ScaleTransition(scale: scale, child: child),
             ),
           );
         },
@@ -606,14 +613,8 @@ class _AppShellState extends State<AppShell> {
         currentIndex: _currentIndex,
         onTap: _onNavTap,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: "Stats",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: "Stats"),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: "Settings",
@@ -623,10 +624,7 @@ class _AppShellState extends State<AppShell> {
     );
 
     if (_isBirthdayToday()) {
-      return Theme(
-        data: _birthdayTheme(context),
-        child: scaffold,
-      );
+      return Theme(data: _birthdayTheme(context), child: scaffold);
     }
     return scaffold;
   }
@@ -652,43 +650,26 @@ class _ContextPageTransitionsBuilder extends PageTransitionsBuilder {
       curve: const Interval(0.10, 1, curve: Curves.easeOutCubic),
       reverseCurve: Curves.easeInCubic,
     );
-    final incomingScale = Tween<double>(
-      begin: 0.92,
-      end: 1,
-    ).animate(
+    final incomingScale = Tween<double>(begin: 0.92, end: 1).animate(
       CurvedAnimation(
         parent: animation,
         curve: Curves.easeOutCubic,
         reverseCurve: Curves.easeInCubic,
       ),
     );
-    final incomingSlide = Tween<Offset>(
-      begin: const Offset(0, 0.045),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      ),
+    final incomingSlide =
+        Tween<Offset>(begin: const Offset(0, 0.045), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        );
+    final outgoingScale = Tween<double>(begin: 1, end: 1.04).animate(
+      CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic),
     );
-    final outgoingScale = Tween<double>(
-      begin: 1,
-      end: 1.04,
-    ).animate(
-      CurvedAnimation(
-        parent: secondaryAnimation,
-        curve: Curves.easeOutCubic,
-      ),
-    );
-    final outgoingFade = Tween<double>(
-      begin: 1,
-      end: 0.72,
-    ).animate(
-      CurvedAnimation(
-        parent: secondaryAnimation,
-        curve: Curves.easeOutCubic,
-      ),
+    final outgoingFade = Tween<double>(begin: 1, end: 0.72).animate(
+      CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic),
     );
 
     return FadeTransition(
@@ -699,10 +680,7 @@ class _ContextPageTransitionsBuilder extends PageTransitionsBuilder {
           opacity: fade,
           child: SlideTransition(
             position: incomingSlide,
-            child: ScaleTransition(
-              scale: incomingScale,
-              child: child,
-            ),
+            child: ScaleTransition(scale: incomingScale, child: child),
           ),
         ),
       ),

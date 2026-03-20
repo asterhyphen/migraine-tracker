@@ -124,7 +124,8 @@ class _WavyPainter extends CustomPainter {
     path.moveTo(0, size.height);
 
     for (double x = 0; x <= size.width; x++) {
-      final y = baseY + math.sin((x / size.width) * freq * math.pi * 2 + phase) * amp;
+      final y =
+          baseY + math.sin((x / size.width) * freq * math.pi * 2 + phase) * amp;
       path.lineTo(x, y);
     }
 

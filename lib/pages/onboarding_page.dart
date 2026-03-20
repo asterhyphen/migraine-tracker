@@ -4,10 +4,7 @@ import '../utils/date_utils.dart';
 import '../widgets/app_snackbar.dart';
 
 class OnboardingPage extends StatefulWidget {
-  const OnboardingPage({
-    super.key,
-    required this.onSave,
-  });
+  const OnboardingPage({super.key, required this.onSave});
 
   final Future<void> Function(String name, DateTime dob) onSave;
 
@@ -96,10 +93,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     style: const TextStyle(fontSize: 16),
                   ),
                 ),
-                TextButton(
-                  onPressed: _pickDob,
-                  child: const Text("Pick date"),
-                ),
+                TextButton(onPressed: _pickDob, child: const Text("Pick date")),
               ],
             ),
             const Spacer(),

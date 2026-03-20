@@ -65,11 +65,7 @@ class AppSnackBar {
           elevation: 0,
           padding: EdgeInsets.zero,
           duration: duration,
-          content: _SnackBarCard(
-            tone: tone,
-            title: title,
-            message: message,
-          ),
+          content: _SnackBarCard(tone: tone, title: title, message: message),
         ),
       );
   }
@@ -112,32 +108,24 @@ class _SnackBarCardState extends State<_SnackBarCard>
     _lift = Tween<double>(
       begin: 18,
       end: 0,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _scale = Tween<double>(
       begin: 0.96,
       end: 1,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutBack,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
     _iconScale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.82, end: 1.08).chain(
-          CurveTween(curve: Curves.easeOutCubic),
-        ),
+        tween: Tween<double>(
+          begin: 0.82,
+          end: 1.08,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
         weight: 55,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.08, end: 1).chain(
-          CurveTween(curve: Curves.easeOutBack),
-        ),
+        tween: Tween<double>(
+          begin: 1.08,
+          end: 1,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
         weight: 45,
       ),
     ]).animate(_controller);

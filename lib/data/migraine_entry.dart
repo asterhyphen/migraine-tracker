@@ -43,6 +43,10 @@ class MigraineEntry {
 
   static List<String> _parseCauses(String? raw) {
     if (raw == null || raw.trim().isEmpty) return [];
-    return raw.split(',').map((c) => c.trim()).where((c) => c.isNotEmpty).toList();
+    return raw
+        .split(',')
+        .map((c) => c.trim())
+        .where((c) => c.isNotEmpty)
+        .toList();
   }
 }

@@ -142,7 +142,8 @@ class _SettingsPageState extends State<SettingsPage> {
               child: const Text("Cancel"),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
               child: const Text("Save"),
             ),
           ],
@@ -270,14 +271,7 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final entries = await MigraineDb.instance.getMigraineEntriesOnly();
       final rows = <List<dynamic>>[
-        [
-          'date',
-          'had_migraine',
-          'intensity',
-          'painkillers',
-          'notes',
-          'causes'
-        ],
+        ['date', 'had_migraine', 'intensity', 'painkillers', 'notes', 'causes'],
       ];
 
       for (final entry in entries) {
@@ -349,8 +343,11 @@ class _SettingsPageState extends State<SettingsPage> {
       final intensity = int.tryParse(row[2].toString()) ?? 0;
       final painkillers = row[3].toString() == '1';
       final notes = row[4].toString();
-      final causes =
-          row[5].toString().split('|').where((c) => c.isNotEmpty).toList();
+      final causes = row[5]
+          .toString()
+          .split('|')
+          .where((c) => c.isNotEmpty)
+          .toList();
       return MigraineEntry(
         date: parsedDate,
         hadMigraine: hadMigraine,
@@ -415,12 +412,17 @@ class _SettingsPageState extends State<SettingsPage> {
                       children: [
                         CircleAvatar(
                           radius: 32,
-                          backgroundColor: scheme.primary.withValues(alpha: 0.2),
-                          backgroundImage: _profileImagePath != null &&
+                          backgroundColor: scheme.primary.withValues(
+                            alpha: 0.2,
+                          ),
+                          backgroundImage:
+                              _profileImagePath != null &&
                                   _profileImagePath!.isNotEmpty
                               ? FileImage(File(_profileImagePath!))
                               : null,
-                          child: _profileImagePath == null || _profileImagePath!.isEmpty
+                          child:
+                              _profileImagePath == null ||
+                                  _profileImagePath!.isEmpty
                               ? Text(
                                   _nameController.text.isEmpty
                                       ? "?"
@@ -466,7 +468,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           _nameController.text.isEmpty
                               ? "Your Profile"
                               : _nameController.text,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -529,7 +532,8 @@ class _SettingsPageState extends State<SettingsPage> {
             child: _SettingsRow(
               icon: Icons.tune_rounded,
               title: "Manage causes",
-              value: "${_causeOptions.length} causes • ${_causeOptions.take(3).join(", ")}",
+              value:
+                  "${_causeOptions.length} causes • ${_causeOptions.take(3).join(", ")}",
               onTap: _openCauseManager,
             ),
           ),
@@ -542,7 +546,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 _SettingsRow(
                   icon: Icons.nfc_rounded,
                   title: "Program NFC tag",
-                  value: "One-time setup. Then tap tag from Home/Lock screen to open logging directly.",
+                  value:
+                      "One-time setup. Then tap tag from Home/Lock screen to open logging directly.",
                   onTap: _openNfcDialog,
                 ),
               ],
@@ -651,8 +656,8 @@ class _CauseManagerSheetState extends State<_CauseManagerSheet> {
                   child: Text(
                     "Manage Causes",
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 TextButton(
@@ -717,7 +722,9 @@ class _CauseManagerSheetState extends State<_CauseManagerSheet> {
                           children: [
                             IconButton(
                               visualDensity: VisualDensity.compact,
-                              onPressed: index == 0 ? null : () => _moveCause(index, -1),
+                              onPressed: index == 0
+                                  ? null
+                                  : () => _moveCause(index, -1),
                               icon: const Icon(Icons.keyboard_arrow_up),
                             ),
                             IconButton(
@@ -869,7 +876,8 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
     _completed = false;
     setState(() {
       _status = _NfcStatus.detecting;
-      _message = 'Hold an NFC tag near your phone to program it with the app shortcut.';
+      _message =
+          'Hold an NFC tag near your phone to program it with the app shortcut.';
     });
 
     _timeout?.cancel();
@@ -893,15 +901,14 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
           if (ndef == null || !ndef.isWritable) {
             throw Exception('Tag not writable');
           }
-          final msg = NdefMessage([
-            NdefRecord.createUri(Uri.parse(_nfcUri)),
-          ]);
+          final msg = NdefMessage([NdefRecord.createUri(Uri.parse(_nfcUri))]);
           await ndef.write(msg);
           await NfcManager.instance.stopSession();
           if (!mounted) return;
           setState(() {
             _status = _NfcStatus.success;
-            _message = 'NFC tag programmed. You can now tap it from Home/Lock screen to open logging.';
+            _message =
+                'NFC tag programmed. You can now tap it from Home/Lock screen to open logging.';
           });
         } catch (e) {
           await NfcManager.instance.stopSession(errorMessage: e.toString());
@@ -922,7 +929,8 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isError = _status == _NfcStatus.notDetected || _status == _NfcStatus.error;
+    final isError =
+        _status == _NfcStatus.notDetected || _status == _NfcStatus.error;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -960,7 +968,8 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
               ),
             ),
             const SizedBox(height: 14),
-            if (_status == _NfcStatus.notDetected || _status == _NfcStatus.error)
+            if (_status == _NfcStatus.notDetected ||
+                _status == _NfcStatus.error)
               Row(
                 children: [
                   Expanded(
@@ -978,7 +987,8 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
                   ),
                 ],
               ),
-            if (_status == _NfcStatus.success || _status == _NfcStatus.unavailable)
+            if (_status == _NfcStatus.success ||
+                _status == _NfcStatus.unavailable)
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -994,10 +1004,7 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
 }
 
 class _NfcPulse extends StatelessWidget {
-  const _NfcPulse({
-    required this.controller,
-    required this.color,
-  });
+  const _NfcPulse({required this.controller, required this.color});
 
   final AnimationController controller;
   final Color color;

@@ -54,24 +54,25 @@ class _StatsPageState extends State<StatsPage> {
     final avgStats = _buildWeeklyAverages(filtered, _selectedMonth);
     final causes = _buildCauseStats(filtered);
     final painkillerPercent = _painkillerUsage(filtered);
-    final intensitySeries =
-        filtered.reversed.map((e) => e.intensity).toList().take(14).toList();
+    final intensitySeries = filtered.reversed
+        .map((e) => e.intensity)
+        .toList()
+        .take(14)
+        .toList();
     final summary = _buildSummary(filtered);
     final recent = filtered.take(8).toList();
     final weekly = _buildWeeklyCounts(filtered, _selectedMonth);
     final overallAvg = _entries.isEmpty
         ? 0.0
         : _entries.map((e) => e.intensity).reduce((a, b) => a + b) /
-            _entries.length;
+              _entries.length;
     final selectedAvg = filtered.isEmpty
         ? 0.0
         : filtered.map((e) => e.intensity).reduce((a, b) => a + b) /
-            filtered.length;
+              filtered.length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Statistics"),
-      ),
+      appBar: AppBar(title: const Text("Statistics")),
       body: RefreshIndicator(
         onRefresh: _loadStats,
         child: SingleChildScrollView(
@@ -171,10 +172,9 @@ class _StatsPageState extends State<StatsPage> {
                             "Overall avg ${overallAvg.toStringAsFixed(1)} • ${_monthLabel(_selectedMonth)} avg ${selectedAvg.toStringAsFixed(1)}",
                             style: TextStyle(
                               fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.65),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.65),
                             ),
                           ),
                         ],
@@ -183,10 +183,11 @@ class _StatsPageState extends State<StatsPage> {
                     const SizedBox(height: 20),
                     const _SectionTitle(
                       title: "Weekly Pulse",
-                      subtitle: "Daily migraine counts for final week of selected month",
+                      subtitle:
+                          "Daily migraine counts for final week of selected month",
                     ),
                     const SizedBox(height: 12),
-                    _WeeklyGraph(data: weekly),    
+                    _WeeklyGraph(data: weekly),
                   ],
                 ),
         ),
@@ -240,8 +241,7 @@ class _StatsPageState extends State<StatsPage> {
       final month = DateTime(e.date.year, e.date.month);
       set["${month.year}-${month.month}"] = month;
     }
-    final months = set.values.toList()
-      ..sort((a, b) => b.compareTo(a));
+    final months = set.values.toList()..sort((a, b) => b.compareTo(a));
     return months;
   }
 
@@ -300,10 +300,12 @@ class _StatsPageState extends State<StatsPage> {
     final total = source.length;
     final avgIntensity =
         source.map((e) => e.intensity).reduce((a, b) => a + b) / total;
-    final maxIntensity =
-        source.map((e) => e.intensity).reduce((a, b) => a > b ? a : b);
-    final minIntensity =
-        source.map((e) => e.intensity).reduce((a, b) => a < b ? a : b);
+    final maxIntensity = source
+        .map((e) => e.intensity)
+        .reduce((a, b) => a > b ? a : b);
+    final minIntensity = source
+        .map((e) => e.intensity)
+        .reduce((a, b) => a < b ? a : b);
 
     final causeCounts = <String, int>{};
     for (final entry in source) {
@@ -327,7 +329,11 @@ class _StatsPageState extends State<StatsPage> {
     });
 
     return [
-      _SummaryItem("Total Entries", "$total", "Max $maxIntensity • Min $minIntensity"),
+      _SummaryItem(
+        "Total Entries",
+        "$total",
+        "Max $maxIntensity • Min $minIntensity",
+      ),
       _SummaryItem(
         "Avg. Intensity",
         avgIntensity.toStringAsFixed(1),
@@ -410,9 +416,9 @@ class _StatsEmptyState extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             "No stats yet",
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
@@ -576,10 +582,7 @@ class _DashboardHeader extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       borderColor: scheme.primary.withValues(alpha: 0.20),
       gradient: LinearGradient(
-        colors: [
-          scheme.surface,
-          scheme.tertiary.withValues(alpha: 0.14),
-        ],
+        colors: [scheme.surface, scheme.tertiary.withValues(alpha: 0.14)],
         begin: Alignment.topCenter,
         end: Alignment.bottomRight,
       ),
@@ -606,8 +609,8 @@ class _DashboardHeader extends StatelessWidget {
                   Text(
                     "Stats Overview",
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -628,10 +631,7 @@ class _DashboardHeader extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({
-    required this.title,
-    required this.subtitle,
-  });
+  const _SectionTitle({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -644,9 +644,9 @@ class _SectionTitle extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 3),
         Text(
@@ -836,10 +836,9 @@ class _CauseList extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: item.percent,
                   minHeight: 6,
-                  backgroundColor: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.12),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.12),
                 ),
               ),
             ],
@@ -870,10 +869,9 @@ class _Gauge extends StatelessWidget {
           LinearProgressIndicator(
             value: value,
             minHeight: 8,
-            backgroundColor: Theme.of(context)
-                .colorScheme
-                .onSurface
-                .withValues(alpha: 0.12),
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.12),
           ),
         ],
       ),
@@ -942,7 +940,8 @@ class _LinePainter extends CustomPainter {
     for (int i = 0; i < values.length; i++) {
       final x = step * i;
       final y =
-          size.height - (values[i] / (maxVal == 0 ? 1.0 : maxVal)) * size.height;
+          size.height -
+          (values[i] / (maxVal == 0 ? 1.0 : maxVal)) * size.height;
       canvas.drawCircle(Offset(x, y), 2.6, pointPaint);
     }
   }
@@ -978,10 +977,7 @@ class _WeeklyGraph extends StatelessWidget {
           SizedBox(
             height: 130,
             child: CustomPaint(
-              painter: _WeeklyGraphPainter(
-                data: data,
-                color: scheme.primary,
-              ),
+              painter: _WeeklyGraphPainter(data: data, color: scheme.primary),
               child: const SizedBox.expand(),
             ),
           ),
@@ -1006,10 +1002,7 @@ class _WeeklyGraph extends StatelessWidget {
 }
 
 class _WeeklyGraphPainter extends CustomPainter {
-  _WeeklyGraphPainter({
-    required this.data,
-    required this.color,
-  });
+  _WeeklyGraphPainter({required this.data, required this.color});
 
   final List<_WeeklyDatum> data;
   final Color color;
@@ -1018,8 +1011,10 @@ class _WeeklyGraphPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (data.length < 2) return;
 
-    final maxCount =
-        data.map((d) => d.count).reduce((a, b) => a > b ? a : b).toDouble();
+    final maxCount = data
+        .map((d) => d.count)
+        .reduce((a, b) => a > b ? a : b)
+        .toDouble();
     final normalizedMax = maxCount == 0 ? 1.0 : maxCount;
 
     final axisPaint = Paint()
@@ -1046,7 +1041,8 @@ class _WeeklyGraphPainter extends CustomPainter {
 
     for (int i = 0; i < data.length; i++) {
       final x = i * stepX;
-      final y = size.height -
+      final y =
+          size.height -
           ((data[i].count / normalizedMax) * (size.height - 12)) -
           6;
       if (i == 0) {
@@ -1067,7 +1063,8 @@ class _WeeklyGraphPainter extends CustomPainter {
     final pointPaint = Paint()..color = color;
     for (int i = 0; i < data.length; i++) {
       final x = i * stepX;
-      final y = size.height -
+      final y =
+          size.height -
           ((data[i].count / normalizedMax) * (size.height - 12)) -
           6;
       canvas.drawCircle(Offset(x, y), 3.2, pointPaint);
@@ -1079,4 +1076,3 @@ class _WeeklyGraphPainter extends CustomPainter {
     return oldDelegate.data != data || oldDelegate.color != color;
   }
 }
-

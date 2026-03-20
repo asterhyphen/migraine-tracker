@@ -97,10 +97,7 @@ class MigraineDb {
 
   Future<List<MigraineEntry>> getAllEntries() async {
     final db = await database;
-    final rows = await db.query(
-      'migraine_entries',
-      orderBy: 'date DESC',
-    );
+    final rows = await db.query('migraine_entries', orderBy: 'date DESC');
     return rows.map(MigraineEntry.fromMap).toList();
   }
 

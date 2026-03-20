@@ -8,11 +8,7 @@ import '../utils/date_utils.dart';
 import '../widgets/app_snackbar.dart';
 
 class LogMigrainePage extends StatefulWidget {
-  const LogMigrainePage({
-    super.key,
-    this.entry,
-    this.initialDate,
-  });
+  const LogMigrainePage({super.key, this.entry, this.initialDate});
 
   final MigraineEntry? entry;
   final DateTime? initialDate;
@@ -122,7 +118,8 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
         !_initialSavedCauses.containsAll(currentSavedCauses)) {
       return true;
     }
-    if (widget.entry == null && currentEntryDate != _initialEntryDate) return true;
+    if (widget.entry == null && currentEntryDate != _initialEntryDate)
+      return true;
     return false;
   }
 
@@ -389,7 +386,9 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: _saveEntry,
-                  child: Text(widget.entry == null ? "Save Entry" : "Update Entry"),
+                  child: Text(
+                    widget.entry == null ? "Save Entry" : "Update Entry",
+                  ),
                 ),
               ),
             ],
@@ -436,7 +435,9 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
     if (_isOtherSelected) {
       final otherDetail = _sanitizeOtherCauseDetail(_otherCauseController.text);
       causes.add(
-        otherDetail.isEmpty ? _otherCauseLabel : '$_otherCauseLabel: $otherDetail',
+        otherDetail.isEmpty
+            ? _otherCauseLabel
+            : '$_otherCauseLabel: $otherDetail',
       );
     }
 

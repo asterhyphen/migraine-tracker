@@ -10,11 +10,7 @@ import '../utils/date_utils.dart';
 import '../widgets/wavy_surface.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({
-    super.key,
-    required this.dob,
-    this.name,
-  });
+  const HomePage({super.key, required this.dob, this.name});
 
   final DateTime dob;
   final String? name;
@@ -51,17 +47,15 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _openLogMigraine() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => LogMigrainePage(entry: _todayEntry),
-      ),
+      MaterialPageRoute(builder: (_) => LogMigrainePage(entry: _todayEntry)),
     );
     await _loadStats();
   }
 
   Future<void> _openHistory() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const HistoryPage()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const HistoryPage()));
   }
 
   Future<void> _loadStats() async {
@@ -129,7 +123,10 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 14),
                       Row(
                         children: [
-                          Icon(Icons.celebration_rounded, color: scheme.secondary),
+                          Icon(
+                            Icons.celebration_rounded,
+                            color: scheme.secondary,
+                          ),
                           const SizedBox(width: 8),
                           Icon(Icons.auto_awesome, color: scheme.primary),
                         ],
@@ -220,32 +217,33 @@ class _HomePageState extends State<HomePage> {
                 height: 148,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  children: [
-                    _StatCard(
-                      title: "Last Migraine",
-                      value: lastText,
-                      icon: Icons.schedule_rounded,
-                    ),
-                    _StatCard(
-                      title: "This Month",
-                      value: "$_monthCount",
-                      suffix: "events",
-                      icon: Icons.calendar_month_rounded,
-                    ),
-                    _StatCard(
-                      title: "This Year",
-                      value: "$_yearCount",
-                      suffix: "events",
-                      icon: Icons.insights_rounded,
-                    ),
-                  ]
-                      .map(
-                        (card) => Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: card,
-                        ),
-                      )
-                      .toList(),
+                  children:
+                      [
+                            _StatCard(
+                              title: "Last Migraine",
+                              value: lastText,
+                              icon: Icons.schedule_rounded,
+                            ),
+                            _StatCard(
+                              title: "This Month",
+                              value: "$_monthCount",
+                              suffix: "events",
+                              icon: Icons.calendar_month_rounded,
+                            ),
+                            _StatCard(
+                              title: "This Year",
+                              value: "$_yearCount",
+                              suffix: "events",
+                              icon: Icons.insights_rounded,
+                            ),
+                          ]
+                          .map(
+                            (card) => Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: card,
+                            ),
+                          )
+                          .toList(),
                 ),
               ),
               const SizedBox(height: 24),
@@ -258,7 +256,8 @@ class _HomePageState extends State<HomePage> {
                   ? _EmptyStateCard(
                       icon: Icons.note_add_outlined,
                       title: "No migraine logs yet",
-                      subtitle: "Start with your first entry to unlock trends and insights.",
+                      subtitle:
+                          "Start with your first entry to unlock trends and insights.",
                       actionLabel: "Log now",
                       onAction: _openLogMigraine,
                     )
@@ -271,10 +270,9 @@ class _HomePageState extends State<HomePage> {
                             : _lastEntry!.causes.join(" • "),
                         textAlign: TextAlign.right,
                         style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.7),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     ),
@@ -419,7 +417,10 @@ class _HeroCard extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: scheme.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(999),
@@ -443,9 +444,9 @@ class _HeroCard extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -575,10 +576,7 @@ class _PartyCrackersBadgeState extends State<_PartyCrackersBadge>
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({
-    required this.title,
-    required this.subtitle,
-  });
+  const _SectionTitle({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -591,9 +589,9 @@ class _SectionTitle extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 3),
         Text(
@@ -628,76 +626,79 @@ class _StatCard extends StatelessWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 172, maxWidth: 172),
       child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
-        gradient: LinearGradient(
-          colors: [
-            scheme.surface.withValues(alpha: 0.98),
-            scheme.surface.withValues(alpha: 0.75),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+          gradient: LinearGradient(
+            colors: [
+              scheme.surface.withValues(alpha: 0.98),
+              scheme.surface.withValues(alpha: 0.75),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: scheme.primary.withValues(alpha: 0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.primary.withValues(alpha: 0.08),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.primary.withValues(alpha: 0.14),
-            ),
-            child: Icon(icon, size: 16, color: scheme.primary),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: scheme.onSurface.withValues(alpha: 0.72),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Text(
-                  value,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.primary.withValues(alpha: 0.14),
               ),
-              if (suffix != null) ...[
-                const SizedBox(width: 6),
-                Text(
-                  suffix!,
-                  style: TextStyle(
-                    color: scheme.onSurface.withValues(alpha: 0.68),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+              child: Icon(icon, size: 16, color: scheme.primary),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: scheme.onSurface.withValues(alpha: 0.72),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
+                if (suffix != null) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    suffix!,
+                    style: TextStyle(
+                      color: scheme.onSurface.withValues(alpha: 0.68),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -782,10 +783,7 @@ class _EmptyStateCard extends StatelessWidget {
             children: [
               Icon(icon, color: scheme.primary),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 8),
@@ -794,10 +792,7 @@ class _EmptyStateCard extends StatelessWidget {
             style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.72)),
           ),
           const SizedBox(height: 12),
-          FilledButton.tonal(
-            onPressed: onAction,
-            child: Text(actionLabel),
-          ),
+          FilledButton.tonal(onPressed: onAction, child: Text(actionLabel)),
         ],
       ),
     );
