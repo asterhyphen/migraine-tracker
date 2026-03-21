@@ -26,11 +26,11 @@ class _MigraineAppState extends State<MigraineApp> {
   static const _themePrefKey = 'theme_dark_mode';
   static const _pageTransitionsTheme = PageTransitionsTheme(
     builders: {
-      TargetPlatform.android: _ContextPageTransitionsBuilder(),
-      TargetPlatform.iOS: _ContextPageTransitionsBuilder(),
-      TargetPlatform.macOS: _ContextPageTransitionsBuilder(),
-      TargetPlatform.windows: _ContextPageTransitionsBuilder(),
-      TargetPlatform.linux: _ContextPageTransitionsBuilder(),
+      TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+      TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
     },
   );
   ThemeMode _themeMode = ThemeMode.dark;
@@ -569,39 +569,13 @@ class _AppShellState extends State<AppShell> {
 
     final scaffold = Scaffold(
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 360),
+        duration: const Duration(milliseconds: 180),
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
         transitionBuilder: (child, animation) {
-          final fade = CurvedAnimation(
-            parent: animation,
-            curve: const Interval(0.12, 1, curve: Curves.easeOutCubic),
-            reverseCurve: Curves.easeInCubic,
-          );
-          final scale = Tween<double>(begin: 0.94, end: 1).animate(
-            CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-              reverseCurve: Curves.easeInCubic,
-            ),
-          );
-          final slide =
-              Tween<Offset>(
-                begin: const Offset(0, 0.035),
-                end: Offset.zero,
-              ).animate(
-                CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutCubic,
-                  reverseCurve: Curves.easeInCubic,
-                ),
-              );
           return FadeTransition(
-            opacity: fade,
-            child: SlideTransition(
-              position: slide,
-              child: ScaleTransition(scale: scale, child: child),
-            ),
+            opacity: animation,
+            child: child,
           );
         },
         child: KeyedSubtree(
@@ -627,63 +601,5 @@ class _AppShellState extends State<AppShell> {
       return Theme(data: _birthdayTheme(context), child: scaffold);
     }
     return scaffold;
-  }
-}
-
-class _ContextPageTransitionsBuilder extends PageTransitionsBuilder {
-  const _ContextPageTransitionsBuilder();
-
-  @override
-  Widget buildTransitions<T>(
-    PageRoute<T> route,
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
-    if (route.settings.name == null && route.fullscreenDialog) {
-      return child;
-    }
-
-    final fade = CurvedAnimation(
-      parent: animation,
-      curve: const Interval(0.10, 1, curve: Curves.easeOutCubic),
-      reverseCurve: Curves.easeInCubic,
-    );
-    final incomingScale = Tween<double>(begin: 0.92, end: 1).animate(
-      CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      ),
-    );
-    final incomingSlide =
-        Tween<Offset>(begin: const Offset(0, 0.045), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          ),
-        );
-    final outgoingScale = Tween<double>(begin: 1, end: 1.04).animate(
-      CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic),
-    );
-    final outgoingFade = Tween<double>(begin: 1, end: 0.72).animate(
-      CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic),
-    );
-
-    return FadeTransition(
-      opacity: outgoingFade,
-      child: ScaleTransition(
-        scale: outgoingScale,
-        child: FadeTransition(
-          opacity: fade,
-          child: SlideTransition(
-            position: incomingSlide,
-            child: ScaleTransition(scale: incomingScale, child: child),
-          ),
-        ),
-      ),
-    );
   }
 }
