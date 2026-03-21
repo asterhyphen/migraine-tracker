@@ -118,8 +118,9 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
         !_initialSavedCauses.containsAll(currentSavedCauses)) {
       return true;
     }
-    if (widget.entry == null && currentEntryDate != _initialEntryDate)
+    if (widget.entry == null && currentEntryDate != _initialEntryDate) {
       return true;
+    }
     return false;
   }
 

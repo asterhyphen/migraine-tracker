@@ -60,7 +60,6 @@ class _StatsPageState extends State<StatsPage> {
         .take(14)
         .toList();
     final summary = _buildSummary(filtered);
-    final recent = filtered.take(8).toList();
     final weekly = _buildWeeklyCounts(filtered, _selectedMonth);
     final overallAvg = _entries.isEmpty
         ? 0.0
