@@ -130,15 +130,24 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
     final shouldLeave = await showDialog<bool>(
       context: context,
       builder: (context) {
+        final scheme = Theme.of(context).colorScheme;
         return AlertDialog(
           title: const Text("Are you sure?"),
           content: const Text("Your edits will not be saved."),
           actions: [
-            TextButton(
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.primary,
+                foregroundColor: scheme.onPrimary,
+              ),
               onPressed: () => Navigator.of(context).pop(false),
               child: const Text("Stay"),
             ),
-            TextButton(
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: scheme.error,
+                side: BorderSide(color: scheme.error.withValues(alpha: 0.65)),
+              ),
               onPressed: () => Navigator.of(context).pop(true),
               child: const Text("Leave"),
             ),
