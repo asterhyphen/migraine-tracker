@@ -33,7 +33,7 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   String _formatDate(DateTime date) {
-    return formatDdMmYyyy(date);
+    return formatDayAndDate(date);
   }
 
   @override
@@ -237,7 +237,7 @@ class _HistorySummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Latest: ${formatDdMmYyyy(latest.date)}",
+                  "Latest: ${formatDayAndDate(latest.date)}",
                   style: TextStyle(
                     color: scheme.onSurface.withValues(alpha: 0.68),
                     fontSize: 12,

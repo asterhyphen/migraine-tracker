@@ -1,7 +1,22 @@
+const _weekdayNames = [
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+];
+
 String formatDdMmYyyy(DateTime date) {
   final dd = date.day.toString().padLeft(2, '0');
   final mm = date.month.toString().padLeft(2, '0');
   return '$dd/$mm/${date.year}';
+}
+
+String formatDayAndDate(DateTime date) {
+  final day = _weekdayNames[date.weekday - 1];
+  return '$day, ${formatDdMmYyyy(date)}';
 }
 
 DateTime? parseFlexibleDate(String raw) {
