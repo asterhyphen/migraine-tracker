@@ -1,12 +1,4 @@
-const _weekdayNames = [
-  'Mon',
-  'Tue',
-  'Wed',
-  'Thu',
-  'Fri',
-  'Sat',
-  'Sun',
-];
+const _weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 String formatDdMmYyyy(DateTime date) {
   final dd = date.day.toString().padLeft(2, '0');

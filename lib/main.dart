@@ -573,10 +573,7 @@ class _AppShellState extends State<AppShell> {
         switchInCurve: Curves.easeOutCubic,
         switchOutCurve: Curves.easeInCubic,
         transitionBuilder: (child, animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
         child: KeyedSubtree(
           key: ValueKey(_currentIndex),
