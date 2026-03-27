@@ -16,6 +16,7 @@ class _StatsPageState extends State<StatsPage> {
   bool _loading = true;
   List<MigraineEntry> _entries = [];
   DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  DateTime? _compareMonth;
   List<DateTime> _monthOptions = [];
 
   @override
@@ -30,12 +31,17 @@ class _StatsPageState extends State<StatsPage> {
     final hasSelected = monthOptions.any(
       (m) => m.year == _selectedMonth.year && m.month == _selectedMonth.month,
     );
+    final nextSelected = hasSelected ? _selectedMonth : monthOptions.first;
+    final nextCompare = _resolvedCompareMonth(
+      options: monthOptions,
+      selectedMonth: nextSelected,
+      currentCompare: _compareMonth,
+    );
     setState(() {
       _entries = entries;
       _monthOptions = monthOptions;
-      if (!hasSelected) {
-        _selectedMonth = monthOptions.first;
-      }
+      _selectedMonth = nextSelected;
+      _compareMonth = nextCompare;
       _loading = false;
     });
   }
@@ -50,6 +56,12 @@ class _StatsPageState extends State<StatsPage> {
       return e.date.year == _selectedMonth.year &&
           e.date.month == _selectedMonth.month;
     }).toList();
+    final compared = _compareMonth == null
+        ? <MigraineEntry>[]
+        : _entries.where((e) {
+            return e.date.year == _compareMonth!.year &&
+                e.date.month == _compareMonth!.month;
+          }).toList();
     final monthStats = _buildWeeklyFrequency(filtered, _selectedMonth);
     final avgStats = _buildWeeklyAverages(filtered, _selectedMonth);
     final causes = _buildCauseStats(filtered);
@@ -69,6 +81,14 @@ class _StatsPageState extends State<StatsPage> {
         ? 0.0
         : filtered.map((e) => e.intensity).reduce((a, b) => a + b) /
               filtered.length;
+    final comparison = _compareMonth == null
+        ? <_ComparisonItem>[]
+        : _buildComparisonItems(
+            selectedSource: filtered,
+            compareSource: compared,
+            selectedMonth: _selectedMonth,
+            compareMonth: _compareMonth!,
+          );
 
     return Scaffold(
       appBar: AppBar(title: const Text("Statistics")),
@@ -84,10 +104,21 @@ class _StatsPageState extends State<StatsPage> {
                   children: [
                     _MonthFilterCard(
                       selectedMonth: _selectedMonth,
+                      compareMonth: _compareMonth,
                       options: _monthOptions,
-                      onChanged: (month) {
+                      onSelectedChanged: (month) {
                         setState(() {
                           _selectedMonth = month;
+                          _compareMonth = _resolvedCompareMonth(
+                            options: _monthOptions,
+                            selectedMonth: month,
+                            currentCompare: _compareMonth,
+                          );
+                        });
+                      },
+                      onCompareChanged: (month) {
+                        setState(() {
+                          _compareMonth = month;
                         });
                       },
                     ),
@@ -95,6 +126,9 @@ class _StatsPageState extends State<StatsPage> {
                     _DashboardHeader(
                       totalEntries: filtered.length,
                       monthLabel: _monthLabelFull(_selectedMonth),
+                      compareLabel: _compareMonth == null
+                          ? null
+                          : _monthLabelFull(_compareMonth!),
                     ),
                     const SizedBox(height: 24),
                     if (filtered.isEmpty) ...[
@@ -119,6 +153,22 @@ class _StatsPageState extends State<StatsPage> {
                         );
                       }).toList(),
                     ),
+                    if (_compareMonth != null) ...[
+                      const SizedBox(height: 20),
+                      const _SectionTitle(
+                        title: "Month Comparison",
+                        subtitle:
+                            "Quick differences between the selected and comparison months",
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: comparison.map((item) {
+                          return _ComparisonCard(item: item);
+                        }).toList(),
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     const _SectionTitle(
                       title: "Trends",
@@ -244,6 +294,25 @@ class _StatsPageState extends State<StatsPage> {
     return months;
   }
 
+  DateTime? _resolvedCompareMonth({
+    required List<DateTime> options,
+    required DateTime selectedMonth,
+    required DateTime? currentCompare,
+  }) {
+    if (options.length < 2) return null;
+    if (currentCompare != null &&
+        _isSameMonth(currentCompare, selectedMonth) == false &&
+        options.any((month) => _isSameMonth(month, currentCompare))) {
+      return options.firstWhere((month) => _isSameMonth(month, currentCompare));
+    }
+    for (final option in options) {
+      if (!_isSameMonth(option, selectedMonth)) {
+        return option;
+      }
+    }
+    return null;
+  }
+
   List<_CauseDatum> _buildCauseStats(List<MigraineEntry> source) {
     final Map<String, int> counts = {};
     for (final entry in source) {
@@ -283,6 +352,10 @@ class _StatsPageState extends State<StatsPage> {
 
   String _monthLabelFull(DateTime month) {
     return "${_monthLabel(month)} ${month.year}";
+  }
+
+  bool _isSameMonth(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month;
   }
 
   List<_SummaryItem> _buildSummary(List<MigraineEntry> source) {
@@ -370,6 +443,64 @@ class _StatsPageState extends State<StatsPage> {
   String _weekdayLabel(DateTime date) {
     const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     return labels[date.weekday % 7];
+  }
+
+  List<_ComparisonItem> _buildComparisonItems({
+    required List<MigraineEntry> selectedSource,
+    required List<MigraineEntry> compareSource,
+    required DateTime selectedMonth,
+    required DateTime compareMonth,
+  }) {
+    final selectedAvg = selectedSource.isEmpty
+        ? 0.0
+        : selectedSource.map((e) => e.intensity).reduce((a, b) => a + b) /
+              selectedSource.length;
+    final compareAvg = compareSource.isEmpty
+        ? 0.0
+        : compareSource.map((e) => e.intensity).reduce((a, b) => a + b) /
+              compareSource.length;
+    final selectedPainkiller = (_painkillerUsage(selectedSource) * 100).round();
+    final comparePainkiller = (_painkillerUsage(compareSource) * 100).round();
+
+    return [
+      _ComparisonItem(
+        title: "Total Entries",
+        selectedValue: "${selectedSource.length}",
+        compareValue: "${compareSource.length}",
+        deltaLabel: _signedDelta(selectedSource.length - compareSource.length),
+        subtitle:
+            "${_monthLabel(selectedMonth)} vs ${_monthLabel(compareMonth)}",
+      ),
+      _ComparisonItem(
+        title: "Avg. Intensity",
+        selectedValue: selectedSource.isEmpty
+            ? "-"
+            : selectedAvg.toStringAsFixed(1),
+        compareValue:
+            compareSource.isEmpty ? "-" : compareAvg.toStringAsFixed(1),
+        deltaLabel: _signedDoubleDelta(selectedAvg - compareAvg),
+        subtitle: "Selected month compared with comparison month",
+      ),
+      _ComparisonItem(
+        title: "Painkiller Rate",
+        selectedValue: "$selectedPainkiller%",
+        compareValue: "$comparePainkiller%",
+        deltaLabel: _signedDelta(selectedPainkiller - comparePainkiller, unit: "%"),
+        subtitle: "Medication use across both months",
+      ),
+    ];
+  }
+
+  String _signedDelta(int value, {String unit = ''}) {
+    if (value == 0) return "No change";
+    final sign = value > 0 ? "+" : "";
+    return "$sign$value$unit";
+  }
+
+  String _signedDoubleDelta(double value) {
+    if (value.abs() < 0.05) return "No change";
+    final sign = value > 0 ? "+" : "";
+    return "$sign${value.toStringAsFixed(1)}";
   }
 }
 
@@ -475,13 +606,17 @@ class _StatsSkeletonBox extends StatelessWidget {
 class _MonthFilterCard extends StatelessWidget {
   const _MonthFilterCard({
     required this.selectedMonth,
+    required this.compareMonth,
     required this.options,
-    required this.onChanged,
+    required this.onSelectedChanged,
+    required this.onCompareChanged,
   });
 
   final DateTime selectedMonth;
+  final DateTime? compareMonth;
   final List<DateTime> options;
-  final ValueChanged<DateTime> onChanged;
+  final ValueChanged<DateTime> onSelectedChanged;
+  final ValueChanged<DateTime?> onCompareChanged;
 
   String _monthLabel(DateTime month) {
     const labels = [
@@ -511,24 +646,56 @@ class _MonthFilterCard extends StatelessWidget {
         border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
         color: scheme.surface.withValues(alpha: 0.74),
       ),
-      child: DropdownButtonFormField<DateTime>(
-        initialValue: selectedMonth,
-        isExpanded: true,
-        decoration: const InputDecoration(
-          labelText: "Filter by month",
-          border: OutlineInputBorder(),
-        ),
-        items: options
-            .map(
-              (month) => DropdownMenuItem<DateTime>(
-                value: month,
-                child: Text(_monthLabel(month)),
+      child: Column(
+        children: [
+          DropdownButtonFormField<DateTime>(
+            initialValue: selectedMonth,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: "Filter by month",
+              border: OutlineInputBorder(),
+            ),
+            items: options
+                .map(
+                  (month) => DropdownMenuItem<DateTime>(
+                    value: month,
+                    child: Text(_monthLabel(month)),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value != null) onSelectedChanged(value);
+            },
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<DateTime?>(
+            initialValue: compareMonth,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: "Compare with",
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              const DropdownMenuItem<DateTime?>(
+                value: null,
+                child: Text("No comparison"),
               ),
-            )
-            .toList(),
-        onChanged: (value) {
-          if (value != null) onChanged(value);
-        },
+              ...options
+                  .where(
+                    (month) =>
+                        month.year != selectedMonth.year ||
+                        month.month != selectedMonth.month,
+                  )
+                  .map(
+                    (month) => DropdownMenuItem<DateTime?>(
+                      value: month,
+                      child: Text(_monthLabel(month)),
+                    ),
+                  ),
+            ],
+            onChanged: onCompareChanged,
+          ),
+        ],
       ),
     );
   }
@@ -569,10 +736,12 @@ class _DashboardHeader extends StatelessWidget {
   const _DashboardHeader({
     required this.totalEntries,
     required this.monthLabel,
+    this.compareLabel,
   });
 
   final int totalEntries;
   final String monthLabel;
+  final String? compareLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -613,7 +782,9 @@ class _DashboardHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "$totalEntries logged migraines • $monthLabel",
+                    compareLabel == null
+                        ? "$totalEntries logged migraines • $monthLabel"
+                        : "$totalEntries logged migraines • $monthLabel vs $compareLabel",
                     style: TextStyle(
                       color: scheme.onSurface.withValues(alpha: 0.68),
                       fontSize: 13,
@@ -697,6 +868,22 @@ class _SummaryItem {
   final String subtitle;
 }
 
+class _ComparisonItem {
+  _ComparisonItem({
+    required this.title,
+    required this.selectedValue,
+    required this.compareValue,
+    required this.deltaLabel,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String selectedValue;
+  final String compareValue;
+  final String deltaLabel;
+  final String subtitle;
+}
+
 class _InsightCard extends StatelessWidget {
   const _InsightCard({
     required this.title,
@@ -734,6 +921,65 @@ class _InsightCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              color: scheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComparisonCard extends StatelessWidget {
+  const _ComparisonCard({required this.item});
+
+  final _ComparisonItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isNeutral = item.deltaLabel == "No change";
+    final isPositive = item.deltaLabel.startsWith("+");
+    final deltaColor = isNeutral
+        ? scheme.onSurface.withValues(alpha: 0.6)
+        : isPositive
+        ? scheme.primary
+        : scheme.error;
+
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+        color: scheme.surface.withValues(alpha: 0.74),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.title,
+            style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "${item.selectedValue} vs ${item.compareValue}",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            item.deltaLabel,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: deltaColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            item.subtitle,
             style: TextStyle(
               fontSize: 12,
               color: scheme.onSurface.withValues(alpha: 0.6),
