@@ -32,7 +32,7 @@ class _StatsPageState extends State<StatsPage> {
       (m) => m.year == _selectedMonth.year && m.month == _selectedMonth.month,
     );
     final nextSelected = hasSelected ? _selectedMonth : monthOptions.first;
-    final nextCompare = _resolvedCompareMonth(
+    final nextCompare = _validatedCompareMonth(
       options: monthOptions,
       selectedMonth: nextSelected,
       currentCompare: _compareMonth,
@@ -109,7 +109,7 @@ class _StatsPageState extends State<StatsPage> {
                       onSelectedChanged: (month) {
                         setState(() {
                           _selectedMonth = month;
-                          _compareMonth = _resolvedCompareMonth(
+                          _compareMonth = _validatedCompareMonth(
                             options: _monthOptions,
                             selectedMonth: month,
                             currentCompare: _compareMonth,
@@ -294,23 +294,19 @@ class _StatsPageState extends State<StatsPage> {
     return months;
   }
 
-  DateTime? _resolvedCompareMonth({
+  DateTime? _validatedCompareMonth({
     required List<DateTime> options,
     required DateTime selectedMonth,
     required DateTime? currentCompare,
   }) {
-    if (options.length < 2) return null;
-    if (currentCompare != null &&
-        _isSameMonth(currentCompare, selectedMonth) == false &&
-        options.any((month) => _isSameMonth(month, currentCompare))) {
-      return options.firstWhere((month) => _isSameMonth(month, currentCompare));
+    if (currentCompare == null) {
+      return null;
     }
-    for (final option in options) {
-      if (!_isSameMonth(option, selectedMonth)) {
-        return option;
-      }
+    if (_isSameMonth(currentCompare, selectedMonth)) {
+      return null;
     }
-    return null;
+    final hasCompare = options.any((month) => _isSameMonth(month, currentCompare));
+    return hasCompare ? currentCompare : null;
   }
 
   List<_CauseDatum> _buildCauseStats(List<MigraineEntry> source) {
