@@ -305,7 +305,9 @@ class _StatsPageState extends State<StatsPage> {
     if (_isSameMonth(currentCompare, selectedMonth)) {
       return null;
     }
-    final hasCompare = options.any((month) => _isSameMonth(month, currentCompare));
+    final hasCompare = options.any(
+      (month) => _isSameMonth(month, currentCompare),
+    );
     return hasCompare ? currentCompare : null;
   }
 
@@ -472,8 +474,9 @@ class _StatsPageState extends State<StatsPage> {
         selectedValue: selectedSource.isEmpty
             ? "-"
             : selectedAvg.toStringAsFixed(1),
-        compareValue:
-            compareSource.isEmpty ? "-" : compareAvg.toStringAsFixed(1),
+        compareValue: compareSource.isEmpty
+            ? "-"
+            : compareAvg.toStringAsFixed(1),
         deltaLabel: _signedDoubleDelta(selectedAvg - compareAvg),
         subtitle: "Selected month compared with comparison month",
       ),
@@ -481,7 +484,10 @@ class _StatsPageState extends State<StatsPage> {
         title: "Painkiller Rate",
         selectedValue: "$selectedPainkiller%",
         compareValue: "$comparePainkiller%",
-        deltaLabel: _signedDelta(selectedPainkiller - comparePainkiller, unit: "%"),
+        deltaLabel: _signedDelta(
+          selectedPainkiller - comparePainkiller,
+          unit: "%",
+        ),
         subtitle: "Medication use across both months",
       ),
     ];
