@@ -167,7 +167,11 @@ class _HomePageState extends State<HomePage> {
     final lastDays = _daysSince(_lastEntry?.date);
     final lastText = _lastEntry == null
         ? "No entries"
-        : (lastDays == 0 ? "Today" : "$lastDays days ago");
+        : (lastDays == 0
+              ? "Today"
+              : lastDays == 1
+              ? "Yesterday"
+              : "$lastDays days ago");
     final lastDetails = _lastEntry == null
         ? "Log your first migraine to see details."
         : "Intensity ${_lastEntry!.intensity} • ${_formatDate(_lastEntry!.date)}";
