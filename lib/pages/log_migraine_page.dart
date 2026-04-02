@@ -232,7 +232,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       builder: (context) {
         return AlertDialog(
           title: const Text("Delete entry?"),
-          content: const Text("This cannot be undone."),
+          content: const Text("Are you sure? This action is irreversible."),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
