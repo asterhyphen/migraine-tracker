@@ -73,8 +73,15 @@ class TermsConditionsPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'If you have any questions about these Terms and Conditions, please contact us at [contact information].',
+              'If you have any questions about these Terms and Conditions, please contact AsterHyphen.',
             ),
+            const SizedBox(height: 16),
+            const Text(
+              'Developer Information',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text('Developed by AsterHyphen.'),
           ],
         ),
       ),
