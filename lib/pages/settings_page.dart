@@ -14,6 +14,8 @@ import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
 import '../utils/date_utils.dart';
 import '../widgets/app_snackbar.dart';
+import 'privacy_policy_page.dart';
+import 'terms_conditions_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -573,6 +575,36 @@ class _SettingsPageState extends State<SettingsPage> {
                   value: _busy ? "Working..." : "Save CSV to Downloads",
                   enabled: !_busy,
                   onTap: _exportData,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _SectionHeader(title: "Legal"),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: Column(
+              children: [
+                _SettingsRow(
+                  icon: Icons.privacy_tip_outlined,
+                  title: "Privacy Policy",
+                  value: "",
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyPage(),
+                    ),
+                  ),
+                ),
+                const Divider(height: 1),
+                _SettingsRow(
+                  icon: Icons.description_outlined,
+                  title: "Terms and Conditions",
+                  value: "",
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const TermsConditionsPage(),
+                    ),
+                  ),
                 ),
               ],
             ),
