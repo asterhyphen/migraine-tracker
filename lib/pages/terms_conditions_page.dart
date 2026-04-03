@@ -1,4 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+Future<void> _launchDevUrl(BuildContext context) async {
+  final url = Uri.parse('https://asterhyphen.xyz');
+  if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not open https://asterhyphen.xyz')),
+    );
+  }
+}
 
 class TermsConditionsPage extends StatelessWidget {
   const TermsConditionsPage({super.key});
@@ -76,8 +86,20 @@ class TermsConditionsPage extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
+            InkWell(
+              onTap: () => _launchDevUrl(context),
+              child: const Text(
+                'Developed by AsterHyphen. Tap here to visit asterhyphen.xyz',
+                style: TextStyle(
+                  color: Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             const Text(
-              'Developed by AsterHyphen. For more details, visit https://asterhyphen.xyz (redirect URL).',
+              'Subtext: Click the link to open the dev website in your browser.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),

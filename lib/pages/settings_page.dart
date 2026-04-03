@@ -8,6 +8,7 @@ import 'package:nfc_manager/nfc_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/cause_prefs.dart';
 import '../data/migraine_db.dart';
@@ -200,6 +201,19 @@ class _SettingsPageState extends State<SettingsPage> {
       title: 'Photo updated',
       message: 'Your profile picture has been changed.',
     );
+  }
+
+  Future<void> _launchDevUrl() async {
+    final url = Uri.parse('https://asterhyphen.xyz');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        AppSnackBar.showError(
+          context,
+          title: 'Link failed',
+          message: 'Could not open $url',
+        );
+      }
+    }
   }
 
   Future<void> _openNfcDialog() async {
@@ -609,11 +623,43 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            "Version $_appVersion\nDeveloped with love by Ahmed.-",
-            style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.6)),
-            textAlign: TextAlign.center,
+          const SizedBox(height: 20),
+          _SectionHeader(title: "About"),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: Column(
+              children: [
+                _SettingsRow(
+                  icon: Icons.info_outline,
+                  title: "App version",
+                  value: _appVersion,
+                  onTap: () {},
+                ),
+                const Divider(height: 1),
+                _SettingsRow(
+                  icon: Icons.developer_mode_outlined,
+                  title: "Dev Info",
+                  value: "AsterHyphen • asterhyphen.xyz",
+                  onTap: _launchDevUrl,
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.link_outlined),
+                  title: const Text('Open developer site'),
+                  subtitle: const Text('Tap to visit the AsterHyphen homepage'),
+                  onTap: _launchDevUrl,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              'Visit the link to read full developer information and open source updates.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12),
+            ),
           ),
         ],
       ),
