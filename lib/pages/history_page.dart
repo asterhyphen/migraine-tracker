@@ -16,7 +16,7 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> {
   bool _loading = true;
-  List<MigraineEntry> _entries = [];
+  Map<String, List<MigraineEntry>> _groupedEntries = {};
 
   @override
   void initState() {
@@ -26,14 +26,99 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Future<void> _loadEntries() async {
     final entries = await MigraineDb.instance.getMigraineEntriesOnly();
+    final grouped = _groupByMonth(entries);
     setState(() {
-      _entries = entries;
+      _groupedEntries = grouped;
       _loading = false;
     });
   }
 
+  Map<String, List<MigraineEntry>> _groupByMonth(List<MigraineEntry> entries) {
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    final map = <String, List<MigraineEntry>>{};
+    for (final entry in entries) {
+      final key = '${monthNames[entry.date.month - 1]} ${entry.date.year}';
+      map.putIfAbsent(key, () => []).add(entry);
+    }
+    // Sort keys by year desc, month desc
+    final sortedKeys = map.keys.toList()
+      ..sort((a, b) {
+        final aParts = a.split(' ');
+        final bParts = b.split(' ');
+        final aYear = int.parse(aParts[1]);
+        final bYear = int.parse(bParts[1]);
+        if (aYear != bYear) return bYear.compareTo(aYear);
+        final aMonth = monthNames.indexOf(aParts[0]);
+        final bMonth = monthNames.indexOf(bParts[0]);
+        return bMonth.compareTo(aMonth);
+      });
+    final sortedMap = <String, List<MigraineEntry>>{};
+    for (final key in sortedKeys) {
+      sortedMap[key] = map[key]!;
+    }
+    return sortedMap;
+  }
+
   String _formatDate(DateTime date) {
-    return formatDayAndDate(date);
+    return formatDdMmYyyy(date);
+  }
+
+  String _formatDay(DateTime date) {
+    return formatDay(date);
+  }
+
+  List<Widget> _buildListChildren() {
+    final allEntries = _groupedEntries.values.expand((e) => e).toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    final children = <Widget>[
+      Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: _HistorySummaryCard(entries: allEntries),
+      ),
+    ];
+    for (final group in _groupedEntries.entries) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: _MonthHeader(title: group.key),
+        ),
+      );
+      for (final entry in group.value) {
+        children.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _HistoryEntryCard(
+              entry: entry,
+              formatDay: _formatDay,
+              formatDate: _formatDate,
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => LogMigrainePage(entry: entry),
+                  ),
+                );
+                await _loadEntries();
+              },
+              onDelete: () => _confirmDelete(entry),
+            ),
+          ),
+        );
+      }
+    }
+    return children;
   }
 
   @override
@@ -49,7 +134,7 @@ class _HistoryPageState extends State<HistoryPage> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadEntries,
-              child: _entries.isEmpty
+              child: _groupedEntries.isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(20),
@@ -57,36 +142,10 @@ class _HistoryPageState extends State<HistoryPage> {
                         _HistoryEmptyState(onLogMissedDay: _logMissedDay),
                       ],
                     )
-                  : ListView.builder(
+                  : ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(20),
-                      itemCount: _entries.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 14),
-                            child: _HistorySummaryCard(entries: _entries),
-                          );
-                        }
-
-                        final entry = _entries[index - 1];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _HistoryEntryCard(
-                            entry: entry,
-                            formatDate: _formatDate,
-                            onTap: () async {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => LogMigrainePage(entry: entry),
-                                ),
-                              );
-                              await _loadEntries();
-                            },
-                            onDelete: () => _confirmDelete(entry),
-                          ),
-                        );
-                      },
+                      children: _buildListChildren(),
                     ),
             ),
     );
@@ -255,12 +314,14 @@ class _HistorySummaryCard extends StatelessWidget {
 class _HistoryEntryCard extends StatelessWidget {
   const _HistoryEntryCard({
     required this.entry,
+    required this.formatDay,
     required this.formatDate,
     required this.onTap,
     required this.onDelete,
   });
 
   final MigraineEntry entry;
+  final String Function(DateTime) formatDay;
   final String Function(DateTime) formatDate;
   final VoidCallback onTap;
   final VoidCallback onDelete;
@@ -309,18 +370,28 @@ class _HistoryEntryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      formatDate(entry.date),
+                      formatDay(entry.date),
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
-                      causes,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      formatDate(entry.date),
                       style: TextStyle(
                         color: scheme.onSurface.withValues(alpha: 0.72),
+                        fontSize: 12,
                       ),
                     ),
+                    if (causes.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        causes,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: scheme.onSurface.withValues(alpha: 0.72),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -332,6 +403,24 @@ class _HistoryEntryCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MonthHeader extends StatelessWidget {
+  const _MonthHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: Theme.of(context).colorScheme.primary,
       ),
     );
   }

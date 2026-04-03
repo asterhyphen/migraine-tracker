@@ -1,4 +1,12 @@
-const _weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const _weekdayNames = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
 
 String formatDdMmYyyy(DateTime date) {
   final dd = date.day.toString().padLeft(2, '0');
@@ -9,6 +17,10 @@ String formatDdMmYyyy(DateTime date) {
 String formatDayAndDate(DateTime date) {
   final day = _weekdayNames[date.weekday - 1];
   return '$day, ${formatDdMmYyyy(date)}';
+}
+
+String formatDay(DateTime date) {
+  return _weekdayNames[date.weekday - 1];
 }
 
 DateTime? parseFlexibleDate(String raw) {
