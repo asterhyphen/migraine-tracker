@@ -18,11 +18,6 @@ class PrivacyPolicyPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Effective Date: [Insert Date]',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 16),
-            const Text(
               '1. Introduction',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -74,6 +69,15 @@ class PrivacyPolicyPage extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'If you have any questions about this Privacy Policy, please contact us at [contact information].',
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Developer Information',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Developed by AsterHyphen. For more info, visit https://asterhyphen.xyz (redirect URL).',
             ),
           ],
         ),

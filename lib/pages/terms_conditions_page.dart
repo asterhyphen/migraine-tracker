@@ -18,11 +18,6 @@ class TermsConditionsPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Effective Date: [Insert Date]',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 16),
-            const Text(
               '1. Acceptance of Terms',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -81,7 +76,9 @@ class TermsConditionsPage extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text('Developed by AsterHyphen.'),
+            const Text(
+              'Developed by AsterHyphen. For more details, visit https://asterhyphen.xyz (redirect URL).',
+            ),
           ],
         ),
       ),
