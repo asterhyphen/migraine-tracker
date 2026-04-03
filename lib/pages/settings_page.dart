@@ -203,16 +203,27 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _launchDevUrl() async {
-    final url = Uri.parse('https://asterhyphen.xyz');
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+  Future<void> _launchUrl(String urlString) async {
+    final url = Uri.parse(urlString);
+
+    if (!await canLaunchUrl(url)) {
       if (mounted) {
         AppSnackBar.showError(
           context,
           title: 'Link failed',
-          message: 'Could not open $url',
+          message: 'No browser found to open $urlString',
         );
       }
+      return;
+    }
+
+    final success = await launchUrl(url, mode: LaunchMode.externalApplication);
+    if (!success && mounted) {
+      AppSnackBar.showError(
+        context,
+        title: 'Link failed',
+        message: 'Could not open $urlString in browser',
+      );
     }
   }
 
@@ -602,7 +613,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 _SettingsRow(
                   icon: Icons.privacy_tip_outlined,
                   title: "Privacy Policy",
-                  value: "",
+                  value: "Read privacy policy details",
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => const PrivacyPolicyPage(),
@@ -613,7 +624,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 _SettingsRow(
                   icon: Icons.description_outlined,
                   title: "Terms and Conditions",
-                  value: "",
+                  value: "Read terms and conditions details",
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => const TermsConditionsPage(),
@@ -629,36 +640,34 @@ class _SettingsPageState extends State<SettingsPage> {
           _SettingsCard(
             child: Column(
               children: [
-                _SettingsRow(
-                  icon: Icons.info_outline,
-                  title: "App version",
-                  value: _appVersion,
-                  onTap: () {},
+                ListTile(
+                  leading: const Icon(Icons.info_outline),
+                  title: const Text('App version'),
+                  subtitle: Text(_appVersion),
+                  onTap: null,
                 ),
                 const Divider(height: 1),
-                _SettingsRow(
-                  icon: Icons.developer_mode_outlined,
-                  title: "Dev Info",
-                  value: "AsterHyphen • asterhyphen.xyz",
-                  onTap: _launchDevUrl,
+                ListTile(
+                  leading: const Icon(Icons.developer_mode_outlined),
+                  title: const Text('Dev website'),
+                  subtitle: const Text('https://asterhyphen.xyz'),
+                  onTap: () => _launchUrl('https://asterhyphen.xyz'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.code),
+                  title: const Text('GitHub'),
+                  subtitle: const Text('https://github.com/AsterHyphen'),
+                  onTap: () => _launchUrl('https://github.com/AsterHyphen'),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.link_outlined),
-                  title: const Text('Open developer site'),
-                  subtitle: const Text('Tap to visit the AsterHyphen homepage'),
-                  onTap: _launchDevUrl,
+                  title: const Text('Open dev site'),
+                  subtitle: const Text('External browser must be installed'),
+                  onTap: () => _launchUrl('https://asterhyphen.xyz'),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12),
-            child: Text(
-              'Visit the link to read full developer information and open source updates.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12),
             ),
           ),
         ],
