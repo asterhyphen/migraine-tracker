@@ -330,7 +330,7 @@ class _HistoryEntryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final causes = entry.causes.isEmpty
-        ? "No cause tagged"
+        ? "Unknown"
         : entry.causes.take(3).join(" • ");
 
     return Material(

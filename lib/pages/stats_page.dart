@@ -383,7 +383,7 @@ class _StatsPageState extends State<StatsPage> {
         causeCounts[cause] = (causeCounts[cause] ?? 0) + 1;
       }
     }
-    String topCause = "No cause tagged";
+    String topCause = "Unknown";
     if (causeCounts.isNotEmpty) {
       final sorted = causeCounts.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
