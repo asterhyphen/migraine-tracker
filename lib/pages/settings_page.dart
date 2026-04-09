@@ -660,13 +660,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   subtitle: const Text('https://github.com/AsterHyphen'),
                   onTap: () => _launchUrl('https://github.com/AsterHyphen'),
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.link_outlined),
-                  title: const Text('Open dev site'),
-                  subtitle: const Text('External browser must be installed'),
-                  onTap: () => _launchUrl('https://asterhyphen.xyz'),
-                ),
+                
               ],
             ),
           ),
