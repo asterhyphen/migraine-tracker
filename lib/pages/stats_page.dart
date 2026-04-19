@@ -1,69 +1,58 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
+import '../state/migraine_entries_provider.dart';
 import '../utils/date_utils.dart';
 import '../widgets/wavy_surface.dart';
 
-class StatsPage extends StatefulWidget {
+class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
 
   @override
-  State<StatsPage> createState() => _StatsPageState();
+  ConsumerState<StatsPage> createState() => _StatsPageState();
 }
 
-class _StatsPageState extends State<StatsPage> {
-  bool _loading = true;
-  List<MigraineEntry> _entries = [];
+class _StatsPageState extends ConsumerState<StatsPage> {
   DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime? _compareMonth;
-  List<DateTime> _monthOptions = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadStats();
-  }
 
   Future<void> _loadStats() async {
-    final entries = await MigraineDb.instance.getMigraineEntriesOnly();
-    final monthOptions = _buildMonthOptions(entries);
-    final hasSelected = monthOptions.any(
-      (m) => m.year == _selectedMonth.year && m.month == _selectedMonth.month,
-    );
-    final nextSelected = hasSelected ? _selectedMonth : monthOptions.first;
-    final nextCompare = _validatedCompareMonth(
-      options: monthOptions,
-      selectedMonth: nextSelected,
-      currentCompare: _compareMonth,
-    );
-    setState(() {
-      _entries = entries;
-      _monthOptions = monthOptions;
-      _selectedMonth = nextSelected;
-      _compareMonth = nextCompare;
-      _loading = false;
-    });
+    await ref.read(migraineEntriesProvider.notifier).reload();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
+    final entriesState = ref.watch(migraineEntriesProvider);
+    final entries = entriesState.value ?? const <MigraineEntry>[];
+
+    if (entriesState.isLoading && entriesState.value == null) {
       return const _StatsLoadingView();
     }
 
-    final filtered = _entries.where((e) {
-      return e.date.year == _selectedMonth.year &&
-          e.date.month == _selectedMonth.month;
+    final monthOptions = _buildMonthOptions(entries);
+    final selectedMonth =
+        monthOptions.any((month) => _isSameMonth(month, _selectedMonth))
+        ? _selectedMonth
+        : monthOptions.first;
+    final compareMonth = _validatedCompareMonth(
+      options: monthOptions,
+      selectedMonth: selectedMonth,
+      currentCompare: _compareMonth,
+    );
+
+    final filtered = entries.where((e) {
+      return e.date.year == selectedMonth.year &&
+          e.date.month == selectedMonth.month;
     }).toList();
-    final compared = _compareMonth == null
+    final compared = compareMonth == null
         ? <MigraineEntry>[]
-        : _entries.where((e) {
-            return e.date.year == _compareMonth!.year &&
-                e.date.month == _compareMonth!.month;
+        : entries.where((e) {
+            return e.date.year == compareMonth.year &&
+                e.date.month == compareMonth.month;
           }).toList();
-    final monthStats = _buildWeeklyFrequency(filtered, _selectedMonth);
-    final avgStats = _buildWeeklyAverages(filtered, _selectedMonth);
+    final monthStats = _buildWeeklyFrequency(filtered, selectedMonth);
+    final avgStats = _buildWeeklyAverages(filtered, selectedMonth);
     final causes = _buildCauseStats(filtered);
     final painkillerPercent = _painkillerUsage(filtered);
     final intensitySeries = filtered.reversed
@@ -72,22 +61,22 @@ class _StatsPageState extends State<StatsPage> {
         .take(14)
         .toList();
     final summary = _buildSummary(filtered);
-    final weekly = _buildWeeklyCounts(filtered, _selectedMonth);
-    final overallAvg = _entries.isEmpty
+    final weekly = _buildWeeklyCounts(filtered, selectedMonth);
+    final overallAvg = entries.isEmpty
         ? 0.0
-        : _entries.map((e) => e.intensity).reduce((a, b) => a + b) /
-              _entries.length;
+        : entries.map((e) => e.intensity).reduce((a, b) => a + b) /
+              entries.length;
     final selectedAvg = filtered.isEmpty
         ? 0.0
         : filtered.map((e) => e.intensity).reduce((a, b) => a + b) /
               filtered.length;
-    final comparison = _compareMonth == null
+    final comparison = compareMonth == null
         ? <_ComparisonItem>[]
         : _buildComparisonItems(
             selectedSource: filtered,
             compareSource: compared,
-            selectedMonth: _selectedMonth,
-            compareMonth: _compareMonth!,
+            selectedMonth: selectedMonth,
+            compareMonth: compareMonth,
           );
 
     return Scaffold(
@@ -97,20 +86,20 @@ class _StatsPageState extends State<StatsPage> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: _entries.isEmpty
+          child: entries.isEmpty
               ? const _StatsEmptyState()
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _MonthFilterCard(
-                      selectedMonth: _selectedMonth,
-                      compareMonth: _compareMonth,
-                      options: _monthOptions,
+                      selectedMonth: selectedMonth,
+                      compareMonth: compareMonth,
+                      options: monthOptions,
                       onSelectedChanged: (month) {
                         setState(() {
                           _selectedMonth = month;
                           _compareMonth = _validatedCompareMonth(
-                            options: _monthOptions,
+                            options: monthOptions,
                             selectedMonth: month,
                             currentCompare: _compareMonth,
                           );
@@ -125,15 +114,15 @@ class _StatsPageState extends State<StatsPage> {
                     const SizedBox(height: 12),
                     _DashboardHeader(
                       totalEntries: filtered.length,
-                      monthLabel: _monthLabelFull(_selectedMonth),
-                      compareLabel: _compareMonth == null
+                      monthLabel: _monthLabelFull(selectedMonth),
+                      compareLabel: compareMonth == null
                           ? null
-                          : _monthLabelFull(_compareMonth!),
+                          : _monthLabelFull(compareMonth),
                     ),
                     const SizedBox(height: 24),
                     if (filtered.isEmpty) ...[
                       _SelectedMonthEmptyState(
-                        monthLabel: _monthLabelFull(_selectedMonth),
+                        monthLabel: _monthLabelFull(selectedMonth),
                       ),
                       const SizedBox(height: 20),
                     ],
@@ -153,7 +142,7 @@ class _StatsPageState extends State<StatsPage> {
                         );
                       }).toList(),
                     ),
-                    if (_compareMonth != null) ...[
+                    if (compareMonth != null) ...[
                       const SizedBox(height: 20),
                       const _SectionTitle(
                         title: "Month Comparison",
@@ -218,7 +207,7 @@ class _StatsPageState extends State<StatsPage> {
                           Expanded(child: _LineChart(values: intensitySeries)),
                           const SizedBox(height: 8),
                           Text(
-                            "Overall avg ${overallAvg.toStringAsFixed(1)} • ${_monthLabel(_selectedMonth)} avg ${selectedAvg.toStringAsFixed(1)}",
+                            "Overall avg ${overallAvg.toStringAsFixed(1)} • ${_monthLabel(selectedMonth)} avg ${selectedAvg.toStringAsFixed(1)}",
                             style: TextStyle(
                               fontSize: 12,
                               color: Theme.of(

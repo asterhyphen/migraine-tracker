@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
 import '../data/cause_prefs.dart';
-import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
+import '../state/migraine_entries_provider.dart';
 import '../utils/date_utils.dart';
 import '../widgets/app_snackbar.dart';
 
-class LogMigrainePage extends StatefulWidget {
+class LogMigrainePage extends ConsumerStatefulWidget {
   const LogMigrainePage({super.key, this.entry, this.initialDate});
 
   final MigraineEntry? entry;
   final DateTime? initialDate;
 
   @override
-  State<LogMigrainePage> createState() => _LogMigrainePageState();
+  ConsumerState<LogMigrainePage> createState() => _LogMigrainePageState();
 }
 
-class _LogMigrainePageState extends State<LogMigrainePage> {
+class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
   static const _otherCauseLabel = 'Other';
 
   bool hadMigraine = true;
@@ -187,7 +188,9 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
 
     final targetDate = _entryDate ?? DateTime.now();
     final existingForDate = widget.entry == null
-        ? await MigraineDb.instance.getEntryForDate(targetDate)
+        ? await ref
+              .read(migraineEntriesProvider.notifier)
+              .entryForDate(targetDate)
         : null;
     final entry = MigraineEntry(
       id: widget.entry?.id ?? existingForDate?.id,
@@ -200,7 +203,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
     );
 
     try {
-      await MigraineDb.instance.updateEntry(entry);
+      await ref.read(migraineEntriesProvider.notifier).saveEntry(entry);
       if (!mounted) return;
       HapticFeedback.lightImpact();
       AppSnackBar.showSuccess(
@@ -247,7 +250,7 @@ class _LogMigrainePageState extends State<LogMigrainePage> {
       },
     );
     if (confirmed != true) return;
-    await MigraineDb.instance.deleteEntry(entry!.id!);
+    await ref.read(migraineEntriesProvider.notifier).deleteEntry(entry!.id!);
     if (!mounted) return;
     HapticFeedback.mediumImpact();
     AppSnackBar.showSuccess(

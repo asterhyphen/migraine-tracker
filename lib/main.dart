@@ -2,28 +2,23 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'data/migraine_db.dart';
 import 'pages/home_page.dart';
 import 'pages/log_migraine_page.dart';
 import 'pages/onboarding_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/stats_page.dart';
+import 'state/app_settings_provider.dart';
+import 'state/migraine_entries_provider.dart';
 
 void main() {
-  runApp(const MigraineApp());
+  runApp(const ProviderScope(child: MigraineApp()));
 }
 
-class MigraineApp extends StatefulWidget {
+class MigraineApp extends ConsumerWidget {
   const MigraineApp({super.key});
 
-  @override
-  State<MigraineApp> createState() => _MigraineAppState();
-}
-
-class _MigraineAppState extends State<MigraineApp> {
-  static const _themePrefKey = 'theme_dark_mode';
   static const _pageTransitionsTheme = PageTransitionsTheme(
     builders: {
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
@@ -33,31 +28,6 @@ class _MigraineAppState extends State<MigraineApp> {
       TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
     },
   );
-  ThemeMode _themeMode = ThemeMode.dark;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadThemeMode();
-  }
-
-  Future<void> _loadThemeMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isDark = prefs.getBool(_themePrefKey) ?? true;
-    if (!mounted) return;
-    setState(() {
-      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    });
-  }
-
-  Future<void> _setDarkMode(bool isDark) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_themePrefKey, isDark);
-    if (!mounted) return;
-    setState(() {
-      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    });
-  }
 
   ThemeData _buildDarkTheme() {
     const background = Color(0xFF090D14);
@@ -336,40 +306,29 @@ class _MigraineAppState extends State<MigraineApp> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(appSettingsProvider);
+    final appSettings = settings.value ?? AppSettingsState.initial();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      themeMode: _themeMode,
+      themeMode: appSettings.themeMode,
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),
-      home: AppShell(
-        isDarkTheme: _themeMode == ThemeMode.dark,
-        onThemeChanged: _setDarkMode,
-      ),
+      home: const AppShell(),
     );
   }
 }
 
-class AppShell extends StatefulWidget {
-  const AppShell({
-    super.key,
-    required this.isDarkTheme,
-    required this.onThemeChanged,
-  });
-
-  final bool isDarkTheme;
-  final Future<void> Function(bool isDark) onThemeChanged;
+class AppShell extends ConsumerStatefulWidget {
+  const AppShell({super.key});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends ConsumerState<AppShell> {
   int _currentIndex = 0;
-  bool _loadingProfile = true;
-  String? _name;
-  DateTime? _dob;
-  String? _profileImagePath;
   late final AppLinks _appLinks;
   StreamSubscription<Uri>? _appLinkSubscription;
   bool _pendingOpenLog = false;
@@ -382,7 +341,6 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     _setupDeepLinks();
-    _loadProfile();
   }
 
   @override
@@ -427,7 +385,8 @@ class _AppShellState extends State<AppShell> {
     _lastHandledLogKey = logKey;
     _lastHandledLogAt = now;
 
-    if (_loadingProfile || _name == null || _dob == null) {
+    final settings = ref.read(appSettingsProvider).value;
+    if (settings == null || !settings.hasProfile) {
       _pendingOpenLog = true;
       return;
     }
@@ -442,9 +401,9 @@ class _AppShellState extends State<AppShell> {
     if (_openingLogFromExternalAction) return;
     _openingLogFromExternalAction = true;
     try {
-      final todayEntry = await MigraineDb.instance.getEntryForDate(
-        DateTime.now(),
-      );
+      final todayEntry = await ref
+          .read(migraineEntriesProvider.notifier)
+          .entryForDate(DateTime.now());
       if (!mounted) return;
       await Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => LogMigrainePage(entry: todayEntry)),
@@ -456,7 +415,8 @@ class _AppShellState extends State<AppShell> {
 
   void _processPendingAction() {
     if (!_pendingOpenLog) return;
-    if (_loadingProfile || _name == null || _dob == null) return;
+    final settings = ref.read(appSettingsProvider).value;
+    if (settings == null || !settings.hasProfile) return;
     _pendingOpenLog = false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -464,44 +424,13 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
-  Future<void> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final name = prefs.getString('user_name');
-    final dobMillis = prefs.getInt('user_dob');
-    final profileImagePath = prefs.getString('user_profile_image');
-    setState(() {
-      _name = name;
-      _dob = dobMillis == null
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch(dobMillis);
-      _profileImagePath = profileImagePath;
-      _loadingProfile = false;
-    });
-    _processPendingAction();
-  }
-
   Future<void> _saveProfile(String name, DateTime dob) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_name', name);
-    await prefs.setInt('user_dob', dob.millisecondsSinceEpoch);
-    setState(() {
-      _name = name;
-      _dob = dob;
-    });
+    await ref.read(appSettingsProvider.notifier).saveProfile(name, dob);
     _processPendingAction();
   }
 
   Future<void> _saveProfileImage(String? imagePath) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (imagePath == null || imagePath.trim().isEmpty) {
-      await prefs.remove('user_profile_image');
-    } else {
-      await prefs.setString('user_profile_image', imagePath);
-    }
-    if (!mounted) return;
-    setState(() {
-      _profileImagePath = imagePath;
-    });
+    await ref.read(appSettingsProvider.notifier).saveProfileImage(imagePath);
   }
 
   void _onNavTap(int index) {
@@ -511,9 +440,10 @@ class _AppShellState extends State<AppShell> {
   }
 
   bool _isBirthdayToday() {
-    if (_dob == null) return false;
+    final dob = ref.read(appSettingsProvider).value?.dob;
+    if (dob == null) return false;
     final now = DateTime.now();
-    return now.month == _dob!.month && now.day == _dob!.day;
+    return now.month == dob.month && now.day == dob.day;
   }
 
   ThemeData _birthdayTheme(BuildContext context) {
@@ -545,25 +475,41 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loadingProfile) {
+    ref.listen(appSettingsProvider, (_, next) => _processPendingAction());
+
+    final settings = ref.watch(appSettingsProvider);
+    final appSettings = settings.value;
+
+    if (settings.isLoading && appSettings == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    if (_name == null || _dob == null) {
+    if (settings.hasError && appSettings == null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('Could not load app settings: ${settings.error}'),
+          ),
+        ),
+      );
+    }
+
+    if (appSettings == null || !appSettings.hasProfile) {
       return OnboardingPage(onSave: _saveProfile);
     }
 
     final pages = [
-      HomePage(dob: _dob!, name: _name),
+      HomePage(dob: appSettings.dob!, name: appSettings.name),
       const StatsPage(),
       SettingsPage(
-        initialName: _name!,
-        initialDob: _dob!,
-        initialProfileImagePath: _profileImagePath,
+        initialName: appSettings.name!,
+        initialDob: appSettings.dob!,
+        initialProfileImagePath: appSettings.profileImagePath,
         onSave: _saveProfile,
         onProfileImageChanged: _saveProfileImage,
-        isDarkTheme: widget.isDarkTheme,
-        onThemeChanged: widget.onThemeChanged,
+        isDarkTheme: appSettings.isDarkTheme,
+        onThemeChanged: ref.read(appSettingsProvider.notifier).setDarkMode,
       ),
     ];
 

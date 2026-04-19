@@ -1,36 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
-import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
+import '../state/migraine_entries_provider.dart';
 import '../utils/date_utils.dart';
 import '../widgets/app_snackbar.dart';
 import 'log_migraine_page.dart';
 
-class HistoryPage extends StatefulWidget {
+class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});
 
   @override
-  State<HistoryPage> createState() => _HistoryPageState();
+  ConsumerState<HistoryPage> createState() => _HistoryPageState();
 }
 
-class _HistoryPageState extends State<HistoryPage> {
-  bool _loading = true;
-  Map<String, List<MigraineEntry>> _groupedEntries = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _loadEntries();
-  }
-
+class _HistoryPageState extends ConsumerState<HistoryPage> {
   Future<void> _loadEntries() async {
-    final entries = await MigraineDb.instance.getMigraineEntriesOnly();
-    final grouped = _groupByMonth(entries);
-    setState(() {
-      _groupedEntries = grouped;
-      _loading = false;
-    });
+    await ref.read(migraineEntriesProvider.notifier).reload();
   }
 
   Map<String, List<MigraineEntry>> _groupByMonth(List<MigraineEntry> entries) {
@@ -80,8 +67,10 @@ class _HistoryPageState extends State<HistoryPage> {
     return formatDay(date);
   }
 
-  List<Widget> _buildListChildren() {
-    final allEntries = _groupedEntries.values.expand((e) => e).toList()
+  List<Widget> _buildListChildren(
+    Map<String, List<MigraineEntry>> groupedEntries,
+  ) {
+    final allEntries = groupedEntries.values.expand((e) => e).toList()
       ..sort((a, b) => b.date.compareTo(a.date));
     final children = <Widget>[
       Padding(
@@ -89,7 +78,7 @@ class _HistoryPageState extends State<HistoryPage> {
         child: _HistorySummaryCard(entries: allEntries),
       ),
     ];
-    for (final group in _groupedEntries.entries) {
+    for (final group in groupedEntries.entries) {
       children.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -123,6 +112,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final entriesState = ref.watch(migraineEntriesProvider);
+    final entries = entriesState.value ?? const <MigraineEntry>[];
+    final groupedEntries = _groupByMonth(entries);
+
     return Scaffold(
       appBar: AppBar(title: const Text("Migraine History")),
       floatingActionButton: FloatingActionButton.extended(
@@ -130,11 +123,11 @@ class _HistoryPageState extends State<HistoryPage> {
         icon: const Icon(Icons.edit_calendar_outlined),
         label: const Text("Log missed day"),
       ),
-      body: _loading
+      body: entriesState.isLoading && entriesState.value == null
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadEntries,
-              child: _groupedEntries.isEmpty
+              child: groupedEntries.isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(20),
@@ -145,7 +138,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   : ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(20),
-                      children: _buildListChildren(),
+                      children: _buildListChildren(groupedEntries),
                     ),
             ),
     );
@@ -173,7 +166,7 @@ class _HistoryPageState extends State<HistoryPage> {
     );
     if (confirmed != true) return;
     if (entry.id == null) return;
-    await MigraineDb.instance.deleteEntry(entry.id!);
+    await ref.read(migraineEntriesProvider.notifier).deleteEntry(entry.id!);
     if (!mounted) return;
     HapticFeedback.mediumImpact();
     AppSnackBar.showSuccess(
@@ -181,7 +174,6 @@ class _HistoryPageState extends State<HistoryPage> {
       title: 'Entry deleted',
       message: 'The migraine log was removed from history.',
     );
-    await _loadEntries();
   }
 
   Future<void> _logMissedDay() async {
@@ -195,7 +187,9 @@ class _HistoryPageState extends State<HistoryPage> {
     );
     if (picked == null) return;
 
-    final existing = await MigraineDb.instance.getEntryForDate(picked);
+    final existing = await ref
+        .read(migraineEntriesProvider.notifier)
+        .entryForDate(picked);
     if (!mounted) return;
     await Navigator.of(context).push(
       MaterialPageRoute(

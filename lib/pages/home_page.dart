@@ -1,37 +1,36 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'history_page.dart';
 import 'log_migraine_page.dart';
-import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
+import '../state/migraine_entries_provider.dart';
 import '../utils/date_utils.dart';
 import '../widgets/wavy_surface.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key, required this.dob, this.name});
 
   final DateTime dob;
   final String? name;
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   static const _birthdayAnnouncedYearKey = 'birthday_announced_year';
-  bool _loading = true;
   bool _birthdayDialogShown = false;
-  MigraineEntry? _lastEntry;
-  MigraineEntry? _todayEntry;
-  int _monthCount = 0;
-  int _yearCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadStats();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _maybeShowBirthdayDialog();
+    });
   }
 
   int calculateAge() {
@@ -46,8 +45,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _openLogMigraine() async {
+    final todayEntry = _entryForDate(
+      ref.read(migraineEntriesProvider).value ?? const [],
+      DateTime.now(),
+    );
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => LogMigrainePage(entry: _todayEntry)),
+      MaterialPageRoute(builder: (_) => LogMigrainePage(entry: todayEntry)),
     );
     await _loadStats();
   }
@@ -59,21 +62,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadStats() async {
-    final now = DateTime.now();
-    final monthEntries = await MigraineDb.instance.getEntriesForMonth(now);
-    final todayEntry = await MigraineDb.instance.getEntryForDate(now);
-    final all = await MigraineDb.instance.getMigraineEntriesOnly();
-    MigraineEntry? last;
-    if (all.isNotEmpty) {
-      last = all.first;
-    }
-    setState(() {
-      _monthCount = monthEntries.length;
-      _lastEntry = last;
-      _todayEntry = todayEntry;
-      _yearCount = all.where((e) => e.date.year == now.year).length;
-      _loading = false;
-    });
+    await ref.read(migraineEntriesProvider.notifier).reload();
     _maybeShowBirthdayDialog();
   }
 
@@ -160,21 +149,36 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
+    final entriesState = ref.watch(migraineEntriesProvider);
+    final entries = entriesState.value ?? const <MigraineEntry>[];
+
+    if (entriesState.isLoading && entriesState.value == null) {
       return const _HomeLoadingView();
     }
 
-    final lastDays = _daysSince(_lastEntry?.date);
-    final lastText = _lastEntry == null
+    final now = DateTime.now();
+    final monthCount = entries
+        .where(
+          (entry) =>
+              entry.date.year == now.year && entry.date.month == now.month,
+        )
+        .length;
+    final yearCount = entries
+        .where((entry) => entry.date.year == now.year)
+        .length;
+    final lastEntry = entries.isEmpty ? null : entries.first;
+    final todayEntry = _entryForDate(entries, now);
+    final lastDays = _daysSince(lastEntry?.date);
+    final lastText = lastEntry == null
         ? "No entries"
         : (lastDays == 0
               ? "Today"
               : lastDays == 1
               ? "Yesterday"
               : "$lastDays days ago");
-    final lastDetails = _lastEntry == null
+    final lastDetails = lastEntry == null
         ? "Log your first migraine to see details."
-        : "Intensity ${_lastEntry!.intensity} • ${_formatDate(_lastEntry!.date)}";
+        : "Intensity ${lastEntry.intensity} • ${_formatDate(lastEntry.date)}";
     final isBirthday = _isBirthdayToday();
 
     return Scaffold(
@@ -199,7 +203,7 @@ class _HomePageState extends State<HomePage> {
                     ? "Today is your day. Take it easy and stay hydrated."
                     : "Age ${calculateAge()} • Track migraines with clarity.",
                 onTap: _openLogMigraine,
-                primaryLabel: _todayEntry == null
+                primaryLabel: todayEntry == null
                     ? "Log Today's Migraine"
                     : "Edit Today's Migraine",
                 primaryAction: _openLogMigraine,
@@ -230,13 +234,13 @@ class _HomePageState extends State<HomePage> {
                             ),
                             _StatCard(
                               title: "This Month",
-                              value: "$_monthCount",
+                              value: "$monthCount",
                               suffix: "events",
                               icon: Icons.calendar_month_rounded,
                             ),
                             _StatCard(
                               title: "This Year",
-                              value: "$_yearCount",
+                              value: "$yearCount",
                               suffix: "events",
                               icon: Icons.insights_rounded,
                             ),
@@ -256,7 +260,7 @@ class _HomePageState extends State<HomePage> {
                 subtitle: "Most recent recorded migraine",
               ),
               const SizedBox(height: 12),
-              _lastEntry == null
+              lastEntry == null
                   ? _EmptyStateCard(
                       icon: Icons.note_add_outlined,
                       title: "No migraine logs yet",
@@ -269,9 +273,9 @@ class _HomePageState extends State<HomePage> {
                       title: "Latest log",
                       subtitle: lastDetails,
                       trailing: Text(
-                        _lastEntry!.causes.isEmpty
+                        lastEntry.causes.isEmpty
                             ? "No causes tagged"
-                            : _lastEntry!.causes.join(" • "),
+                            : lastEntry.causes.join(" • "),
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           color: Theme.of(
@@ -289,6 +293,19 @@ class _HomePageState extends State<HomePage> {
 
   String _formatDate(DateTime date) {
     return formatDdMmYyyy(date);
+  }
+
+  MigraineEntry? _entryForDate(List<MigraineEntry> entries, DateTime date) {
+    final target = DateTime(date.year, date.month, date.day);
+    for (final entry in entries) {
+      final entryDate = DateTime(
+        entry.date.year,
+        entry.date.month,
+        entry.date.day,
+      );
+      if (entryDate == target) return entry;
+    }
+    return null;
   }
 }
 

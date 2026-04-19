@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -11,14 +12,14 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/cause_prefs.dart';
-import '../data/migraine_db.dart';
 import '../data/migraine_entry.dart';
+import '../state/migraine_entries_provider.dart';
 import '../utils/date_utils.dart';
 import '../widgets/app_snackbar.dart';
 import 'privacy_policy_page.dart';
 import 'terms_conditions_page.dart';
 
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({
     super.key,
     required this.initialName,
@@ -39,10 +40,10 @@ class SettingsPage extends StatefulWidget {
   final Future<void> Function(bool isDark) onThemeChanged;
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends ConsumerState<SettingsPage> {
   late final TextEditingController _nameController;
   late DateTime _dob;
   late bool _isDarkTheme;
@@ -266,7 +267,7 @@ class _SettingsPageState extends State<SettingsPage> {
         if (entry != null) entries.add(entry);
       }
 
-      await MigraineDb.instance.insertEntries(entries);
+      await ref.read(migraineEntriesProvider.notifier).insertEntries(entries);
       if (!mounted) return;
       AppSnackBar.showSuccess(
         context,
@@ -296,7 +297,12 @@ class _SettingsPageState extends State<SettingsPage> {
     });
 
     try {
-      final entries = await MigraineDb.instance.getMigraineEntriesOnly();
+      var entries = ref.read(migraineEntriesProvider).value;
+      if (entries == null) {
+        await ref.read(migraineEntriesProvider.notifier).reload();
+        entries =
+            ref.read(migraineEntriesProvider).value ?? const <MigraineEntry>[];
+      }
       final rows = <List<dynamic>>[
         ['date', 'had_migraine', 'intensity', 'painkillers', 'notes', 'causes'],
       ];
@@ -660,7 +666,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   subtitle: const Text('https://github.com/AsterHyphen'),
                   onTap: () => _launchUrl('https://github.com/AsterHyphen'),
                 ),
-                
               ],
             ),
           ),

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 Future<void> _launchDevUrl(BuildContext context) async {
   final url = Uri.parse('https://asterhyphen.xyz');
   if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Could not open https://asterhyphen.xyz')),
     );
