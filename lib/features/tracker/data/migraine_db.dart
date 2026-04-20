@@ -1,7 +1,7 @@
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
-import 'migraine_entry.dart';
+import '../models/migraine_entry.dart';
 
 class MigraineDb {
   MigraineDb._();

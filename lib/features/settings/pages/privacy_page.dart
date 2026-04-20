@@ -11,75 +11,76 @@ Future<void> _launchDevUrl(BuildContext context) async {
   }
 }
 
-class TermsConditionsPage extends StatelessWidget {
-  const TermsConditionsPage({super.key});
+class PrivacyPolicyPage extends StatelessWidget {
+  const PrivacyPolicyPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Terms and Conditions')),
+      appBar: AppBar(title: const Text('Privacy Policy')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Terms and Conditions',
+              'Privacy Policy',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             const Text(
-              '1. Acceptance of Terms',
+              '1. Introduction',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              'By downloading and using Migraine Tracker, you accept and agree to be bound by the terms and provision of this agreement.',
+              'Welcome to Migraine Tracker. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you about how we handle your information.',
             ),
             const SizedBox(height: 16),
             const Text(
-              '2. Use License',
+              '2. Information We Collect',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              'Permission is granted to use this app for personal, non-commercial purposes only.',
+              'We collect information you provide directly to us, such as your name, date of birth, and migraine tracking data. All data is stored locally on your device.',
             ),
             const SizedBox(height: 16),
             const Text(
-              '3. Disclaimer',
+              '3. How We Use Your Information',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              'This app is provided "as is" without warranties. We are not medical professionals, and this app is not a substitute for professional medical advice.',
+              'We use your information to provide and improve our services, including tracking your migraines and generating statistics.',
             ),
             const SizedBox(height: 16),
             const Text(
-              '4. Limitation of Liability',
+              '4. Data Sharing',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              'In no event shall we be liable for any damages arising out of the use or inability to use this app.',
+              'We do not share your personal data with third parties. Your data remains on your device unless you choose to export it.',
             ),
             const SizedBox(height: 16),
             const Text(
-              '5. Changes to Terms',
+              '5. Data Security',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              'We reserve the right to modify these terms at any time. Continued use of the app constitutes acceptance of the new terms.',
+              'We implement appropriate security measures to protect your data stored on your device.',
             ),
             const SizedBox(height: 16),
             const Text(
-              '6. Contact Information',
+              '6. Contact Us',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
-              'If you have any questions about these Terms and Conditions, please contact AsterHyphen.',
+              'If you have any questions about this Privacy Policy, please contact us at [contact information].',
             ),
             const SizedBox(height: 16),
             const Text(
@@ -89,18 +90,21 @@ class TermsConditionsPage extends StatelessWidget {
             const SizedBox(height: 8),
             InkWell(
               onTap: () => _launchDevUrl(context),
-              child: const Text(
+              child: Text(
                 'Developed by AsterHyphen. Tap here to visit asterhyphen.xyz',
                 style: TextStyle(
-                  color: Colors.blue,
+                  color: scheme.primary,
                   decoration: TextDecoration.underline,
                 ),
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Subtext: Click the link to open the dev website in your browser.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onSurface.withValues(alpha: 0.62),
+              ),
             ),
           ],
         ),

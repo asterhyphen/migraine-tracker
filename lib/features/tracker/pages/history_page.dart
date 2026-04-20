@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
-import '../data/migraine_entry.dart';
-import '../state/migraine_entries_provider.dart';
-import '../utils/date_utils.dart';
-import '../widgets/app_snackbar.dart';
-import 'log_migraine_page.dart';
+import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
+import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
+import 'package:migraine_tracker/core/utils/date_utils.dart';
+import 'package:migraine_tracker/core/widgets/app_snackbar.dart';
+import 'log_page.dart';
 
 class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});

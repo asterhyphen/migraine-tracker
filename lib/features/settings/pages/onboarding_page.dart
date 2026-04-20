@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../utils/date_utils.dart';
-import '../widgets/app_snackbar.dart';
+import 'package:migraine_tracker/core/utils/date_utils.dart';
+import 'package:migraine_tracker/core/widgets/app_snackbar.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key, required this.onSave});

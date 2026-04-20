@@ -11,13 +11,15 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../data/cause_prefs.dart';
-import '../data/migraine_entry.dart';
-import '../state/migraine_entries_provider.dart';
-import '../utils/date_utils.dart';
-import '../widgets/app_snackbar.dart';
-import 'privacy_policy_page.dart';
-import 'terms_conditions_page.dart';
+import 'package:migraine_tracker/core/theme/app_theme.dart';
+import 'package:migraine_tracker/features/tracker/models/cause_option.dart';
+import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
+import 'package:migraine_tracker/features/tracker/providers/causes_provider.dart';
+import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
+import 'package:migraine_tracker/core/utils/date_utils.dart';
+import 'package:migraine_tracker/core/widgets/app_snackbar.dart';
+import 'privacy_page.dart';
+import 'terms_page.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({
@@ -50,7 +52,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   String? _profileImagePath;
   String _appVersion = '-';
   bool _busy = false;
-  List<String> _causeOptions = List<String>.from(CausePrefs.defaultCauses);
+  List<String> _causeOptions = List<String>.from(defaultCauseOptions);
 
   @override
   void initState() {
@@ -64,7 +66,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _loadCauseOptions() async {
-    final loaded = await CausePrefs.loadCauses();
+    final loaded =
+        ref.read(causeOptionsProvider).value ??
+        await ref.read(causeOptionsProvider.notifier).reload();
     if (!mounted) return;
     setState(() {
       _causeOptions = loaded;
@@ -72,7 +76,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _saveCauseOptions() async {
-    await CausePrefs.saveCauses(_causeOptions);
+    await ref.read(causeOptionsProvider.notifier).save(_causeOptions);
   }
 
   Future<void> _openCauseManager() async {
@@ -866,11 +870,12 @@ class _SettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white12),
-        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(color: scheme.faintTrack),
+        color: scheme.surface,
       ),
       child: child,
     );
@@ -1042,14 +1047,14 @@ class _NfcActionDialogState extends State<_NfcActionDialog>
             const SizedBox(height: 8),
             _NfcPulse(
               controller: _pulseController,
-              color: isError ? Colors.redAccent : scheme.primary,
+              color: isError ? scheme.error : scheme.primary,
             ),
             const SizedBox(height: 12),
             Text(
               _message,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: isError ? Colors.redAccent : scheme.onSurface,
+                color: isError ? scheme.error : scheme.onSurface,
                 fontWeight: isError ? FontWeight.w700 : FontWeight.w500,
               ),
             ),

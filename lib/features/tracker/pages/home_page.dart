@@ -2,13 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'history_page.dart';
-import 'log_migraine_page.dart';
-import '../data/migraine_entry.dart';
-import '../state/migraine_entries_provider.dart';
-import '../utils/date_utils.dart';
-import '../widgets/wavy_surface.dart';
+import 'log_page.dart';
+import 'package:migraine_tracker/features/settings/providers/settings_provider.dart';
+import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
+import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
+import 'package:migraine_tracker/core/utils/date_utils.dart';
+import 'package:migraine_tracker/core/widgets/wavy_surface.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key, required this.dob, this.name});
@@ -21,7 +21,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  static const _birthdayAnnouncedYearKey = 'birthday_announced_year';
   bool _birthdayDialogShown = false;
 
   @override
@@ -73,9 +72,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Future<void> _maybeShowBirthdayDialog() async {
     if (_birthdayDialogShown || !_isBirthdayToday() || !mounted) return;
-    final prefs = await SharedPreferences.getInstance();
+    final settingsRepository = ref.read(appSettingsRepositoryProvider);
     final nowYear = DateTime.now().year;
-    final announcedYear = prefs.getInt(_birthdayAnnouncedYearKey);
+    final announcedYear = await settingsRepository.loadBirthdayAnnouncedYear();
     if (announcedYear == nowYear) return;
 
     _birthdayDialogShown = true;
@@ -136,7 +135,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           );
         },
       );
-      await prefs.setInt(_birthdayAnnouncedYearKey, nowYear);
+      await settingsRepository.saveBirthdayAnnouncedYear(nowYear);
     });
   }
 

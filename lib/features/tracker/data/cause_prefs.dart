@@ -1,21 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/cause_option.dart';
+
 class CausePrefs {
   static const _causesKey = 'cause_options';
-
-  static const List<String> defaultCauses = [
-    "Stress",
-    "Smoke",
-    "Food contents",
-    "AC",
-    "Dehydration",
-    "Odour",
-    "Sleep related",
-    "Screen Time",
-    "Skipped Meal",
-    "Weather",
-    "Other",
-  ];
 
   static Future<List<String>> loadCauses() async {
     final prefs = await SharedPreferences.getInstance();
@@ -24,7 +12,7 @@ class CausePrefs {
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
-    if (cleaned.isEmpty) return List<String>.from(defaultCauses);
+    if (cleaned.isEmpty) return List<String>.from(defaultCauseOptions);
     return cleaned;
   }
 

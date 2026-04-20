@@ -3,14 +3,15 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'pages/home_page.dart';
-import 'pages/log_migraine_page.dart';
-import 'pages/onboarding_page.dart';
-import 'pages/settings_page.dart';
-import 'pages/stats_page.dart';
-import 'state/app_settings_provider.dart';
-import 'state/migraine_entries_provider.dart';
+import 'core/theme/app_theme.dart';
+import 'features/settings/models/app_settings.dart';
+import 'features/settings/providers/settings_provider.dart';
+import 'features/tracker/pages/home_page.dart';
+import 'features/tracker/pages/log_page.dart';
+import 'features/tracker/pages/stats_page.dart';
+import 'features/tracker/providers/entries_provider.dart';
+import 'features/settings/pages/onboarding_page.dart';
+import 'features/settings/pages/settings_page.dart';
 
 void main() {
   runApp(const ProviderScope(child: MigraineApp()));
@@ -19,302 +20,16 @@ void main() {
 class MigraineApp extends ConsumerWidget {
   const MigraineApp({super.key});
 
-  static const _pageTransitionsTheme = PageTransitionsTheme(
-    builders: {
-      TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
-    },
-  );
-
-  ThemeData _buildDarkTheme() {
-    const background = Color(0xFF090D14);
-    const darkScheme = ColorScheme.dark(
-      primary: Color(0xFF65E0C2),
-      secondary: Color(0xFFFFC26F),
-      tertiary: Color(0xFF7E9DFF),
-      surface: Color(0xFF111927),
-      error: Color(0xFFFF6D7A),
-      onPrimary: Color(0xFF04110D),
-      onSecondary: Color(0xFF1C1200),
-      onSurface: Color(0xFFE8ECF5),
-      onError: Color(0xFF2D0208),
-    );
-
-    final baseText =
-        GoogleFonts.plusJakartaSansTextTheme(ThemeData.dark().textTheme).apply(
-          bodyColor: darkScheme.onSurface,
-          displayColor: darkScheme.onSurface,
-        );
-    final textTheme = GoogleFonts.spaceGroteskTextTheme(baseText).copyWith(
-      titleLarge: GoogleFonts.spaceGrotesk(
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        color: darkScheme.onSurface,
-      ),
-      titleMedium: GoogleFonts.spaceGrotesk(
-        fontSize: 17,
-        fontWeight: FontWeight.w600,
-        color: darkScheme.onSurface,
-      ),
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: darkScheme,
-      scaffoldBackgroundColor: background,
-      textTheme: textTheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: darkScheme.surface,
-        foregroundColor: darkScheme.onSurface,
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: textTheme.titleLarge,
-      ),
-      cardTheme: CardThemeData(
-        color: darkScheme.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: darkScheme.primary.withValues(alpha: 0.10)),
-        ),
-      ),
-      dividerTheme: DividerThemeData(
-        color: darkScheme.onSurface.withValues(alpha: 0.10),
-        thickness: 1,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: darkScheme.surface.withValues(alpha: 0.95),
-        hintStyle: TextStyle(
-          color: darkScheme.onSurface.withValues(alpha: 0.5),
-          fontWeight: FontWeight.w500,
-        ),
-        labelStyle: TextStyle(
-          color: darkScheme.onSurface.withValues(alpha: 0.75),
-          fontWeight: FontWeight.w600,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: darkScheme.onSurface.withValues(alpha: 0.12),
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: darkScheme.onSurface.withValues(alpha: 0.12),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: darkScheme.primary.withValues(alpha: 0.70),
-          ),
-        ),
-      ),
-      chipTheme: ChipThemeData(
-        backgroundColor: darkScheme.surface.withValues(alpha: 0.90),
-        selectedColor: darkScheme.primary.withValues(alpha: 0.20),
-        disabledColor: darkScheme.surface.withValues(alpha: 0.50),
-        side: BorderSide(color: darkScheme.onSurface.withValues(alpha: 0.15)),
-        labelStyle: TextStyle(color: darkScheme.onSurface),
-        secondaryLabelStyle: TextStyle(color: darkScheme.onSurface),
-        brightness: Brightness.dark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: darkScheme.primary,
-          foregroundColor: darkScheme.onPrimary,
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: darkScheme.onSurface,
-          side: BorderSide(color: darkScheme.onSurface.withValues(alpha: 0.20)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-        contentTextStyle: TextStyle(color: darkScheme.onSurface),
-      ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: darkScheme.surface,
-        selectedItemColor: darkScheme.primary,
-        unselectedItemColor: darkScheme.onSurface.withValues(alpha: 0.6),
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-        type: BottomNavigationBarType.fixed,
-      ),
-      pageTransitionsTheme: _pageTransitionsTheme,
-    );
-  }
-
-  ThemeData _buildLightTheme() {
-    const background = Color(0xFFF4F7FB);
-    const lightScheme = ColorScheme.light(
-      primary: Color(0xFF0FA58A),
-      secondary: Color(0xFFE08A00),
-      tertiary: Color(0xFF4A6CF7),
-      surface: Color(0xFFFFFFFF),
-      error: Color(0xFFB3261E),
-      onPrimary: Color(0xFFFFFFFF),
-      onSecondary: Color(0xFFFFFFFF),
-      onSurface: Color(0xFF1A2433),
-      onError: Color(0xFFFFFFFF),
-    );
-
-    final baseText =
-        GoogleFonts.plusJakartaSansTextTheme(ThemeData.light().textTheme).apply(
-          bodyColor: lightScheme.onSurface,
-          displayColor: lightScheme.onSurface,
-        );
-    final textTheme = GoogleFonts.spaceGroteskTextTheme(baseText).copyWith(
-      titleLarge: GoogleFonts.spaceGrotesk(
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        color: lightScheme.onSurface,
-      ),
-      titleMedium: GoogleFonts.spaceGrotesk(
-        fontSize: 17,
-        fontWeight: FontWeight.w600,
-        color: lightScheme.onSurface,
-      ),
-    );
-
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: lightScheme,
-      scaffoldBackgroundColor: background,
-      textTheme: textTheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: lightScheme.surface,
-        foregroundColor: lightScheme.onSurface,
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: textTheme.titleLarge,
-      ),
-      cardTheme: CardThemeData(
-        color: lightScheme.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: lightScheme.primary.withValues(alpha: 0.14)),
-        ),
-      ),
-      dividerTheme: DividerThemeData(
-        color: lightScheme.onSurface.withValues(alpha: 0.12),
-        thickness: 1,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: lightScheme.surface,
-        hintStyle: TextStyle(
-          color: lightScheme.onSurface.withValues(alpha: 0.45),
-          fontWeight: FontWeight.w500,
-        ),
-        labelStyle: TextStyle(
-          color: lightScheme.onSurface.withValues(alpha: 0.72),
-          fontWeight: FontWeight.w600,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: lightScheme.onSurface.withValues(alpha: 0.15),
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: lightScheme.onSurface.withValues(alpha: 0.15),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: lightScheme.primary.withValues(alpha: 0.80),
-          ),
-        ),
-      ),
-      chipTheme: ChipThemeData(
-        backgroundColor: lightScheme.surface,
-        selectedColor: lightScheme.primary.withValues(alpha: 0.16),
-        disabledColor: lightScheme.onSurface.withValues(alpha: 0.05),
-        side: BorderSide(color: lightScheme.onSurface.withValues(alpha: 0.15)),
-        labelStyle: TextStyle(color: lightScheme.onSurface),
-        secondaryLabelStyle: TextStyle(color: lightScheme.onSurface),
-        brightness: Brightness.light,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: lightScheme.primary,
-          foregroundColor: lightScheme.onPrimary,
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: lightScheme.onSurface,
-          side: BorderSide(
-            color: lightScheme.onSurface.withValues(alpha: 0.24),
-          ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-        contentTextStyle: TextStyle(color: lightScheme.onSurface),
-      ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: lightScheme.surface,
-        selectedItemColor: lightScheme.primary,
-        unselectedItemColor: lightScheme.onSurface.withValues(alpha: 0.6),
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-        type: BottomNavigationBarType.fixed,
-      ),
-      pageTransitionsTheme: _pageTransitionsTheme,
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
-    final appSettings = settings.value ?? AppSettingsState.initial();
+    final appSettings = settings.value ?? AppSettings.initial();
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       themeMode: appSettings.themeMode,
-      theme: _buildLightTheme(),
-      darkTheme: _buildDarkTheme(),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
       home: const AppShell(),
     );
   }
@@ -446,33 +161,6 @@ class _AppShellState extends ConsumerState<AppShell> {
     return now.month == dob.month && now.day == dob.day;
   }
 
-  ThemeData _birthdayTheme(BuildContext context) {
-    final base = Theme.of(context);
-    final scheme = base.colorScheme;
-    final birthdayScheme = scheme.copyWith(
-      primary: const Color(0xFFFF8A3D),
-      secondary: const Color(0xFFFFC857),
-      tertiary: const Color(0xFFFF6FCF),
-    );
-    return base.copyWith(
-      colorScheme: birthdayScheme,
-      appBarTheme: base.appBarTheme.copyWith(
-        backgroundColor: birthdayScheme.surface,
-        foregroundColor: birthdayScheme.onSurface,
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: birthdayScheme.primary,
-          foregroundColor: birthdayScheme.onPrimary,
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-      ),
-      bottomNavigationBarTheme: base.bottomNavigationBarTheme.copyWith(
-        selectedItemColor: birthdayScheme.primary,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     ref.listen(appSettingsProvider, (_, next) => _processPendingAction());
@@ -541,7 +229,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     );
 
     if (_isBirthdayToday()) {
-      return Theme(data: _birthdayTheme(context), child: scaffold);
+      return Theme(data: AppTheme.birthday(context), child: scaffold);
     }
     return scaffold;
   }

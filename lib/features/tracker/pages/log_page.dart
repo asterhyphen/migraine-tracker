@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
-import '../data/cause_prefs.dart';
-import '../data/migraine_entry.dart';
-import '../state/migraine_entries_provider.dart';
-import '../utils/date_utils.dart';
-import '../widgets/app_snackbar.dart';
+import 'package:migraine_tracker/features/tracker/models/cause_option.dart';
+import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
+import 'package:migraine_tracker/features/tracker/providers/causes_provider.dart';
+import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
+import 'package:migraine_tracker/core/utils/date_utils.dart';
+import 'package:migraine_tracker/core/widgets/app_snackbar.dart';
 
 class LogMigrainePage extends ConsumerStatefulWidget {
   const LogMigrainePage({super.key, this.entry, this.initialDate});
@@ -36,7 +37,7 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
   late Set<String> _initialSavedCauses;
   late DateTime _initialEntryDate;
 
-  List<String> _causes = List<String>.from(CausePrefs.defaultCauses);
+  List<String> _causes = List<String>.from(defaultCauseOptions);
 
   final Set<String> selectedCauses = {};
 
@@ -78,7 +79,9 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
   }
 
   Future<void> _loadCauseOptions() async {
-    final loaded = await CausePrefs.loadCauses();
+    final loaded =
+        ref.read(causeOptionsProvider).value ??
+        await ref.read(causeOptionsProvider.notifier).reload();
     if (!mounted) return;
     setState(() {
       _causes = loaded;

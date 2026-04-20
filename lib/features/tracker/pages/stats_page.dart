@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/migraine_entry.dart';
-import '../state/migraine_entries_provider.dart';
-import '../utils/date_utils.dart';
-import '../widgets/wavy_surface.dart';
+import 'package:migraine_tracker/core/theme/app_theme.dart';
+import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
+import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
+import 'package:migraine_tracker/core/utils/date_utils.dart';
+import 'package:migraine_tracker/core/widgets/wavy_surface.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
@@ -1016,10 +1017,7 @@ class _BarChart extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
-                    colors: [
-                      scheme.primary.withValues(alpha: 0.85),
-                      scheme.tertiary.withValues(alpha: 0.75),
-                    ],
+                    colors: scheme.barGradient,
                   ),
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -1072,9 +1070,7 @@ class _CauseList extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: item.percent,
                   minHeight: 6,
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.12),
+                  backgroundColor: Theme.of(context).colorScheme.faintTrack,
                 ),
               ),
             ],
@@ -1105,9 +1101,7 @@ class _Gauge extends StatelessWidget {
           LinearProgressIndicator(
             value: value,
             minHeight: 8,
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.12),
+            backgroundColor: Theme.of(context).colorScheme.faintTrack,
           ),
         ],
       ),
@@ -1129,8 +1123,8 @@ class _LineChart extends StatelessWidget {
     return CustomPaint(
       painter: _LinePainter(
         values: values,
-        lineColor: scheme.primary,
-        pointColor: scheme.secondary,
+        lineColor: scheme.chartLine,
+        pointColor: scheme.chartPoint,
       ),
       child: const SizedBox.expand(),
     );
@@ -1213,7 +1207,13 @@ class _WeeklyGraph extends StatelessWidget {
           SizedBox(
             height: 130,
             child: CustomPaint(
-              painter: _WeeklyGraphPainter(data: data, color: scheme.primary),
+              painter: _WeeklyGraphPainter(
+                data: data,
+                axisColor: scheme.chartAxis,
+                fillColor: scheme.chartFill,
+                lineColor: scheme.chartLine,
+                pointColor: scheme.chartPoint,
+              ),
               child: const SizedBox.expand(),
             ),
           ),
@@ -1238,10 +1238,19 @@ class _WeeklyGraph extends StatelessWidget {
 }
 
 class _WeeklyGraphPainter extends CustomPainter {
-  _WeeklyGraphPainter({required this.data, required this.color});
+  _WeeklyGraphPainter({
+    required this.data,
+    required this.axisColor,
+    required this.fillColor,
+    required this.lineColor,
+    required this.pointColor,
+  });
 
   final List<_WeeklyDatum> data;
-  final Color color;
+  final Color axisColor;
+  final Color fillColor;
+  final Color lineColor;
+  final Color pointColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1254,7 +1263,7 @@ class _WeeklyGraphPainter extends CustomPainter {
     final normalizedMax = maxCount == 0 ? 1.0 : maxCount;
 
     final axisPaint = Paint()
-      ..color = Colors.white24
+      ..color = axisColor
       ..strokeWidth = 1;
     canvas.drawLine(
       Offset(0, size.height - 1),
@@ -1263,12 +1272,12 @@ class _WeeklyGraphPainter extends CustomPainter {
     );
 
     final linePaint = Paint()
-      ..color = color
+      ..color = lineColor
       ..strokeWidth = 2.2
       ..style = PaintingStyle.stroke;
 
     final fillPaint = Paint()
-      ..color = color.withValues(alpha: 0.14)
+      ..color = fillColor
       ..style = PaintingStyle.fill;
 
     final stepX = size.width / (data.length - 1);
@@ -1296,7 +1305,7 @@ class _WeeklyGraphPainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(linePath, linePaint);
 
-    final pointPaint = Paint()..color = color;
+    final pointPaint = Paint()..color = pointColor;
     for (int i = 0; i < data.length; i++) {
       final x = i * stepX;
       final y =
@@ -1309,6 +1318,10 @@ class _WeeklyGraphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _WeeklyGraphPainter oldDelegate) {
-    return oldDelegate.data != data || oldDelegate.color != color;
+    return oldDelegate.data != data ||
+        oldDelegate.axisColor != axisColor ||
+        oldDelegate.fillColor != fillColor ||
+        oldDelegate.lineColor != lineColor ||
+        oldDelegate.pointColor != pointColor;
   }
 }
