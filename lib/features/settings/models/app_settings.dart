@@ -6,6 +6,11 @@ class AppSettings {
     required this.name,
     required this.dob,
     required this.profileImagePath,
+    required this.dailyReminderEnabled,
+    required this.staleReminderEnabled,
+    required this.reminderHour,
+    required this.reminderMinute,
+    required this.staleReminderDays,
   });
 
   factory AppSettings.initial() {
@@ -14,6 +19,11 @@ class AppSettings {
       name: null,
       dob: null,
       profileImagePath: null,
+      dailyReminderEnabled: false,
+      staleReminderEnabled: false,
+      reminderHour: 20,
+      reminderMinute: 30,
+      staleReminderDays: 3,
     );
   }
 
@@ -21,6 +31,11 @@ class AppSettings {
   final String? name;
   final DateTime? dob;
   final String? profileImagePath;
+  final bool dailyReminderEnabled;
+  final bool staleReminderEnabled;
+  final int reminderHour;
+  final int reminderMinute;
+  final int staleReminderDays;
 
   bool get hasProfile => name != null && dob != null;
 
@@ -31,6 +46,11 @@ class AppSettings {
     String? name,
     DateTime? dob,
     String? profileImagePath,
+    bool? dailyReminderEnabled,
+    bool? staleReminderEnabled,
+    int? reminderHour,
+    int? reminderMinute,
+    int? staleReminderDays,
     bool clearProfileImagePath = false,
   }) {
     return AppSettings(
@@ -40,6 +60,11 @@ class AppSettings {
       profileImagePath: clearProfileImagePath
           ? null
           : profileImagePath ?? this.profileImagePath,
+      dailyReminderEnabled: dailyReminderEnabled ?? this.dailyReminderEnabled,
+      staleReminderEnabled: staleReminderEnabled ?? this.staleReminderEnabled,
+      reminderHour: reminderHour ?? this.reminderHour,
+      reminderMinute: reminderMinute ?? this.reminderMinute,
+      staleReminderDays: staleReminderDays ?? this.staleReminderDays,
     );
   }
 }

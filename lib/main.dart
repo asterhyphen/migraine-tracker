@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/services/reminder_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/settings/models/app_settings.dart';
 import 'features/settings/providers/settings_provider.dart';
@@ -12,6 +13,7 @@ import 'features/tracker/pages/stats_page.dart';
 import 'features/tracker/providers/entries_provider.dart';
 import 'features/settings/pages/onboarding_page.dart';
 import 'features/settings/pages/settings_page.dart';
+import 'features/tracker/models/migraine_entry.dart';
 
 void main() {
   runApp(const ProviderScope(child: MigraineApp()));
@@ -55,6 +57,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   void initState() {
     super.initState();
+    ReminderService.instance.initialize(onLogRequested: _handleReminderOpen);
     _setupDeepLinks();
   }
 
@@ -100,6 +103,19 @@ class _AppShellState extends ConsumerState<AppShell> {
     _lastHandledLogKey = logKey;
     _lastHandledLogAt = now;
 
+    final settings = ref.read(appSettingsProvider).value;
+    if (settings == null || !settings.hasProfile) {
+      _pendingOpenLog = true;
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _openLogFromExternalAction();
+    });
+  }
+
+  void _handleReminderOpen() {
     final settings = ref.read(appSettingsProvider).value;
     if (settings == null || !settings.hasProfile) {
       _pendingOpenLog = true;
@@ -164,6 +180,25 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     ref.listen(appSettingsProvider, (_, next) => _processPendingAction());
+    ref.listen(appSettingsProvider, (_, next) {
+      final appSettings = next.value;
+      if (appSettings == null) return;
+      final entries =
+          ref.read(migraineEntriesProvider).value ?? const <MigraineEntry>[];
+      ReminderService.instance.reschedule(
+        settings: appSettings,
+        entries: entries,
+      );
+    });
+    ref.listen(migraineEntriesProvider, (_, next) {
+      final appSettings = ref.read(appSettingsProvider).value;
+      final entries = next.value;
+      if (appSettings == null || entries == null) return;
+      ReminderService.instance.reschedule(
+        settings: appSettings,
+        entries: entries,
+      );
+    });
 
     final settings = ref.watch(appSettingsProvider);
     final appSettings = settings.value;
@@ -198,6 +233,14 @@ class _AppShellState extends ConsumerState<AppShell> {
         onProfileImageChanged: _saveProfileImage,
         isDarkTheme: appSettings.isDarkTheme,
         onThemeChanged: ref.read(appSettingsProvider.notifier).setDarkMode,
+        dailyReminderEnabled: appSettings.dailyReminderEnabled,
+        staleReminderEnabled: appSettings.staleReminderEnabled,
+        reminderHour: appSettings.reminderHour,
+        reminderMinute: appSettings.reminderMinute,
+        staleReminderDays: appSettings.staleReminderDays,
+        onReminderSettingsChanged: ref
+            .read(appSettingsProvider.notifier)
+            .saveReminderSettings,
       ),
     ];
 

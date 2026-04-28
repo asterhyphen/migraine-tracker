@@ -46,4 +46,30 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
       ),
     );
   }
+
+  Future<void> saveReminderSettings({
+    required bool dailyEnabled,
+    required bool staleEnabled,
+    required int hour,
+    required int minute,
+    required int staleDays,
+  }) async {
+    await _repository.saveReminderSettings(
+      dailyEnabled: dailyEnabled,
+      staleEnabled: staleEnabled,
+      hour: hour,
+      minute: minute,
+      staleDays: staleDays,
+    );
+    final current = state.value ?? AppSettings.initial();
+    state = AsyncValue.data(
+      current.copyWith(
+        dailyReminderEnabled: dailyEnabled,
+        staleReminderEnabled: staleEnabled,
+        reminderHour: hour,
+        reminderMinute: minute,
+        staleReminderDays: staleDays,
+      ),
+    );
+  }
 }

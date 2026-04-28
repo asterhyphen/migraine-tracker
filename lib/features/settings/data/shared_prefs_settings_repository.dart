@@ -11,6 +11,11 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
   static const _dobKey = 'user_dob';
   static const _profileImageKey = 'user_profile_image';
   static const _birthdayAnnouncedYearKey = 'birthday_announced_year';
+  static const _dailyReminderEnabledKey = 'daily_reminder_enabled';
+  static const _staleReminderEnabledKey = 'stale_reminder_enabled';
+  static const _reminderHourKey = 'reminder_hour';
+  static const _reminderMinuteKey = 'reminder_minute';
+  static const _staleReminderDaysKey = 'stale_reminder_days';
 
   @override
   Future<int?> loadBirthdayAnnouncedYear() async {
@@ -29,6 +34,11 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
           ? null
           : DateTime.fromMillisecondsSinceEpoch(dobMillis),
       profileImagePath: prefs.getString(_profileImageKey),
+      dailyReminderEnabled: prefs.getBool(_dailyReminderEnabledKey) ?? false,
+      staleReminderEnabled: prefs.getBool(_staleReminderEnabledKey) ?? false,
+      reminderHour: prefs.getInt(_reminderHourKey) ?? 20,
+      reminderMinute: prefs.getInt(_reminderMinuteKey) ?? 30,
+      staleReminderDays: prefs.getInt(_staleReminderDaysKey) ?? 3,
     );
   }
 
@@ -54,6 +64,22 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
     } else {
       await prefs.setString(_profileImageKey, cleanedPath);
     }
+  }
+
+  @override
+  Future<void> saveReminderSettings({
+    required bool dailyEnabled,
+    required bool staleEnabled,
+    required int hour,
+    required int minute,
+    required int staleDays,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_dailyReminderEnabledKey, dailyEnabled);
+    await prefs.setBool(_staleReminderEnabledKey, staleEnabled);
+    await prefs.setInt(_reminderHourKey, hour);
+    await prefs.setInt(_reminderMinuteKey, minute);
+    await prefs.setInt(_staleReminderDaysKey, staleDays);
   }
 
   @override

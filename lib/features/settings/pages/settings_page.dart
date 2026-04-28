@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:migraine_tracker/core/services/reminder_service.dart';
 import 'package:migraine_tracker/core/theme/app_theme.dart';
 import 'package:migraine_tracker/features/tracker/models/cause_option.dart';
 import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
@@ -31,6 +32,12 @@ class SettingsPage extends ConsumerStatefulWidget {
     required this.onProfileImageChanged,
     required this.isDarkTheme,
     required this.onThemeChanged,
+    required this.dailyReminderEnabled,
+    required this.staleReminderEnabled,
+    required this.reminderHour,
+    required this.reminderMinute,
+    required this.staleReminderDays,
+    required this.onReminderSettingsChanged,
   });
 
   final String initialName;
@@ -40,6 +47,19 @@ class SettingsPage extends ConsumerStatefulWidget {
   final Future<void> Function(String? imagePath) onProfileImageChanged;
   final bool isDarkTheme;
   final Future<void> Function(bool isDark) onThemeChanged;
+  final bool dailyReminderEnabled;
+  final bool staleReminderEnabled;
+  final int reminderHour;
+  final int reminderMinute;
+  final int staleReminderDays;
+  final Future<void> Function({
+    required bool dailyEnabled,
+    required bool staleEnabled,
+    required int hour,
+    required int minute,
+    required int staleDays,
+  })
+  onReminderSettingsChanged;
 
   @override
   ConsumerState<SettingsPage> createState() => _SettingsPageState();
@@ -49,6 +69,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late final TextEditingController _nameController;
   late DateTime _dob;
   late bool _isDarkTheme;
+  late bool _dailyReminderEnabled;
+  late bool _staleReminderEnabled;
+  late int _reminderHour;
+  late int _reminderMinute;
+  late int _staleReminderDays;
   String? _profileImagePath;
   String _appVersion = '-';
   bool _busy = false;
@@ -60,6 +85,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _nameController = TextEditingController(text: widget.initialName);
     _dob = widget.initialDob;
     _isDarkTheme = widget.isDarkTheme;
+    _dailyReminderEnabled = widget.dailyReminderEnabled;
+    _staleReminderEnabled = widget.staleReminderEnabled;
+    _reminderHour = widget.reminderHour;
+    _reminderMinute = widget.reminderMinute;
+    _staleReminderDays = widget.staleReminderDays;
     _profileImagePath = widget.initialProfileImagePath;
     _loadAppVersion();
     _loadCauseOptions();
@@ -115,6 +145,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   String _formatDate(DateTime date) {
     return formatDdMmYyyy(date);
+  }
+
+  String _formatReminderTime(BuildContext context) {
+    return MaterialLocalizations.of(
+      context,
+    ).formatTimeOfDay(TimeOfDay(hour: _reminderHour, minute: _reminderMinute));
   }
 
   Future<void> _pickDob() async {
@@ -190,6 +226,116 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _isDarkTheme = value;
     });
     await widget.onThemeChanged(value);
+  }
+
+  Future<void> _saveReminderSettings() async {
+    await widget.onReminderSettingsChanged(
+      dailyEnabled: _dailyReminderEnabled,
+      staleEnabled: _staleReminderEnabled,
+      hour: _reminderHour,
+      minute: _reminderMinute,
+      staleDays: _staleReminderDays,
+    );
+  }
+
+  Future<bool> _ensureNotificationPermission() async {
+    final granted = await ReminderService.instance.requestPermission();
+    if (granted) return true;
+    if (!mounted) return false;
+    AppSnackBar.showInfo(
+      context,
+      title: 'Notifications disabled',
+      message: 'Allow notifications in system settings to use reminders.',
+    );
+    return false;
+  }
+
+  Future<void> _toggleDailyReminder(bool value) async {
+    if (value && !await _ensureNotificationPermission()) return;
+    setState(() {
+      _dailyReminderEnabled = value;
+    });
+    await _saveReminderSettings();
+  }
+
+  Future<void> _toggleStaleReminder(bool value) async {
+    if (value && !await _ensureNotificationPermission()) return;
+    setState(() {
+      _staleReminderEnabled = value;
+    });
+    await _saveReminderSettings();
+  }
+
+  Future<void> _pickReminderTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: _reminderHour, minute: _reminderMinute),
+    );
+    if (picked == null) return;
+    setState(() {
+      _reminderHour = picked.hour;
+      _reminderMinute = picked.minute;
+    });
+    await _saveReminderSettings();
+  }
+
+  Future<void> _pickStaleReminderDays() async {
+    var selected = _staleReminderDays;
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Gentle reminder delay',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 2, label: Text('2 days')),
+                        ButtonSegment(value: 3, label: Text('3 days')),
+                        ButtonSegment(value: 5, label: Text('5 days')),
+                        ButtonSegment(value: 7, label: Text('7 days')),
+                      ],
+                      selected: {selected},
+                      onSelectionChanged: (values) {
+                        setSheetState(() {
+                          selected = values.first;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(context).pop(selected),
+                        child: const Text('Save'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    if (picked == null) return;
+    setState(() {
+      _staleReminderDays = picked;
+    });
+    await _saveReminderSettings();
   }
 
   Future<void> _pickProfileImage() async {
@@ -572,6 +718,48 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               value:
                   "${_causeOptions.length} causes • ${_causeOptions.take(3).join(", ")}",
               onTap: _openCauseManager,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _SectionHeader(title: "Reminders"),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: Column(
+              children: [
+                SwitchListTile(
+                  value: _dailyReminderEnabled,
+                  onChanged: _toggleDailyReminder,
+                  title: const Text("Daily log reminder"),
+                  subtitle: Text("At ${_formatReminderTime(context)}"),
+                  secondary: const Icon(Icons.notifications_active_outlined),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  value: _staleReminderEnabled,
+                  onChanged: _toggleStaleReminder,
+                  title: const Text("Gentle check-in"),
+                  subtitle: Text(
+                    "If there is no log for $_staleReminderDays days",
+                  ),
+                  secondary: const Icon(Icons.notification_important_outlined),
+                ),
+                const Divider(height: 1),
+                _SettingsRow(
+                  icon: Icons.schedule_outlined,
+                  title: "Reminder time",
+                  value: _formatReminderTime(context),
+                  enabled: _dailyReminderEnabled || _staleReminderEnabled,
+                  onTap: _pickReminderTime,
+                ),
+                const Divider(height: 1),
+                _SettingsRow(
+                  icon: Icons.event_repeat_outlined,
+                  title: "Check-in delay",
+                  value: "$_staleReminderDays days after the last log",
+                  enabled: _staleReminderEnabled,
+                  onTap: _pickStaleReminderDays,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
