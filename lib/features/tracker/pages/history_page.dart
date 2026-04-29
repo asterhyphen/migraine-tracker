@@ -16,6 +16,15 @@ class HistoryPage extends ConsumerStatefulWidget {
 }
 
 class _HistoryPageState extends ConsumerState<HistoryPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadEntries() async {
     await ref.read(migraineEntriesProvider.notifier).reload();
   }
@@ -67,6 +76,23 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
     return formatDay(date);
   }
 
+  List<MigraineEntry> _filterEntries(List<MigraineEntry> entries) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return entries;
+
+    return entries.where((entry) {
+      final haystack = [
+        formatDdMmYyyy(entry.date),
+        formatDay(entry.date),
+        entry.intensity.toString(),
+        entry.painkillers ? 'painkillers' : 'no painkillers',
+        entry.notes,
+        ...entry.causes,
+      ].join(' ').toLowerCase();
+      return haystack.contains(query);
+    }).toList();
+  }
+
   List<Widget> _buildListChildren(
     Map<String, List<MigraineEntry>> groupedEntries,
   ) {
@@ -114,7 +140,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
   Widget build(BuildContext context) {
     final entriesState = ref.watch(migraineEntriesProvider);
     final entries = entriesState.value ?? const <MigraineEntry>[];
-    final groupedEntries = _groupByMonth(entries);
+    final filteredEntries = _filterEntries(entries);
+    final groupedEntries = _groupByMonth(filteredEntries);
+    final hasSearch = _searchQuery.trim().isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Migraine History")),
@@ -127,7 +155,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadEntries,
-              child: groupedEntries.isEmpty
+              child: entries.isEmpty
                   ? ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(20),
@@ -138,7 +166,27 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                   : ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(20),
-                      children: _buildListChildren(groupedEntries),
+                      children: [
+                        _HistorySearchField(
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                          onClear: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        if (groupedEntries.isEmpty && hasSearch)
+                          _HistoryNoResultsState(query: _searchQuery)
+                        else
+                          ..._buildListChildren(groupedEntries),
+                      ],
                     ),
             ),
     );
@@ -200,6 +248,84 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       ),
     );
     await _loadEntries();
+  }
+}
+
+class _HistorySearchField extends StatelessWidget {
+  const _HistorySearchField({
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        prefixIcon: const Icon(Icons.search_rounded),
+        suffixIcon: controller.text.isEmpty
+            ? null
+            : IconButton(
+                onPressed: onClear,
+                icon: const Icon(Icons.close_rounded),
+                tooltip: 'Clear search',
+              ),
+        hintText: 'Search history',
+        filled: true,
+        fillColor: scheme.surface.withValues(alpha: 0.72),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: scheme.onSurface.withValues(alpha: 0.12),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: scheme.onSurface.withValues(alpha: 0.12),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryNoResultsState extends StatelessWidget {
+  const _HistoryNoResultsState({required this.query});
+
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+        color: scheme.surface.withValues(alpha: 0.72),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.search_off_rounded, color: scheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'No entries found for "$query".',
+              style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.72)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
