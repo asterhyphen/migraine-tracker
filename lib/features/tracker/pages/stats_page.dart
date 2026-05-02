@@ -62,7 +62,6 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         .take(14)
         .toList();
     final summary = _buildSummary(filtered);
-    final weekly = _buildWeeklyCounts(filtered, selectedMonth);
     final overallAvg = entries.isEmpty
         ? 0.0
         : entries.map((e) => e.intensity).reduce((a, b) => a + b) /
@@ -219,14 +218,6 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    const _SectionTitle(
-                      title: "Weekly Pulse",
-                      subtitle:
-                          "Daily migraine counts for final week of selected month",
-                    ),
-                    const SizedBox(height: 12),
-                    _WeeklyGraph(data: weekly),
                   ],
                 ),
         ),
@@ -407,30 +398,6 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       _SummaryItem("Top Cause", topCause, "Most frequent trigger"),
       _SummaryItem("Painkiller Rate", "$painkillerRate%", "For selected month"),
     ];
-  }
-
-  List<_WeeklyDatum> _buildWeeklyCounts(
-    List<MigraineEntry> source,
-    DateTime month,
-  ) {
-    final daysInMonth = DateUtils.getDaysInMonth(month.year, month.month);
-    final start = daysInMonth > 7 ? daysInMonth - 6 : 1;
-    final List<_WeeklyDatum> data = [];
-    for (int dayNum = start; dayNum <= daysInMonth; dayNum++) {
-      final day = DateTime(month.year, month.month, dayNum);
-      final count = source.where((e) {
-        return e.date.year == day.year &&
-            e.date.month == day.month &&
-            e.date.day == day.day;
-      }).length;
-      data.add(_WeeklyDatum(_weekdayLabel(day), count));
-    }
-    return data;
-  }
-
-  String _weekdayLabel(DateTime date) {
-    const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    return labels[date.weekday % 7];
   }
 
   List<_ComparisonItem> _buildComparisonItems({
@@ -890,35 +857,38 @@ class _InsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: 170,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
-        color: scheme.surface.withValues(alpha: 0.74),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: scheme.onSurface.withValues(alpha: 0.6),
+    return Tooltip(
+      message: '$title: $value - $subtitle',
+      child: Container(
+        width: 170,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+          color: scheme.surface.withValues(alpha: 0.74),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -940,44 +910,48 @@ class _ComparisonCard extends StatelessWidget {
         ? scheme.primary
         : scheme.error;
 
-    return Container(
-      width: 220,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
-        color: scheme.surface.withValues(alpha: 0.74),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            item.title,
-            style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "${item.selectedValue} vs ${item.compareValue}",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            item.deltaLabel,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: deltaColor,
+    return Tooltip(
+      message:
+          '${item.title}: ${item.selectedValue} vs ${item.compareValue} (${item.deltaLabel})',
+      child: Container(
+        width: 220,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+          color: scheme.surface.withValues(alpha: 0.74),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              item.title,
+              style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            item.subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: scheme.onSurface.withValues(alpha: 0.6),
+            const SizedBox(height: 8),
+            Text(
+              "${item.selectedValue} vs ${item.compareValue}",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              item.deltaLabel,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: deltaColor,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              item.subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1010,16 +984,19 @@ class _BarChart extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Container(
-                height: height,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: scheme.barGradient,
+              Tooltip(
+                message: '${datum.label}: ${datum.value.toStringAsFixed(1)}',
+                child: Container(
+                  height: height,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: scheme.barGradient,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
               const SizedBox(height: 6),
@@ -1054,26 +1031,45 @@ class _CauseList extends StatelessWidget {
     }
     return Column(
       children: data.take(3).map((item) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+        return GestureDetector(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text(item.label),
+                content: Text(
+                  '${item.count} occurrences (${(item.percent * 100).toStringAsFixed(1)}%)',
                 ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
               ),
-              SizedBox(
-                width: 60,
-                child: LinearProgressIndicator(
-                  value: item.percent,
-                  minHeight: 6,
-                  backgroundColor: Theme.of(context).colorScheme.faintTrack,
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    item.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-            ],
+                SizedBox(
+                  width: 60,
+                  child: LinearProgressIndicator(
+                    value: item.percent,
+                    minHeight: 6,
+                    backgroundColor: Theme.of(context).colorScheme.faintTrack,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }).toList(),
@@ -1089,21 +1085,24 @@ class _Gauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percent = (value * 100).round();
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            "$percent%",
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 6),
-          LinearProgressIndicator(
-            value: value,
-            minHeight: 8,
-            backgroundColor: Theme.of(context).colorScheme.faintTrack,
-          ),
-        ],
+    return Tooltip(
+      message: 'Painkiller usage: $percent%',
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "$percent%",
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            LinearProgressIndicator(
+              value: value,
+              minHeight: 8,
+              backgroundColor: Theme.of(context).colorScheme.faintTrack,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1120,13 +1119,16 @@ class _LineChart extends StatelessWidget {
       return const Center(child: Text("No entries yet"));
     }
     final scheme = Theme.of(context).colorScheme;
-    return CustomPaint(
-      painter: _LinePainter(
-        values: values,
-        lineColor: scheme.chartLine,
-        pointColor: scheme.chartPoint,
+    return Tooltip(
+      message: 'Intensity over last 14 days: ${values.join(', ')}',
+      child: CustomPaint(
+        painter: _LinePainter(
+          values: values,
+          lineColor: scheme.chartLine,
+          pointColor: scheme.chartPoint,
+        ),
+        child: const SizedBox.expand(),
       ),
-      child: const SizedBox.expand(),
     );
   }
 }
@@ -1178,150 +1180,4 @@ class _LinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
-class _WeeklyDatum {
-  _WeeklyDatum(this.label, this.count);
-
-  final String label;
-  final int count;
-}
-
-class _WeeklyGraph extends StatelessWidget {
-  const _WeeklyGraph({required this.data});
-
-  final List<_WeeklyDatum> data;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
-        color: scheme.surface.withValues(alpha: 0.74),
-      ),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 130,
-            child: CustomPaint(
-              painter: _WeeklyGraphPainter(
-                data: data,
-                axisColor: scheme.chartAxis,
-                fillColor: scheme.chartFill,
-                lineColor: scheme.chartLine,
-                pointColor: scheme.chartPoint,
-              ),
-              child: const SizedBox.expand(),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: data
-                .map(
-                  (d) => Expanded(
-                    child: Text(
-                      d.label,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WeeklyGraphPainter extends CustomPainter {
-  _WeeklyGraphPainter({
-    required this.data,
-    required this.axisColor,
-    required this.fillColor,
-    required this.lineColor,
-    required this.pointColor,
-  });
-
-  final List<_WeeklyDatum> data;
-  final Color axisColor;
-  final Color fillColor;
-  final Color lineColor;
-  final Color pointColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (data.length < 2) return;
-
-    final maxCount = data
-        .map((d) => d.count)
-        .reduce((a, b) => a > b ? a : b)
-        .toDouble();
-    final normalizedMax = maxCount == 0 ? 1.0 : maxCount;
-
-    final axisPaint = Paint()
-      ..color = axisColor
-      ..strokeWidth = 1;
-    canvas.drawLine(
-      Offset(0, size.height - 1),
-      Offset(size.width, size.height - 1),
-      axisPaint,
-    );
-
-    final linePaint = Paint()
-      ..color = lineColor
-      ..strokeWidth = 2.2
-      ..style = PaintingStyle.stroke;
-
-    final fillPaint = Paint()
-      ..color = fillColor
-      ..style = PaintingStyle.fill;
-
-    final stepX = size.width / (data.length - 1);
-    final linePath = Path();
-    final fillPath = Path();
-
-    for (int i = 0; i < data.length; i++) {
-      final x = i * stepX;
-      final y =
-          size.height -
-          ((data[i].count / normalizedMax) * (size.height - 12)) -
-          6;
-      if (i == 0) {
-        linePath.moveTo(x, y);
-        fillPath.moveTo(x, size.height);
-        fillPath.lineTo(x, y);
-      } else {
-        linePath.lineTo(x, y);
-        fillPath.lineTo(x, y);
-      }
-    }
-    fillPath.lineTo(size.width, size.height);
-    fillPath.close();
-
-    canvas.drawPath(fillPath, fillPaint);
-    canvas.drawPath(linePath, linePaint);
-
-    final pointPaint = Paint()..color = pointColor;
-    for (int i = 0; i < data.length; i++) {
-      final x = i * stepX;
-      final y =
-          size.height -
-          ((data[i].count / normalizedMax) * (size.height - 12)) -
-          6;
-      canvas.drawCircle(Offset(x, y), 3.2, pointPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _WeeklyGraphPainter oldDelegate) {
-    return oldDelegate.data != data ||
-        oldDelegate.axisColor != axisColor ||
-        oldDelegate.fillColor != fillColor ||
-        oldDelegate.lineColor != lineColor ||
-        oldDelegate.pointColor != pointColor;
-  }
 }
