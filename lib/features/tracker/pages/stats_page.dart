@@ -1148,6 +1148,27 @@ class _LinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (values.length < 2) return;
     final maxVal = values.reduce((a, b) => a > b ? a : b).toDouble();
+
+    // Draw intensity zones
+    const lowThreshold = 3.0; // 0-3: Low intensity
+    const moderateThreshold = 6.0; // 4-6: Moderate intensity
+    const maxIntensity = 10.0; // 7-10: High intensity
+
+    // Green zone (low intensity)
+    final greenHeight = (lowThreshold / maxIntensity) * size.height;
+    final greenRect = Rect.fromLTWH(0, size.height - greenHeight, size.width, greenHeight);
+    canvas.drawRect(greenRect, Paint()..color = Color.fromARGB(40, 76, 175, 80)); // Green with transparency
+
+    // Yellow zone (moderate intensity)
+    final yellowHeight = ((moderateThreshold - lowThreshold) / maxIntensity) * size.height;
+    final yellowRect = Rect.fromLTWH(0, size.height - greenHeight - yellowHeight, size.width, yellowHeight);
+    canvas.drawRect(yellowRect, Paint()..color = Color.fromARGB(40, 255, 193, 7)); // Yellow with transparency
+
+    // Red zone (high intensity)
+    final redHeight = ((maxIntensity - moderateThreshold) / maxIntensity) * size.height;
+    final redRect = Rect.fromLTWH(0, 0, size.width, redHeight);
+    canvas.drawRect(redRect, Paint()..color = Color.fromARGB(40, 244, 67, 54)); // Red with transparency
+
     final paint = Paint()
       ..color = lineColor
       ..strokeWidth = 2
