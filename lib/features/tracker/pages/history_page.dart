@@ -7,6 +7,7 @@ import 'package:migraine_tracker/features/tracker/providers/entries_provider.dar
 import 'package:migraine_tracker/core/utils/date_utils.dart';
 import 'package:migraine_tracker/core/widgets/app_snackbar.dart';
 import 'log_page.dart';
+import 'view_page.dart';
 
 class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});
@@ -122,7 +123,7 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               onTap: () async {
                 await Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => LogMigrainePage(entry: entry),
+                    builder: (_) => ViewMigrainePage(entry: entry),
                   ),
                 );
                 await _loadEntries();

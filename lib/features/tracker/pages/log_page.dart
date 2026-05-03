@@ -219,7 +219,7 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
             : 'Your migraine log has been saved for the day.',
       );
       _skipBackConfirm = true;
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
       AppSnackBar.showError(
