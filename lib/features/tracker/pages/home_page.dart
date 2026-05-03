@@ -203,8 +203,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     : "Age ${calculateAge()} • Track migraines with clarity.",
                 onTap: _openLogMigraine,
                 primaryLabel: todayEntry == null
-                    ? "Log Today's Migraine"
-                    : "Edit Today's Migraine",
+                    ? "Log Today's Entry"
+                    : "Edit Today's Entry",
                 primaryAction: _openLogMigraine,
                 secondaryLabel: "View History",
                 secondaryAction: _openHistory,
