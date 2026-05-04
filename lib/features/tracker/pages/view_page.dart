@@ -99,7 +99,9 @@ class ViewMigrainePage extends ConsumerWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+                border: Border.all(
+                  color: scheme.onSurface.withValues(alpha: 0.13),
+                ),
                 color: scheme.surface.withValues(alpha: 0.74),
               ),
               child: Column(
@@ -131,7 +133,9 @@ class ViewMigrainePage extends ConsumerWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+                border: Border.all(
+                  color: scheme.onSurface.withValues(alpha: 0.13),
+                ),
                 color: scheme.surface.withValues(alpha: 0.74),
               ),
               child: Column(
@@ -181,7 +185,9 @@ class ViewMigrainePage extends ConsumerWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+                border: Border.all(
+                  color: scheme.onSurface.withValues(alpha: 0.13),
+                ),
                 color: scheme.surface.withValues(alpha: 0.74),
               ),
               child: Column(
@@ -301,9 +307,7 @@ class ViewMigrainePage extends ConsumerWidget {
                   // ignore: use_build_context_synchronously
                   if (!context.mounted) return;
                   if (result == true) {
-                    await ref
-                        .read(migraineEntriesProvider.notifier)
-                        .reload();
+                    await ref.read(migraineEntriesProvider.notifier).reload();
                     // ignore: use_build_context_synchronously
                     Navigator.of(context).pop();
                   }

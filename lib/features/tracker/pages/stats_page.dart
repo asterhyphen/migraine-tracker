@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:migraine_tracker/core/theme/app_theme.dart';
 import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
+import 'package:migraine_tracker/features/tracker/pages/view_page.dart';
 import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
 import 'package:migraine_tracker/core/utils/date_utils.dart';
 import 'package:migraine_tracker/core/widgets/wavy_surface.dart';
@@ -139,6 +140,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                           title: item.title,
                           value: item.value,
                           subtitle: item.subtitle,
+                          onTap: item.onTap,
                         );
                       }).toList(),
                     ),
@@ -394,6 +396,13 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         "Highest Pain Day",
         formatDdMmYyyy(highestPainEntry.date),
         "Intensity ${highestPainEntry.intensity}/10",
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ViewMigrainePage(entry: highestPainEntry),
+            ),
+          );
+        },
       ),
       _SummaryItem("Top Cause", topCause, "Most frequent trigger"),
       _SummaryItem("Painkiller Rate", "$painkillerRate%", "For selected month"),
@@ -820,11 +829,12 @@ class _ChartCard extends StatelessWidget {
 }
 
 class _SummaryItem {
-  _SummaryItem(this.title, this.value, this.subtitle);
+  _SummaryItem(this.title, this.value, this.subtitle, {this.onTap});
 
   final String title;
   final String value;
   final String subtitle;
+  final VoidCallback? onTap;
 }
 
 class _ComparisonItem {
@@ -848,46 +858,62 @@ class _InsightCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.subtitle,
+    this.onTap,
   });
 
   final String title;
   final String value;
   final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Tooltip(
       message: '$title: $value - $subtitle',
-      child: Container(
-        width: 170,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
-          color: scheme.surface.withValues(alpha: 0.74),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.7)),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: scheme.onSurface.withValues(alpha: 0.6),
+          child: Container(
+            width: 170,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: scheme.onSurface.withValues(alpha: 0.13),
               ),
+              color: scheme.surface.withValues(alpha: 0.74),
             ),
-          ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: scheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -1156,18 +1182,39 @@ class _LinePainter extends CustomPainter {
 
     // Green zone (low intensity)
     final greenHeight = (lowThreshold / maxIntensity) * size.height;
-    final greenRect = Rect.fromLTWH(0, size.height - greenHeight, size.width, greenHeight);
-    canvas.drawRect(greenRect, Paint()..color = Color.fromARGB(40, 76, 175, 80)); // Green with transparency
+    final greenRect = Rect.fromLTWH(
+      0,
+      size.height - greenHeight,
+      size.width,
+      greenHeight,
+    );
+    canvas.drawRect(
+      greenRect,
+      Paint()..color = Color.fromARGB(40, 76, 175, 80),
+    ); // Green with transparency
 
     // Yellow zone (moderate intensity)
-    final yellowHeight = ((moderateThreshold - lowThreshold) / maxIntensity) * size.height;
-    final yellowRect = Rect.fromLTWH(0, size.height - greenHeight - yellowHeight, size.width, yellowHeight);
-    canvas.drawRect(yellowRect, Paint()..color = Color.fromARGB(40, 255, 193, 7)); // Yellow with transparency
+    final yellowHeight =
+        ((moderateThreshold - lowThreshold) / maxIntensity) * size.height;
+    final yellowRect = Rect.fromLTWH(
+      0,
+      size.height - greenHeight - yellowHeight,
+      size.width,
+      yellowHeight,
+    );
+    canvas.drawRect(
+      yellowRect,
+      Paint()..color = Color.fromARGB(40, 255, 193, 7),
+    ); // Yellow with transparency
 
     // Red zone (high intensity)
-    final redHeight = ((maxIntensity - moderateThreshold) / maxIntensity) * size.height;
+    final redHeight =
+        ((maxIntensity - moderateThreshold) / maxIntensity) * size.height;
     final redRect = Rect.fromLTWH(0, 0, size.width, redHeight);
-    canvas.drawRect(redRect, Paint()..color = Color.fromARGB(40, 244, 67, 54)); // Red with transparency
+    canvas.drawRect(
+      redRect,
+      Paint()..color = Color.fromARGB(40, 244, 67, 54),
+    ); // Red with transparency
 
     final paint = Paint()
       ..color = lineColor
