@@ -53,6 +53,7 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
     required int hour,
     required int minute,
     required int staleDays,
+    required bool forceDailyReminder,
     required String dailyMessage,
     required String staleMessage,
   }) async {
@@ -62,6 +63,7 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
       hour: hour,
       minute: minute,
       staleDays: staleDays,
+      forceDailyReminder: forceDailyReminder,
       dailyMessage: dailyMessage,
       staleMessage: staleMessage,
     );
@@ -73,6 +75,7 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
         reminderHour: hour,
         reminderMinute: minute,
         staleReminderDays: staleDays,
+        forceDailyReminder: forceDailyReminder,
         dailyReminderMessage: dailyMessage,
         staleReminderMessage: staleMessage,
       ),

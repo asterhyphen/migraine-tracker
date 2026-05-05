@@ -238,6 +238,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         reminderHour: appSettings.reminderHour,
         reminderMinute: appSettings.reminderMinute,
         staleReminderDays: appSettings.staleReminderDays,
+        forceDailyReminder: appSettings.forceDailyReminder,
         dailyReminderMessage: appSettings.dailyReminderMessage,
         staleReminderMessage: appSettings.staleReminderMessage,
         onReminderSettingsChanged: ref

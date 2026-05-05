@@ -106,12 +106,23 @@ class ReminderService {
     await _notifications.cancel(id: _staleReminderId);
 
     if (settings.dailyReminderEnabled) {
-      await _scheduleDaily(settings);
+      if (settings.forceDailyReminder || !_hasLoggedToday(entries)) {
+        await _scheduleDaily(settings);
+      }
     }
 
     if (settings.staleReminderEnabled) {
       await _scheduleStaleReminder(settings, entries);
     }
+  }
+
+  bool _hasLoggedToday(List<MigraineEntry> entries) {
+    final now = DateTime.now();
+    return entries.any((entry) {
+      return entry.date.year == now.year &&
+          entry.date.month == now.month &&
+          entry.date.day == now.day;
+    });
   }
 
   Future<void> cancelAllReminders() async {

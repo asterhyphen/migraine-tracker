@@ -37,6 +37,7 @@ class SettingsPage extends ConsumerStatefulWidget {
     required this.reminderHour,
     required this.reminderMinute,
     required this.staleReminderDays,
+    required this.forceDailyReminder,
     required this.dailyReminderMessage,
     required this.staleReminderMessage,
     required this.onReminderSettingsChanged,
@@ -54,6 +55,7 @@ class SettingsPage extends ConsumerStatefulWidget {
   final int reminderHour;
   final int reminderMinute;
   final int staleReminderDays;
+  final bool forceDailyReminder;
   final String dailyReminderMessage;
   final String staleReminderMessage;
   final Future<void> Function({
@@ -62,6 +64,7 @@ class SettingsPage extends ConsumerStatefulWidget {
     required int hour,
     required int minute,
     required int staleDays,
+    required bool forceDailyReminder,
     required String dailyMessage,
     required String staleMessage,
   })
@@ -80,6 +83,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late int _reminderHour;
   late int _reminderMinute;
   late int _staleReminderDays;
+  late bool _forceDailyReminder;
   late String _dailyReminderMessage;
   late String _staleReminderMessage;
   String? _profileImagePath;
@@ -98,6 +102,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _reminderHour = widget.reminderHour;
     _reminderMinute = widget.reminderMinute;
     _staleReminderDays = widget.staleReminderDays;
+    _forceDailyReminder = widget.forceDailyReminder;
     _dailyReminderMessage = widget.dailyReminderMessage;
     _staleReminderMessage = widget.staleReminderMessage;
     _profileImagePath = widget.initialProfileImagePath;
@@ -245,6 +250,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       hour: _reminderHour,
       minute: _reminderMinute,
       staleDays: _staleReminderDays,
+      forceDailyReminder: _forceDailyReminder,
       dailyMessage: _dailyReminderMessage,
       staleMessage: _staleReminderMessage,
     );
@@ -808,6 +814,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       });
                     },
                   ),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  value: _forceDailyReminder,
+                  onChanged: _dailyReminderEnabled
+                      ? (value) {
+                          setState(() {
+                            _forceDailyReminder = value;
+                          });
+                          _saveReminderSettings();
+                        }
+                      : null,
+                  title: const Text("Force daily reminder"),
+                  subtitle: const Text(
+                    "Send the daily reminder even if you've logged today",
+                  ),
+                  secondary: const Icon(Icons.push_pin_outlined),
                 ),
                 const Divider(height: 1),
                 SwitchListTile(

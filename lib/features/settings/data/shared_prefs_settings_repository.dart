@@ -16,6 +16,7 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
   static const _reminderHourKey = 'reminder_hour';
   static const _reminderMinuteKey = 'reminder_minute';
   static const _staleReminderDaysKey = 'stale_reminder_days';
+  static const _forceDailyReminderKey = 'force_daily_reminder';
   static const _dailyReminderMessageKey = 'daily_reminder_message';
   static const _staleReminderMessageKey = 'stale_reminder_message';
 
@@ -41,6 +42,7 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
       reminderHour: prefs.getInt(_reminderHourKey) ?? 20,
       reminderMinute: prefs.getInt(_reminderMinuteKey) ?? 30,
       staleReminderDays: prefs.getInt(_staleReminderDaysKey) ?? 3,
+      forceDailyReminder: prefs.getBool(_forceDailyReminderKey) ?? false,
       dailyReminderMessage:
           prefs.getString(_dailyReminderMessageKey) ??
           'A quick note today can make your migraine patterns clearer.',
@@ -81,6 +83,7 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
     required int hour,
     required int minute,
     required int staleDays,
+    required bool forceDailyReminder,
     required String dailyMessage,
     required String staleMessage,
   }) async {
@@ -90,6 +93,7 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
     await prefs.setInt(_reminderHourKey, hour);
     await prefs.setInt(_reminderMinuteKey, minute);
     await prefs.setInt(_staleReminderDaysKey, staleDays);
+    await prefs.setBool(_forceDailyReminderKey, forceDailyReminder);
     await prefs.setString(_dailyReminderMessageKey, dailyMessage);
     await prefs.setString(_staleReminderMessageKey, staleMessage);
   }

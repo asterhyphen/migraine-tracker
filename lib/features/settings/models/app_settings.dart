@@ -11,6 +11,7 @@ class AppSettings {
     required this.reminderHour,
     required this.reminderMinute,
     required this.staleReminderDays,
+    required this.forceDailyReminder,
     required this.dailyReminderMessage,
     required this.staleReminderMessage,
   });
@@ -26,6 +27,7 @@ class AppSettings {
       reminderHour: 20,
       reminderMinute: 30,
       staleReminderDays: 3,
+      forceDailyReminder: false,
       dailyReminderMessage:
           'A quick note today can make your migraine patterns clearer.',
       staleReminderMessage:
@@ -42,6 +44,7 @@ class AppSettings {
   final int reminderHour;
   final int reminderMinute;
   final int staleReminderDays;
+  final bool forceDailyReminder;
   final String dailyReminderMessage;
   final String staleReminderMessage;
 
@@ -59,6 +62,7 @@ class AppSettings {
     int? reminderHour,
     int? reminderMinute,
     int? staleReminderDays,
+    bool? forceDailyReminder,
     String? dailyReminderMessage,
     String? staleReminderMessage,
     bool clearProfileImagePath = false,
@@ -75,6 +79,7 @@ class AppSettings {
       reminderHour: reminderHour ?? this.reminderHour,
       reminderMinute: reminderMinute ?? this.reminderMinute,
       staleReminderDays: staleReminderDays ?? this.staleReminderDays,
+      forceDailyReminder: forceDailyReminder ?? this.forceDailyReminder,
       dailyReminderMessage: dailyReminderMessage ?? this.dailyReminderMessage,
       staleReminderMessage: staleReminderMessage ?? this.staleReminderMessage,
     );

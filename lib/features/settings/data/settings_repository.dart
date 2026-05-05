@@ -12,6 +12,7 @@ abstract class AppSettingsRepository {
     required int hour,
     required int minute,
     required int staleDays,
+    required bool forceDailyReminder,
     required String dailyMessage,
     required String staleMessage,
   });
