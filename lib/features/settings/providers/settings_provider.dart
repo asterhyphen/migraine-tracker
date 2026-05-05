@@ -53,6 +53,8 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
     required int hour,
     required int minute,
     required int staleDays,
+    required String dailyMessage,
+    required String staleMessage,
   }) async {
     await _repository.saveReminderSettings(
       dailyEnabled: dailyEnabled,
@@ -60,6 +62,8 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
       hour: hour,
       minute: minute,
       staleDays: staleDays,
+      dailyMessage: dailyMessage,
+      staleMessage: staleMessage,
     );
     final current = state.value ?? AppSettings.initial();
     state = AsyncValue.data(
@@ -69,6 +73,8 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
         reminderHour: hour,
         reminderMinute: minute,
         staleReminderDays: staleDays,
+        dailyReminderMessage: dailyMessage,
+        staleReminderMessage: staleMessage,
       ),
     );
   }

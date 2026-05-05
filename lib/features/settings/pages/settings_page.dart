@@ -37,6 +37,8 @@ class SettingsPage extends ConsumerStatefulWidget {
     required this.reminderHour,
     required this.reminderMinute,
     required this.staleReminderDays,
+    required this.dailyReminderMessage,
+    required this.staleReminderMessage,
     required this.onReminderSettingsChanged,
   });
 
@@ -52,12 +54,16 @@ class SettingsPage extends ConsumerStatefulWidget {
   final int reminderHour;
   final int reminderMinute;
   final int staleReminderDays;
+  final String dailyReminderMessage;
+  final String staleReminderMessage;
   final Future<void> Function({
     required bool dailyEnabled,
     required bool staleEnabled,
     required int hour,
     required int minute,
     required int staleDays,
+    required String dailyMessage,
+    required String staleMessage,
   })
   onReminderSettingsChanged;
 
@@ -74,6 +80,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late int _reminderHour;
   late int _reminderMinute;
   late int _staleReminderDays;
+  late String _dailyReminderMessage;
+  late String _staleReminderMessage;
   String? _profileImagePath;
   String _appVersion = '-';
   bool _busy = false;
@@ -90,6 +98,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _reminderHour = widget.reminderHour;
     _reminderMinute = widget.reminderMinute;
     _staleReminderDays = widget.staleReminderDays;
+    _dailyReminderMessage = widget.dailyReminderMessage;
+    _staleReminderMessage = widget.staleReminderMessage;
     _profileImagePath = widget.initialProfileImagePath;
     _loadAppVersion();
     _loadCauseOptions();
@@ -235,6 +245,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       hour: _reminderHour,
       minute: _reminderMinute,
       staleDays: _staleReminderDays,
+      dailyMessage: _dailyReminderMessage,
+      staleMessage: _staleReminderMessage,
     );
   }
 
@@ -336,6 +348,55 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _staleReminderDays = picked;
     });
     await _saveReminderSettings();
+  }
+
+  Future<void> _editReminderMessage({
+    required String title,
+    required String currentMessage,
+    required ValueChanged<String> onSaved,
+  }) async {
+    final controller = TextEditingController(text: currentMessage);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            minLines: 3,
+            maxLines: 6,
+            decoration: const InputDecoration(
+              labelText: 'Notification text',
+              hintText: 'Type a friendly reminder message',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == null || result.isEmpty) return;
+    onSaved(result);
+    await _saveReminderSettings();
+  }
+
+  String _shortReminderPreview(String value) {
+    const max = 52;
+    if (value.length <= max) {
+      return value;
+    }
+    return '${value.substring(0, max).trim()}...';
   }
 
   Future<void> _pickProfileImage() async {
@@ -734,6 +795,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   secondary: const Icon(Icons.notifications_active_outlined),
                 ),
                 const Divider(height: 1),
+                _SettingsRow(
+                  icon: Icons.text_snippet_outlined,
+                  title: "Daily reminder text",
+                  value: _shortReminderPreview(_dailyReminderMessage),
+                  onTap: () => _editReminderMessage(
+                    title: 'Edit daily reminder text',
+                    currentMessage: _dailyReminderMessage,
+                    onSaved: (text) {
+                      setState(() {
+                        _dailyReminderMessage = text;
+                      });
+                    },
+                  ),
+                ),
+                const Divider(height: 1),
                 SwitchListTile(
                   value: _staleReminderEnabled,
                   onChanged: _toggleStaleReminder,
@@ -742,6 +818,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     "If there is no log for $_staleReminderDays days",
                   ),
                   secondary: const Icon(Icons.notification_important_outlined),
+                ),
+                const Divider(height: 1),
+                _SettingsRow(
+                  icon: Icons.text_snippet_outlined,
+                  title: "Stale reminder text",
+                  value: _shortReminderPreview(_staleReminderMessage),
+                  onTap: () => _editReminderMessage(
+                    title: 'Edit check-in reminder text',
+                    currentMessage: _staleReminderMessage,
+                    onSaved: (text) {
+                      setState(() {
+                        _staleReminderMessage = text;
+                      });
+                    },
+                  ),
                 ),
                 const Divider(height: 1),
                 _SettingsRow(

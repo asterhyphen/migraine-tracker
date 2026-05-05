@@ -12,6 +12,8 @@ abstract class AppSettingsRepository {
     required int hour,
     required int minute,
     required int staleDays,
+    required String dailyMessage,
+    required String staleMessage,
   });
   Future<void> setDarkMode(bool isDark);
 }

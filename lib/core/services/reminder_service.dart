@@ -133,7 +133,7 @@ class ReminderService {
     await _notifications.zonedSchedule(
       id: _dailyReminderId,
       title: 'Time to log your symptoms',
-      body: 'A quick note today can make your migraine patterns clearer.',
+      body: settings.dailyReminderMessage,
       scheduledDate: _nextTime(settings.reminderHour, settings.reminderMinute),
       notificationDetails: _notificationDetails(),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -164,8 +164,7 @@ class ReminderService {
     await _notifications.zonedSchedule(
       id: _staleReminderId,
       title: 'Want to check in?',
-      body:
-          'It has been a few days since your last log. Add a quick update when you can.',
+      body: settings.staleReminderMessage,
       scheduledDate: scheduled,
       notificationDetails: _notificationDetails(),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
