@@ -6,8 +6,12 @@ class AppTheme {
 
   static const _pageTransitions = PageTransitionsTheme(
     builders: {
-      TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.android: _MigrainePageTransitionsBuilder(),
+      TargetPlatform.iOS: _MigrainePageTransitionsBuilder(),
+      TargetPlatform.macOS: _MigrainePageTransitionsBuilder(),
+      TargetPlatform.windows: _MigrainePageTransitionsBuilder(),
+      TargetPlatform.linux: _MigrainePageTransitionsBuilder(),
+      TargetPlatform.fuchsia: _MigrainePageTransitionsBuilder(),
     },
   );
 
@@ -262,4 +266,61 @@ extension AppThemeColors on ColorScheme {
     primary.withValues(alpha: 0.85),
     tertiary.withValues(alpha: 0.75),
   ];
+}
+
+class _MigrainePageTransitionsBuilder extends PageTransitionsBuilder {
+  const _MigrainePageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (route.fullscreenDialog || MediaQuery.disableAnimationsOf(context)) {
+      return child;
+    }
+
+    final incomingAnimation = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    final outgoingAnimation = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeOutCubic,
+    );
+
+    final incomingOffset = Tween<Offset>(
+      begin: const Offset(0.12, 0),
+      end: Offset.zero,
+    ).animate(incomingAnimation);
+    final outgoingOffset = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(-0.035, 0),
+    ).animate(outgoingAnimation);
+    final fade = Tween<double>(begin: 0.0, end: 1.0).animate(incomingAnimation);
+    final scale = Tween<double>(
+      begin: 0.985,
+      end: 1.0,
+    ).animate(incomingAnimation);
+
+    return SlideTransition(
+      position: outgoingOffset,
+      child: SlideTransition(
+        position: incomingOffset,
+        child: FadeTransition(
+          opacity: fade,
+          child: ScaleTransition(
+            scale: scale,
+            alignment: Alignment.centerRight,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
 }
