@@ -644,6 +644,111 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final reminderRows = <Widget>[];
+    void addReminderRow(Widget row) {
+      if (reminderRows.isNotEmpty) {
+        reminderRows.add(const Divider(height: 1));
+      }
+      reminderRows.add(row);
+    }
+
+    addReminderRow(
+      SwitchListTile(
+        value: _dailyReminderEnabled,
+        onChanged: _toggleDailyReminder,
+        title: const Text("Daily log reminder"),
+        subtitle: Text(
+          _dailyReminderEnabled ? "At ${_formatReminderTime(context)}" : "Off",
+        ),
+        secondary: const Icon(Icons.notifications_active_outlined),
+      ),
+    );
+    if (_dailyReminderEnabled) {
+      addReminderRow(
+        _SettingsRow(
+          icon: Icons.text_snippet_outlined,
+          title: "Daily reminder text",
+          value: _shortReminderPreview(_dailyReminderMessage),
+          onTap: () => _editReminderMessage(
+            title: 'Edit daily reminder text',
+            currentMessage: _dailyReminderMessage,
+            onSaved: (text) {
+              setState(() {
+                _dailyReminderMessage = text;
+              });
+            },
+          ),
+        ),
+      );
+      addReminderRow(
+        SwitchListTile(
+          value: _forceDailyReminder,
+          onChanged: (value) {
+            setState(() {
+              _forceDailyReminder = value;
+            });
+            _saveReminderSettings();
+          },
+          title: const Text("Force daily reminder"),
+          subtitle: const Text(
+            "Send the daily reminder even if you've logged today",
+          ),
+          secondary: const Icon(Icons.push_pin_outlined),
+        ),
+      );
+    }
+
+    addReminderRow(
+      SwitchListTile(
+        value: _staleReminderEnabled,
+        onChanged: _toggleStaleReminder,
+        title: const Text("Gentle check-in"),
+        subtitle: Text(
+          _staleReminderEnabled
+              ? "If there is no log for $_staleReminderDays days"
+              : "Off",
+        ),
+        secondary: const Icon(Icons.notification_important_outlined),
+      ),
+    );
+    if (_staleReminderEnabled) {
+      addReminderRow(
+        _SettingsRow(
+          icon: Icons.text_snippet_outlined,
+          title: "Check-in reminder text",
+          value: _shortReminderPreview(_staleReminderMessage),
+          onTap: () => _editReminderMessage(
+            title: 'Edit check-in reminder text',
+            currentMessage: _staleReminderMessage,
+            onSaved: (text) {
+              setState(() {
+                _staleReminderMessage = text;
+              });
+            },
+          ),
+        ),
+      );
+      addReminderRow(
+        _SettingsRow(
+          icon: Icons.event_repeat_outlined,
+          title: "Check-in delay",
+          value: "$_staleReminderDays days after the last log",
+          onTap: _pickStaleReminderDays,
+        ),
+      );
+    }
+
+    if (_dailyReminderEnabled || _staleReminderEnabled) {
+      addReminderRow(
+        _SettingsRow(
+          icon: Icons.schedule_outlined,
+          title: "Reminder time",
+          value: _formatReminderTime(context),
+          onTap: _pickReminderTime,
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text("Settings")),
       body: ListView(
@@ -790,92 +895,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           const SizedBox(height: 20),
           _SectionHeader(title: "Reminders"),
           const SizedBox(height: 12),
-          _SettingsCard(
-            child: Column(
-              children: [
-                SwitchListTile(
-                  value: _dailyReminderEnabled,
-                  onChanged: _toggleDailyReminder,
-                  title: const Text("Daily log reminder"),
-                  subtitle: Text("At ${_formatReminderTime(context)}"),
-                  secondary: const Icon(Icons.notifications_active_outlined),
-                ),
-                const Divider(height: 1),
-                _SettingsRow(
-                  icon: Icons.text_snippet_outlined,
-                  title: "Daily reminder text",
-                  value: _shortReminderPreview(_dailyReminderMessage),
-                  onTap: () => _editReminderMessage(
-                    title: 'Edit daily reminder text',
-                    currentMessage: _dailyReminderMessage,
-                    onSaved: (text) {
-                      setState(() {
-                        _dailyReminderMessage = text;
-                      });
-                    },
-                  ),
-                ),
-                const Divider(height: 1),
-                SwitchListTile(
-                  value: _forceDailyReminder,
-                  onChanged: _dailyReminderEnabled
-                      ? (value) {
-                          setState(() {
-                            _forceDailyReminder = value;
-                          });
-                          _saveReminderSettings();
-                        }
-                      : null,
-                  title: const Text("Force daily reminder"),
-                  subtitle: const Text(
-                    "Send the daily reminder even if you've logged today",
-                  ),
-                  secondary: const Icon(Icons.push_pin_outlined),
-                ),
-                const Divider(height: 1),
-                SwitchListTile(
-                  value: _staleReminderEnabled,
-                  onChanged: _toggleStaleReminder,
-                  title: const Text("Gentle check-in"),
-                  subtitle: Text(
-                    "If there is no log for $_staleReminderDays days",
-                  ),
-                  secondary: const Icon(Icons.notification_important_outlined),
-                ),
-                const Divider(height: 1),
-                _SettingsRow(
-                  icon: Icons.text_snippet_outlined,
-                  title: "Stale reminder text",
-                  value: _shortReminderPreview(_staleReminderMessage),
-                  onTap: () => _editReminderMessage(
-                    title: 'Edit check-in reminder text',
-                    currentMessage: _staleReminderMessage,
-                    onSaved: (text) {
-                      setState(() {
-                        _staleReminderMessage = text;
-                      });
-                    },
-                  ),
-                ),
-                const Divider(height: 1),
-                _SettingsRow(
-                  icon: Icons.schedule_outlined,
-                  title: "Reminder time",
-                  value: _formatReminderTime(context),
-                  enabled: _dailyReminderEnabled || _staleReminderEnabled,
-                  onTap: _pickReminderTime,
-                ),
-                const Divider(height: 1),
-                _SettingsRow(
-                  icon: Icons.event_repeat_outlined,
-                  title: "Check-in delay",
-                  value: "$_staleReminderDays days after the last log",
-                  enabled: _staleReminderEnabled,
-                  onTap: _pickStaleReminderDays,
-                ),
-              ],
-            ),
-          ),
+          _SettingsCard(child: Column(children: reminderRows)),
           const SizedBox(height: 20),
           _SectionHeader(title: "NFC"),
           const SizedBox(height: 12),
