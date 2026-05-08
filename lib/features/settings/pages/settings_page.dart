@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:migraine_tracker/core/services/reminder_service.dart';
 import 'package:migraine_tracker/core/theme/app_theme.dart';
+import 'package:migraine_tracker/features/settings/models/app_settings.dart';
 import 'package:migraine_tracker/features/tracker/models/cause_option.dart';
 import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
 import 'package:migraine_tracker/features/tracker/providers/causes_provider.dart';
@@ -40,6 +41,7 @@ class SettingsPage extends ConsumerStatefulWidget {
     required this.forceDailyReminder,
     required this.dailyReminderMessage,
     required this.staleReminderMessage,
+    required this.medicationReminders,
     required this.onReminderSettingsChanged,
   });
 
@@ -58,6 +60,7 @@ class SettingsPage extends ConsumerStatefulWidget {
   final bool forceDailyReminder;
   final String dailyReminderMessage;
   final String staleReminderMessage;
+  final List<MedicationReminder> medicationReminders;
   final Future<void> Function({
     required bool dailyEnabled,
     required bool staleEnabled,
@@ -67,6 +70,7 @@ class SettingsPage extends ConsumerStatefulWidget {
     required bool forceDailyReminder,
     required String dailyMessage,
     required String staleMessage,
+    required List<MedicationReminder> medicationReminders,
   })
   onReminderSettingsChanged;
 
@@ -86,6 +90,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late bool _forceDailyReminder;
   late String _dailyReminderMessage;
   late String _staleReminderMessage;
+  late List<MedicationReminder> _medicationReminders;
   String? _profileImagePath;
   String _appVersion = '-';
   bool _busy = false;
@@ -105,6 +110,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _forceDailyReminder = widget.forceDailyReminder;
     _dailyReminderMessage = widget.dailyReminderMessage;
     _staleReminderMessage = widget.staleReminderMessage;
+    _medicationReminders = List<MedicationReminder>.from(
+      widget.medicationReminders,
+    );
     _profileImagePath = widget.initialProfileImagePath;
     _loadAppVersion();
     _loadCauseOptions();
@@ -253,6 +261,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       forceDailyReminder: _forceDailyReminder,
       dailyMessage: _dailyReminderMessage,
       staleMessage: _staleReminderMessage,
+      medicationReminders: _medicationReminders,
     );
   }
 
@@ -395,6 +404,68 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (result == null || result.isEmpty) return;
     onSaved(result);
     await _saveReminderSettings();
+  }
+
+  Future<void> _addMedicationReminder() async {
+    if (!await _ensureNotificationPermission()) return;
+    if (!mounted) return;
+    final reminder = await showDialog<MedicationReminder>(
+      context: context,
+      builder: (context) => const _MedicationReminderDialog(),
+    );
+    if (reminder == null) return;
+    setState(() {
+      _medicationReminders = [..._medicationReminders, reminder];
+    });
+    await _saveReminderSettings();
+  }
+
+  Future<void> _editMedicationReminder(MedicationReminder reminder) async {
+    final updated = await showDialog<MedicationReminder>(
+      context: context,
+      builder: (context) => _MedicationReminderDialog(reminder: reminder),
+    );
+    if (updated == null) return;
+    setState(() {
+      _medicationReminders = _medicationReminders
+          .map((item) => item.id == updated.id ? updated : item)
+          .toList();
+    });
+    await _saveReminderSettings();
+  }
+
+  Future<void> _toggleMedicationReminder(
+    MedicationReminder reminder,
+    bool enabled,
+  ) async {
+    if (enabled && !await _ensureNotificationPermission()) return;
+    setState(() {
+      _medicationReminders = _medicationReminders
+          .map(
+            (item) =>
+                item.id == reminder.id ? item.copyWith(enabled: enabled) : item,
+          )
+          .toList();
+    });
+    await _saveReminderSettings();
+  }
+
+  Future<void> _deleteMedicationReminder(MedicationReminder reminder) async {
+    setState(() {
+      _medicationReminders = _medicationReminders
+          .where((item) => item.id != reminder.id)
+          .toList();
+    });
+    await _saveReminderSettings();
+  }
+
+  String _formatMedicationReminderTime(
+    BuildContext context,
+    MedicationReminder reminder,
+  ) {
+    return MaterialLocalizations.of(
+      context,
+    ).formatTimeOfDay(TimeOfDay(hour: reminder.hour, minute: reminder.minute));
   }
 
   String _shortReminderPreview(String value) {
@@ -745,6 +816,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           title: "Reminder time",
           value: _formatReminderTime(context),
           onTap: _pickReminderTime,
+        ),
+      );
+    }
+
+    addReminderRow(
+      _SettingsRow(
+        icon: Icons.medication_outlined,
+        title: "Medication reminders",
+        value: _medicationReminders.isEmpty
+            ? "Add medication times"
+            : "${_medicationReminders.length} saved",
+        onTap: _addMedicationReminder,
+      ),
+    );
+    for (final reminder in _medicationReminders) {
+      addReminderRow(
+        _MedicationReminderTile(
+          reminder: reminder,
+          timeLabel: _formatMedicationReminderTime(context, reminder),
+          onChanged: (value) => _toggleMedicationReminder(reminder, value),
+          onEdit: () => _editMedicationReminder(reminder),
+          onDelete: () => _deleteMedicationReminder(reminder),
         ),
       );
     }
@@ -1235,6 +1328,143 @@ class _SettingsRow extends StatelessWidget {
         color: scheme.onSurface.withValues(alpha: 0.45),
       ),
       onTap: enabled ? onTap : null,
+    );
+  }
+}
+
+class _MedicationReminderTile extends StatelessWidget {
+  const _MedicationReminderTile({
+    required this.reminder,
+    required this.timeLabel,
+    required this.onChanged,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final MedicationReminder reminder;
+  final String timeLabel;
+  final ValueChanged<bool> onChanged;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Switch(value: reminder.enabled, onChanged: onChanged),
+      title: Text(reminder.name),
+      subtitle: Text(
+        "${reminder.enabled ? 'Daily' : 'Off'} at $timeLabel",
+        style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.65)),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: "Edit medication reminder",
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          IconButton(
+            tooltip: "Delete medication reminder",
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MedicationReminderDialog extends StatefulWidget {
+  const _MedicationReminderDialog({this.reminder});
+
+  final MedicationReminder? reminder;
+
+  @override
+  State<_MedicationReminderDialog> createState() =>
+      _MedicationReminderDialogState();
+}
+
+class _MedicationReminderDialogState extends State<_MedicationReminderDialog> {
+  late final TextEditingController _nameController;
+  late TimeOfDay _time;
+
+  @override
+  void initState() {
+    super.initState();
+    final reminder = widget.reminder;
+    _nameController = TextEditingController(text: reminder?.name ?? '');
+    _time = TimeOfDay(hour: reminder?.hour ?? 9, minute: reminder?.minute ?? 0);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(context: context, initialTime: _time);
+    if (picked == null) return;
+    setState(() {
+      _time = picked;
+    });
+  }
+
+  void _save() {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) return;
+    final current = widget.reminder;
+    Navigator.of(context).pop(
+      MedicationReminder(
+        id: current?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+        name: name,
+        hour: _time.hour,
+        minute: _time.minute,
+        enabled: current?.enabled ?? true,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final timeLabel = MaterialLocalizations.of(context).formatTimeOfDay(_time);
+    return AlertDialog(
+      title: Text(
+        widget.reminder == null
+            ? "Add medication reminder"
+            : "Edit medication reminder",
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameController,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: "Medication name",
+              hintText: "For example, Sumatriptan",
+            ),
+            onSubmitted: (_) => _save(),
+          ),
+          const SizedBox(height: 12),
+          _SettingsRow(
+            icon: Icons.schedule_outlined,
+            title: "Reminder time",
+            value: timeLabel,
+            onTap: _pickTime,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text("Cancel"),
+        ),
+        TextButton(onPressed: _save, child: const Text("Save")),
+      ],
     );
   }
 }

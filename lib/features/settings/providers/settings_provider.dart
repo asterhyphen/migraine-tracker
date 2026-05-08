@@ -56,6 +56,7 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
     required bool forceDailyReminder,
     required String dailyMessage,
     required String staleMessage,
+    required List<MedicationReminder> medicationReminders,
   }) async {
     await _repository.saveReminderSettings(
       dailyEnabled: dailyEnabled,
@@ -66,6 +67,7 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
       forceDailyReminder: forceDailyReminder,
       dailyMessage: dailyMessage,
       staleMessage: staleMessage,
+      medicationReminders: medicationReminders,
     );
     final current = state.value ?? AppSettings.initial();
     state = AsyncValue.data(
@@ -78,6 +80,7 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
         forceDailyReminder: forceDailyReminder,
         dailyReminderMessage: dailyMessage,
         staleReminderMessage: staleMessage,
+        medicationReminders: medicationReminders,
       ),
     );
   }

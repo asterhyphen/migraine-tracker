@@ -15,6 +15,7 @@ abstract class AppSettingsRepository {
     required bool forceDailyReminder,
     required String dailyMessage,
     required String staleMessage,
+    required List<MedicationReminder> medicationReminders,
   });
   Future<void> setDarkMode(bool isDark);
 }

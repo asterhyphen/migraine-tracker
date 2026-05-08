@@ -16,6 +16,8 @@ class ReminderService {
   static const logPayload = 'open-log';
   static const _dailyReminderId = 701;
   static const _staleReminderId = 702;
+  static const _medicationReminderBaseId = 720;
+  static const _maxMedicationReminders = 50;
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -104,6 +106,7 @@ class ReminderService {
     await initialize();
     await _notifications.cancel(id: _dailyReminderId);
     await _notifications.cancel(id: _staleReminderId);
+    await _cancelMedicationReminders();
 
     if (settings.dailyReminderEnabled) {
       if (settings.forceDailyReminder || !_hasLoggedToday(entries)) {
@@ -114,6 +117,8 @@ class ReminderService {
     if (settings.staleReminderEnabled) {
       await _scheduleStaleReminder(settings, entries);
     }
+
+    await _scheduleMedicationReminders(settings.medicationReminders);
   }
 
   bool _hasLoggedToday(List<MigraineEntry> entries) {
@@ -129,6 +134,7 @@ class ReminderService {
     await initialize();
     await _notifications.cancel(id: _dailyReminderId);
     await _notifications.cancel(id: _staleReminderId);
+    await _cancelMedicationReminders();
   }
 
   Future<void> _configureLocalTimeZone() async {
@@ -183,6 +189,33 @@ class ReminderService {
     );
   }
 
+  Future<void> _scheduleMedicationReminders(
+    List<MedicationReminder> reminders,
+  ) async {
+    final enabled = reminders
+        .where((reminder) => reminder.enabled)
+        .take(_maxMedicationReminders);
+    var index = 0;
+    for (final reminder in enabled) {
+      await _notifications.zonedSchedule(
+        id: _medicationReminderBaseId + index,
+        title: 'Medication reminder',
+        body: 'Time to take ${reminder.name}.',
+        scheduledDate: _nextTime(reminder.hour, reminder.minute),
+        notificationDetails: _medicationNotificationDetails(),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+      index += 1;
+    }
+  }
+
+  Future<void> _cancelMedicationReminders() async {
+    for (var i = 0; i < _maxMedicationReminders; i += 1) {
+      await _notifications.cancel(id: _medicationReminderBaseId + i);
+    }
+  }
+
   tz.TZDateTime _nextTime(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
     var scheduled = tz.TZDateTime(
@@ -204,6 +237,23 @@ class ReminderService {
       'migraine_log_reminders',
       'Log reminders',
       channelDescription: 'Reminders to log migraine symptoms.',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      category: AndroidNotificationCategory.reminder,
+    );
+    const darwin = DarwinNotificationDetails();
+    return const NotificationDetails(
+      android: android,
+      iOS: darwin,
+      macOS: darwin,
+    );
+  }
+
+  NotificationDetails _medicationNotificationDetails() {
+    const android = AndroidNotificationDetails(
+      'medication_reminders',
+      'Medication reminders',
+      channelDescription: 'Reminders to take migraine-related medication.',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
       category: AndroidNotificationCategory.reminder,

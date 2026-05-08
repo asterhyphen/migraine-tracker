@@ -241,6 +241,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         forceDailyReminder: appSettings.forceDailyReminder,
         dailyReminderMessage: appSettings.dailyReminderMessage,
         staleReminderMessage: appSettings.staleReminderMessage,
+        medicationReminders: appSettings.medicationReminders,
         onReminderSettingsChanged: ref
             .read(appSettingsProvider.notifier)
             .saveReminderSettings,

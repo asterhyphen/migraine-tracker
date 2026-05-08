@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/app_settings.dart';
@@ -19,6 +21,7 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
   static const _forceDailyReminderKey = 'force_daily_reminder';
   static const _dailyReminderMessageKey = 'daily_reminder_message';
   static const _staleReminderMessageKey = 'stale_reminder_message';
+  static const _medicationRemindersKey = 'medication_reminders';
 
   @override
   Future<int?> loadBirthdayAnnouncedYear() async {
@@ -49,6 +52,9 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
       staleReminderMessage:
           prefs.getString(_staleReminderMessageKey) ??
           'It has been a few days since your last log. Add a quick update when you can.',
+      medicationReminders: _loadMedicationReminders(
+        prefs.getString(_medicationRemindersKey),
+      ),
     );
   }
 
@@ -86,6 +92,7 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
     required bool forceDailyReminder,
     required String dailyMessage,
     required String staleMessage,
+    required List<MedicationReminder> medicationReminders,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_dailyReminderEnabledKey, dailyEnabled);
@@ -96,11 +103,35 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
     await prefs.setBool(_forceDailyReminderKey, forceDailyReminder);
     await prefs.setString(_dailyReminderMessageKey, dailyMessage);
     await prefs.setString(_staleReminderMessageKey, staleMessage);
+    await prefs.setString(
+      _medicationRemindersKey,
+      jsonEncode(
+        medicationReminders.map((reminder) => reminder.toJson()).toList(),
+      ),
+    );
   }
 
   @override
   Future<void> setDarkMode(bool isDark) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_themePrefKey, isDark);
+  }
+
+  static List<MedicationReminder> _loadMedicationReminders(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map(
+            (item) => MedicationReminder.fromJson(
+              item.map((key, value) => MapEntry(key.toString(), value)),
+            ),
+          )
+          .toList();
+    } catch (_) {
+      return const [];
+    }
   }
 }
