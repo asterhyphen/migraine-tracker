@@ -121,11 +121,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
               formatDay: _formatDay,
               formatDate: _formatDate,
               onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ViewMigrainePage(entry: entry),
-                  ),
-                );
+                await Navigator.of(
+                  context,
+                ).push(viewMigraineRoute(entry: entry));
                 await _loadEntries();
               },
               onDelete: () => _confirmDelete(entry),

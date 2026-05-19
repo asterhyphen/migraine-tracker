@@ -9,6 +9,59 @@ import 'package:migraine_tracker/core/widgets/app_snackbar.dart';
 import 'package:migraine_tracker/core/theme/app_theme.dart';
 import 'log_page.dart';
 
+Route<void> viewMigraineRoute({required MigraineEntry entry}) {
+  return PageRouteBuilder<void>(
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return ViewMigrainePage(entry: entry);
+    },
+    transitionDuration: const Duration(milliseconds: 360),
+    reverseTransitionDuration: const Duration(milliseconds: 260),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      if (MediaQuery.disableAnimationsOf(context)) {
+        return child;
+      }
+
+      final slide =
+          Tween<Offset>(
+            begin: const Offset(0.06, 0.04),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
+            ),
+          );
+      final scale = Tween<double>(begin: 0.982, end: 1).animate(
+        CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        ),
+      );
+      final fade = Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(
+          parent: animation,
+          curve: const Interval(0, 0.78, curve: Curves.easeOut),
+          reverseCurve: const Interval(0.12, 1, curve: Curves.easeIn),
+        ),
+      );
+
+      return FadeTransition(
+        opacity: fade,
+        child: SlideTransition(
+          position: slide,
+          child: ScaleTransition(
+            scale: scale,
+            alignment: Alignment.topCenter,
+            child: child,
+          ),
+        ),
+      );
+    },
+  );
+}
+
 class ViewMigrainePage extends ConsumerWidget {
   const ViewMigrainePage({super.key, required this.entry});
 

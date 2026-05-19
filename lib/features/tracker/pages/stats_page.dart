@@ -397,11 +397,9 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         formatDdMmYyyy(highestPainEntry.date),
         "Intensity ${highestPainEntry.intensity}/10",
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ViewMigrainePage(entry: highestPainEntry),
-            ),
-          );
+          Navigator.of(
+            context,
+          ).push(viewMigraineRoute(entry: highestPainEntry));
         },
       ),
       _SummaryItem("Top Cause", topCause, "Most frequent trigger"),
