@@ -1,314 +1,10 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'history_page.dart';
-import 'log_page.dart';
-import 'package:migraine_tracker/core/utils/date_utils.dart';
 import 'package:migraine_tracker/core/widgets/wavy_surface.dart';
-import 'package:migraine_tracker/features/settings/providers/settings_provider.dart';
-import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
-import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
 
-class HomePage extends ConsumerStatefulWidget {
-  const HomePage({super.key, required this.dob, this.name});
-
-  final DateTime dob;
-  final String? name;
-
-  @override
-  ConsumerState<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends ConsumerState<HomePage> {
-  bool _birthdayDialogShown = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _maybeShowBirthdayDialog();
-    });
-  }
-
-  int calculateAge() {
-    DateTime today = DateTime.now();
-    int age = today.year - widget.dob.year;
-
-    if (today.month < widget.dob.month ||
-        (today.month == widget.dob.month && today.day < widget.dob.day)) {
-      age--;
-    }
-    return age;
-  }
-
-  Future<void> _openLogMigraine() async {
-    final todayEntry = _entryForDate(
-      ref.read(migraineEntriesProvider).value ?? const [],
-      DateTime.now(),
-    );
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => LogMigrainePage(entry: todayEntry)),
-    );
-    await _loadStats();
-  }
-
-  Future<void> _openHistory() async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const HistoryPage()));
-  }
-
-  Future<void> _loadStats() async {
-    await ref.read(migraineEntriesProvider.notifier).reload();
-    _maybeShowBirthdayDialog();
-  }
-
-  bool _isBirthdayToday() {
-    final now = DateTime.now();
-    return now.month == widget.dob.month && now.day == widget.dob.day;
-  }
-
-  Future<void> _maybeShowBirthdayDialog() async {
-    if (_birthdayDialogShown || !_isBirthdayToday() || !mounted) return;
-    final settingsRepository = ref.read(appSettingsRepositoryProvider);
-    final nowYear = DateTime.now().year;
-    final announcedYear = await settingsRepository.loadBirthdayAnnouncedYear();
-    if (announcedYear == nowYear) return;
-
-    _birthdayDialogShown = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          final scheme = Theme.of(context).colorScheme;
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Stack(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
-                      Text(
-                        "Happy Birthday!",
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        widget.name == null || widget.name!.isEmpty
-                            ? "Wishing you a great year ahead!"
-                            : "Happy Birthday, ${widget.name}! Wishing you a great year ahead!",
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.celebration_rounded,
-                            color: scheme.secondary,
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(Icons.auto_awesome, color: scheme.primary),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  top: 6,
-                  left: 6,
-                  child: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-      await settingsRepository.saveBirthdayAnnouncedYear(nowYear);
-    });
-  }
-
-  int _daysSince(DateTime? date) {
-    if (date == null) return 0;
-    final now = DateTime.now();
-    final delta = now.difference(DateTime(date.year, date.month, date.day));
-    return delta.inDays;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final entriesState = ref.watch(migraineEntriesProvider);
-    final entries = entriesState.value ?? const <MigraineEntry>[];
-
-    if (entriesState.isLoading && entriesState.value == null) {
-      return const _HomeLoadingView();
-    }
-
-    final now = DateTime.now();
-    final monthCount = entries
-        .where(
-          (entry) =>
-              entry.date.year == now.year && entry.date.month == now.month,
-        )
-        .length;
-    final yearCount = entries
-        .where((entry) => entry.date.year == now.year)
-        .length;
-    final lastEntry = entries.isEmpty ? null : entries.first;
-    final todayEntry = _entryForDate(entries, now);
-    final lastDays = _daysSince(lastEntry?.date);
-    final lastText = lastEntry == null
-        ? "No entries"
-        : (lastDays == 0
-              ? "Today"
-              : lastDays == 1
-              ? "Yesterday"
-              : "$lastDays days ago");
-    final lastDetails = lastEntry == null
-        ? "Log your first migraine to see details."
-        : "Intensity ${lastEntry.intensity} • ${_formatDate(lastEntry.date)}";
-    final isBirthday = _isBirthdayToday();
-
-    return Scaffold(
-      appBar: AppBar(title: const Text("Home")),
-      body: RefreshIndicator(
-        onRefresh: _loadStats,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _HeroCard(
-                title: isBirthday
-                    ? (widget.name == null || widget.name!.isEmpty
-                          ? "Happy Birthday!"
-                          : "Happy Birthday, ${widget.name}!")
-                    : (widget.name == null || widget.name!.isEmpty
-                          ? "Welcome!"
-                          : "Welcome, ${widget.name}!"),
-                subtitle: isBirthday
-                    ? "Today is your day. Take it easy and stay hydrated."
-                    : "Age ${calculateAge()} • Track migraines with clarity.",
-                onTap: _openLogMigraine,
-                primaryLabel: todayEntry == null
-                    ? "Log Today's Entry"
-                    : "Edit Today's Entry",
-                primaryAction: _openLogMigraine,
-                secondaryLabel: "View History",
-                secondaryAction: _openHistory,
-                isBirthday: isBirthday,
-              ),
-              if (isBirthday) ...[
-                const SizedBox(height: 14),
-                const _BirthdayBanner(),
-              ],
-              const SizedBox(height: 24),
-              const _SectionTitle(
-                title: "At a Glance",
-                subtitle: "Current period highlights",
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 148,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children:
-                      [
-                            _StatCard(
-                              title: "Last Migraine",
-                              value: lastText,
-                              icon: Icons.schedule_rounded,
-                            ),
-                            _StatCard(
-                              title: "This Month",
-                              value: "$monthCount",
-                              suffix: "events",
-                              icon: Icons.calendar_month_rounded,
-                            ),
-                            _StatCard(
-                              title: "This Year",
-                              value: "$yearCount",
-                              suffix: "events",
-                              icon: Icons.insights_rounded,
-                            ),
-                          ]
-                          .map(
-                            (card) => Padding(
-                              padding: const EdgeInsets.only(right: 12),
-                              child: card,
-                            ),
-                          )
-                          .toList(),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const _SectionTitle(
-                title: "Last Entry",
-                subtitle: "Most recent recorded migraine",
-              ),
-              const SizedBox(height: 12),
-              lastEntry == null
-                  ? _EmptyStateCard(
-                      icon: Icons.note_add_outlined,
-                      title: "No migraine logs yet",
-                      subtitle:
-                          "Start with your first entry to unlock trends and insights.",
-                      actionLabel: "Log now",
-                      onAction: _openLogMigraine,
-                    )
-                  : _DetailCard(
-                      title: "Latest log",
-                      subtitle: lastDetails,
-                      trailing: Text(
-                        lastEntry.causes.isEmpty
-                            ? "No causes tagged"
-                            : lastEntry.causes.join(" • "),
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return formatDdMmYyyy(date);
-  }
-
-  MigraineEntry? _entryForDate(List<MigraineEntry> entries, DateTime date) {
-    final target = DateTime(date.year, date.month, date.day);
-    for (final entry in entries) {
-      final entryDate = DateTime(
-        entry.date.year,
-        entry.date.month,
-        entry.date.day,
-      );
-      if (entryDate == target) return entry;
-    }
-    return null;
-  }
-}
-
-class _HomeLoadingView extends StatelessWidget {
-  const _HomeLoadingView();
+class HomeLoadingView extends StatelessWidget {
+  const HomeLoadingView();
 
   @override
   Widget build(BuildContext context) {
@@ -319,15 +15,15 @@ class _HomeLoadingView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: const [
-            _SkeletonBox(height: 210, radius: 20),
+            SkeletonBox(height: 210, radius: 20),
             SizedBox(height: 24),
-            _SkeletonBox(height: 18, width: 140),
+            SkeletonBox(height: 18, width: 140),
             SizedBox(height: 12),
-            _SkeletonBox(height: 148, radius: 14),
+            SkeletonBox(height: 148, radius: 14),
             SizedBox(height: 24),
-            _SkeletonBox(height: 18, width: 120),
+            SkeletonBox(height: 18, width: 120),
             SizedBox(height: 12),
-            _SkeletonBox(height: 96, radius: 14),
+            SkeletonBox(height: 96, radius: 14),
           ],
         ),
       ),
@@ -335,8 +31,8 @@ class _HomeLoadingView extends StatelessWidget {
   }
 }
 
-class _SkeletonBox extends StatelessWidget {
-  const _SkeletonBox({
+class SkeletonBox extends StatelessWidget {
+  const SkeletonBox({
     required this.height,
     this.width = double.infinity,
     this.radius = 10,
@@ -368,8 +64,8 @@ class _SkeletonBox extends StatelessWidget {
   }
 }
 
-class _HeroCard extends StatelessWidget {
-  const _HeroCard({
+class HeroCard extends StatelessWidget {
+  const HeroCard({
     required this.title,
     required this.subtitle,
     required this.onTap,
@@ -455,7 +151,7 @@ class _HeroCard extends StatelessWidget {
                     ),
                     if (isBirthday) ...[
                       const SizedBox(width: 8),
-                      const _PartyCrackersBadge(),
+                      const PartyCrackersBadge(),
                     ],
                   ],
                 ),
@@ -501,8 +197,8 @@ class _HeroCard extends StatelessWidget {
   }
 }
 
-class _BirthdayBanner extends StatelessWidget {
-  const _BirthdayBanner();
+class BirthdayBanner extends StatelessWidget {
+  const BirthdayBanner();
 
   @override
   Widget build(BuildContext context) {
@@ -533,14 +229,14 @@ class _BirthdayBanner extends StatelessWidget {
   }
 }
 
-class _PartyCrackersBadge extends StatefulWidget {
-  const _PartyCrackersBadge();
+class PartyCrackersBadge extends StatefulWidget {
+  const PartyCrackersBadge();
 
   @override
-  State<_PartyCrackersBadge> createState() => _PartyCrackersBadgeState();
+  State<PartyCrackersBadge> createState() => _PartyCrackersBadgeState();
 }
 
-class _PartyCrackersBadgeState extends State<_PartyCrackersBadge>
+class _PartyCrackersBadgeState extends State<PartyCrackersBadge>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
@@ -594,8 +290,8 @@ class _PartyCrackersBadgeState extends State<_PartyCrackersBadge>
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, required this.subtitle});
+class SectionTitle extends StatelessWidget {
+  const SectionTitle({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -626,8 +322,8 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({
+class StatCard extends StatelessWidget {
+  const StatCard({
     required this.title,
     required this.value,
     required this.icon,
@@ -723,8 +419,8 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _DetailCard extends StatelessWidget {
-  const _DetailCard({
+class DetailCard extends StatelessWidget {
+  const DetailCard({
     required this.title,
     required this.subtitle,
     this.trailing,
@@ -770,8 +466,8 @@ class _DetailCard extends StatelessWidget {
   }
 }
 
-class _EmptyStateCard extends StatelessWidget {
-  const _EmptyStateCard({
+class EmptyStateCard extends StatelessWidget {
+  const EmptyStateCard({
     required this.icon,
     required this.title,
     required this.subtitle,
