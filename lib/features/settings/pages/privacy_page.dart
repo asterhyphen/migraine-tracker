@@ -44,7 +44,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'We collect information you provide directly to us, such as your name, date of birth, and migraine tracking data. All data is stored locally on your device.',
+              'We collect information you provide directly to us via email, everything else that you log in the app is local to your device and cannot be accessed by us.',
             ),
             const SizedBox(height: 16),
             const Text(
@@ -53,7 +53,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'We use your information to provide and improve our services, including tracking your migraines and generating statistics.',
+              'We use your information to provide and improve our services and provide support. Your medical data is not shared with us and remains only on your device.',
             ),
             const SizedBox(height: 16),
             const Text(
@@ -80,7 +80,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'If you have any questions about this Privacy Policy, please contact us at [contact information].',
+              'If you have any questions about this Privacy Policy, please email me at ahmed@asterhyphen.xyz.',
             ),
             const SizedBox(height: 16),
             const Text(
@@ -91,7 +91,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             InkWell(
               onTap: () => _launchDevUrl(context),
               child: Text(
-                'Developed by AsterHyphen. Tap here to visit asterhyphen.xyz',
+                'Developed by Ahmed Siddiqua. Tap here to visit asterhyphen.xyz',
                 style: TextStyle(
                   color: scheme.primary,
                   decoration: TextDecoration.underline,
@@ -100,7 +100,7 @@ class PrivacyPolicyPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Subtext: Click the link to open the dev website in your browser.',
+              'Subtext: Click the link to open the developer\'s website.',
               style: TextStyle(
                 fontSize: 12,
                 color: scheme.onSurface.withValues(alpha: 0.62),

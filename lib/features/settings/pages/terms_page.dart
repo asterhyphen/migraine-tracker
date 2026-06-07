@@ -80,7 +80,7 @@ class TermsConditionsPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'If you have any questions about these Terms and Conditions, please contact AsterHyphen.',
+              'If you have any questions about these Terms and Conditions, please email me at ahmed@asterhyphen.xyz.',
             ),
             const SizedBox(height: 16),
             const Text(
@@ -91,7 +91,7 @@ class TermsConditionsPage extends StatelessWidget {
             InkWell(
               onTap: () => _launchDevUrl(context),
               child: Text(
-                'Developed by AsterHyphen. Tap here to visit asterhyphen.xyz',
+                'Developed by Ahmed Siddiqua. Tap here to visit asterhyphen.xyz',
                 style: TextStyle(
                   color: scheme.primary,
                   decoration: TextDecoration.underline,
@@ -100,7 +100,7 @@ class TermsConditionsPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Subtext: Click the link to open the dev website in your browser.',
+              'Subtext: Click the link to open the developer\'s website.',
               style: TextStyle(
                 fontSize: 12,
                 color: scheme.onSurface.withValues(alpha: 0.62),
