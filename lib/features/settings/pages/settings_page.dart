@@ -5,23 +5,33 @@ import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nfc_manager/nfc_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:migraine_tracker/core/services/reminder_service.dart';
-import 'package:migraine_tracker/core/theme/app_theme.dart';
+import 'package:migraine_tracker/core/utils/date_utils.dart';
+import 'package:migraine_tracker/core/widgets/app_snackbar.dart';
 import 'package:migraine_tracker/features/settings/models/app_settings.dart';
 import 'package:migraine_tracker/features/tracker/models/cause_option.dart';
 import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
 import 'package:migraine_tracker/features/tracker/providers/causes_provider.dart';
 import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
-import 'package:migraine_tracker/core/utils/date_utils.dart';
-import 'package:migraine_tracker/core/widgets/app_snackbar.dart';
 import 'privacy_page.dart';
 import 'terms_page.dart';
+import 'widgets/section_header.dart';
+import 'sections/profile_section.dart';
+import 'sections/appearance_section.dart';
+import 'sections/causes_section.dart';
+import 'sections/reminders_section.dart';
+import 'sections/nfc_section.dart';
+import 'sections/data_section.dart';
+import 'sections/about_section.dart';
+import 'sections/app_about_section.dart';
+import 'dialogs/cause_manager_sheet.dart';
+import 'dialogs/medication_reminder_dialog.dart';
+import 'dialogs/nfc_action_dialog.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({
@@ -137,7 +147,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => _CauseManagerSheet(initialCauses: _causeOptions),
+      builder: (_) => CauseManagerSheet(initialCauses: _causeOptions),
     );
     if (updated == null) return;
     setState(() {
@@ -411,7 +421,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (!mounted) return;
     final reminder = await showDialog<MedicationReminder>(
       context: context,
-      builder: (context) => const _MedicationReminderDialog(),
+      builder: (context) => const MedicationReminderDialog(),
     );
     if (reminder == null) return;
     setState(() {
@@ -423,7 +433,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _editMedicationReminder(MedicationReminder reminder) async {
     final updated = await showDialog<MedicationReminder>(
       context: context,
-      builder: (context) => _MedicationReminderDialog(reminder: reminder),
+      builder: (context) => MedicationReminderDialog(reminder: reminder),
     );
     if (updated == null) return;
     setState(() {
@@ -466,14 +476,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return MaterialLocalizations.of(
       context,
     ).formatTimeOfDay(TimeOfDay(hour: reminder.hour, minute: reminder.minute));
-  }
-
-  String _shortReminderPreview(String value) {
-    const max = 52;
-    if (value.length <= max) {
-      return value;
-    }
-    return '${value.substring(0, max).trim()}...';
   }
 
   Future<void> _pickProfileImage() async {
@@ -521,7 +523,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       context: context,
       barrierDismissible: false,
       builder: (_) {
-        return const _NfcActionDialog();
+        return const NfcActionDialog();
       },
     );
   }
@@ -714,987 +716,130 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final reminderRows = <Widget>[];
-    void addReminderRow(Widget row) {
-      if (reminderRows.isNotEmpty) {
-        reminderRows.add(const Divider(height: 1));
-      }
-      reminderRows.add(row);
-    }
-
-    addReminderRow(
-      SwitchListTile(
-        value: _dailyReminderEnabled,
-        onChanged: _toggleDailyReminder,
-        title: const Text("Daily log reminder"),
-        subtitle: Text(
-          _dailyReminderEnabled ? "At ${_formatReminderTime(context)}" : "Off",
-        ),
-        secondary: const Icon(Icons.notifications_active_outlined),
-      ),
-    );
-    if (_dailyReminderEnabled) {
-      addReminderRow(
-        _SettingsRow(
-          icon: Icons.text_snippet_outlined,
-          title: "Daily reminder text",
-          value: _shortReminderPreview(_dailyReminderMessage),
-          onTap: () => _editReminderMessage(
-            title: 'Edit daily reminder text',
-            currentMessage: _dailyReminderMessage,
-            onSaved: (text) {
-              setState(() {
-                _dailyReminderMessage = text;
-              });
-            },
-          ),
-        ),
-      );
-      addReminderRow(
-        SwitchListTile(
-          value: _forceDailyReminder,
-          onChanged: (value) {
-            setState(() {
-              _forceDailyReminder = value;
-            });
-            _saveReminderSettings();
-          },
-          title: const Text("Force daily reminder"),
-          subtitle: const Text(
-            "Send the daily reminder even if you've logged today",
-          ),
-          secondary: const Icon(Icons.push_pin_outlined),
-        ),
-      );
-    }
-
-    addReminderRow(
-      SwitchListTile(
-        value: _staleReminderEnabled,
-        onChanged: _toggleStaleReminder,
-        title: const Text("Gentle check-in"),
-        subtitle: Text(
-          _staleReminderEnabled
-              ? "If there is no log for $_staleReminderDays days"
-              : "Off",
-        ),
-        secondary: const Icon(Icons.notification_important_outlined),
-      ),
-    );
-    if (_staleReminderEnabled) {
-      addReminderRow(
-        _SettingsRow(
-          icon: Icons.text_snippet_outlined,
-          title: "Check-in reminder text",
-          value: _shortReminderPreview(_staleReminderMessage),
-          onTap: () => _editReminderMessage(
-            title: 'Edit check-in reminder text',
-            currentMessage: _staleReminderMessage,
-            onSaved: (text) {
-              setState(() {
-                _staleReminderMessage = text;
-              });
-            },
-          ),
-        ),
-      );
-      addReminderRow(
-        _SettingsRow(
-          icon: Icons.event_repeat_outlined,
-          title: "Check-in delay",
-          value: "$_staleReminderDays days after the last log",
-          onTap: _pickStaleReminderDays,
-        ),
-      );
-    }
-
-    if (_dailyReminderEnabled || _staleReminderEnabled) {
-      addReminderRow(
-        _SettingsRow(
-          icon: Icons.schedule_outlined,
-          title: "Reminder time",
-          value: _formatReminderTime(context),
-          onTap: _pickReminderTime,
-        ),
-      );
-    }
-
-    addReminderRow(
-      _SettingsRow(
-        icon: Icons.medication_outlined,
-        title: "Medication reminders",
-        value: _medicationReminders.isEmpty
-            ? "Add medication times"
-            : "${_medicationReminders.length} saved",
-        onTap: _addMedicationReminder,
-      ),
-    );
-    for (final reminder in _medicationReminders) {
-      addReminderRow(
-        _MedicationReminderTile(
-          reminder: reminder,
-          timeLabel: _formatMedicationReminderTime(context, reminder),
-          onChanged: (value) => _toggleMedicationReminder(reminder, value),
-          onEdit: () => _editMedicationReminder(reminder),
-          onDelete: () => _deleteMedicationReminder(reminder),
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(title: const Text("Settings")),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _SettingsCard(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-              child: Row(
-                children: [
-                  InkWell(
-                    borderRadius: BorderRadius.circular(40),
-                    onTap: _pickProfileImage,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: scheme.primary.withValues(
-                            alpha: 0.2,
-                          ),
-                          backgroundImage:
-                              _profileImagePath != null &&
-                                  _profileImagePath!.isNotEmpty
-                              ? FileImage(File(_profileImagePath!))
-                              : null,
-                          child:
-                              _profileImagePath == null ||
-                                  _profileImagePath!.isEmpty
-                              ? Text(
-                                  _nameController.text.isEmpty
-                                      ? "?"
-                                      : _nameController.text[0].toUpperCase(),
-                                  style: TextStyle(
-                                    color: scheme.primary,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 24,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        Positioned(
-                          right: -2,
-                          bottom: -2,
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: scheme.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: scheme.surface,
-                                width: 2,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.edit,
-                              size: 13,
-                              color: scheme.onPrimary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _nameController.text.isEmpty
-                              ? "Your Profile"
-                              : _nameController.text,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "DOB ${_formatDate(_dob)}",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: scheme.onSurface.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+          // Profile Section
+          ProfileSection(
+            name: _nameController.text,
+            dob: _dob,
+            profileImagePath: _profileImagePath,
+            formatDate: _formatDate,
+            onNameEdit: _editName,
+            onDobPick: _pickDob,
+            onImagePick: _pickProfileImage,
+          ),
+          const SizedBox(height: 20),
+
+          // Appearance Section
+          SectionHeader(title: "Appearance"),
+          const SizedBox(height: 12),
+          AppearanceSection(
+            isDarkTheme: _isDarkTheme,
+            onThemeChanged: _toggleTheme,
+          ),
+          const SizedBox(height: 20),
+
+          // Causes Section
+          SectionHeader(title: "Causes"),
+          const SizedBox(height: 12),
+          CausesSection(
+            causeCount: _causeOptions.length,
+            topCauses: _causeOptions.take(3).toList(),
+            onManageCauses: _openCauseManager,
+          ),
+          const SizedBox(height: 20),
+
+          // Reminders Section
+          SectionHeader(title: "Reminders"),
+          const SizedBox(height: 12),
+          RemindersSection(
+            dailyReminderEnabled: _dailyReminderEnabled,
+            staleReminderEnabled: _staleReminderEnabled,
+            reminderHour: _reminderHour,
+            reminderMinute: _reminderMinute,
+            staleReminderDays: _staleReminderDays,
+            forceDailyReminder: _forceDailyReminder,
+            dailyReminderMessage: _dailyReminderMessage,
+            staleReminderMessage: _staleReminderMessage,
+            medicationReminders: _medicationReminders,
+            formatReminderTime: _formatReminderTime,
+            onToggleDailyReminder: _toggleDailyReminder,
+            onToggleStaleReminder: _toggleStaleReminder,
+            onEditDailyMessage: () => _editReminderMessage(
+              title: 'Edit daily reminder text',
+              currentMessage: _dailyReminderMessage,
+              onSaved: (text) {
+                setState(() {
+                  _dailyReminderMessage = text;
+                });
+              },
+            ),
+            onEditStaleMessage: () => _editReminderMessage(
+              title: 'Edit check-in reminder text',
+              currentMessage: _staleReminderMessage,
+              onSaved: (text) {
+                setState(() {
+                  _staleReminderMessage = text;
+                });
+              },
+            ),
+            onToggleForceDailyReminder: (value) {
+              setState(() {
+                _forceDailyReminder = value;
+              });
+              _saveReminderSettings();
+            },
+            onPickReminderTime: _pickReminderTime,
+            onPickStaleReminderDays: _pickStaleReminderDays,
+            onAddMedicationReminder: _addMedicationReminder,
+            onEditMedicationReminder: _editMedicationReminder,
+            onToggleMedicationReminder: _toggleMedicationReminder,
+            onDeleteMedicationReminder: _deleteMedicationReminder,
+            formatMedicationReminderTime: _formatMedicationReminderTime,
+          ),
+          const SizedBox(height: 20),
+
+          // NFC Section
+          SectionHeader(title: "NFC"),
+          const SizedBox(height: 12),
+          NfcSection(onProgramNfc: _openNfcDialog),
+          const SizedBox(height: 20),
+
+          // Data Section
+          SectionHeader(title: "Data"),
+          const SizedBox(height: 12),
+          DataSection(
+            isBusy: _busy,
+            onImportData: _importData,
+            onExportData: _exportData,
+          ),
+          const SizedBox(height: 20),
+
+          // Legal Section
+          SectionHeader(title: "Legal"),
+          const SizedBox(height: 12),
+          LegalSection(
+            onPrivacyPolicyTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+            ),
+            onTermsConditionsTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const TermsConditionsPage()),
             ),
           ),
           const SizedBox(height: 20),
-          _SectionHeader(title: "Profile"),
+
+          // About Section
+          SectionHeader(title: "About"),
           const SizedBox(height: 12),
-          _SettingsCard(
-            child: Column(
-              children: [
-                _SettingsRow(
-                  icon: Icons.person_outline,
-                  title: "Name",
-                  value: _nameController.text.isEmpty
-                      ? "Not set"
-                      : _nameController.text,
-                  onTap: _editName,
-                ),
-                const Divider(height: 1),
-                _SettingsRow(
-                  icon: Icons.cake_outlined,
-                  title: "Date of birth",
-                  value: _formatDate(_dob),
-                  onTap: _pickDob,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          _SectionHeader(title: "Appearance"),
-          const SizedBox(height: 12),
-          _SettingsCard(
-            child: SwitchListTile(
-              value: _isDarkTheme,
-              onChanged: _toggleTheme,
-              title: const Text("Dark theme"),
-              subtitle: Text(_isDarkTheme ? "Enabled (default)" : "Light mode"),
-              secondary: const Icon(Icons.dark_mode_outlined),
-            ),
-          ),
-          const SizedBox(height: 20),
-          _SectionHeader(title: "Causes"),
-          const SizedBox(height: 12),
-          _SettingsCard(
-            child: _SettingsRow(
-              icon: Icons.tune_rounded,
-              title: "Manage causes",
-              value:
-                  "${_causeOptions.length} causes • ${_causeOptions.take(3).join(", ")}",
-              onTap: _openCauseManager,
-            ),
-          ),
-          const SizedBox(height: 20),
-          _SectionHeader(title: "Reminders"),
-          const SizedBox(height: 12),
-          _SettingsCard(child: Column(children: reminderRows)),
-          const SizedBox(height: 20),
-          _SectionHeader(title: "NFC"),
-          const SizedBox(height: 12),
-          _SettingsCard(
-            child: Column(
-              children: [
-                _SettingsRow(
-                  icon: Icons.nfc_rounded,
-                  title: "Program NFC tag",
-                  value:
-                      "One-time setup. Then tap tag from Home/Lock screen to open logging directly.",
-                  onTap: _openNfcDialog,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          _SectionHeader(title: "Data"),
-          const SizedBox(height: 12),
-          _SettingsCard(
-            child: Column(
-              children: [
-                _SettingsRow(
-                  icon: Icons.upload_file_outlined,
-                  title: "Import data",
-                  value: "Restore from CSV backup",
-                  enabled: !_busy,
-                  onTap: _importData,
-                ),
-                const Divider(height: 1),
-                _SettingsRow(
-                  icon: Icons.download_outlined,
-                  title: "Export data",
-                  value: _busy ? "Working..." : "Save CSV to Downloads",
-                  enabled: !_busy,
-                  onTap: _exportData,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          _SectionHeader(title: "Legal"),
-          const SizedBox(height: 12),
-          _SettingsCard(
-            child: Column(
-              children: [
-                _SettingsRow(
-                  icon: Icons.privacy_tip_outlined,
-                  title: "Privacy Policy",
-                  value: "Read privacy policy details",
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const PrivacyPolicyPage(),
-                    ),
-                  ),
-                ),
-                const Divider(height: 1),
-                _SettingsRow(
-                  icon: Icons.description_outlined,
-                  title: "Terms and Conditions",
-                  value: "Read terms and conditions details",
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const TermsConditionsPage(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          _SectionHeader(title: "About"),
-          const SizedBox(height: 12),
-          _SettingsCard(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: const Text('App version'),
-                  subtitle: Text(_appVersion),
-                  onTap: null,
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.developer_mode_outlined),
-                  title: const Text('Dev website'),
-                  subtitle: const Text('https://asterhyphen.xyz'),
-                  onTap: () => _launchUrl('https://asterhyphen.xyz'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.code),
-                  title: const Text('GitHub'),
-                  subtitle: const Text('https://github.com/AsterHyphen'),
-                  onTap: () => _launchUrl('https://github.com/AsterHyphen'),
-                ),
-              ],
-            ),
+          AppAboutSection(
+            appVersion: _appVersion,
+            onDevWebsiteTap: () => _launchUrl('https://asterhyphen.xyz'),
+            onGithubTap: () => _launchUrl('https://github.com/AsterHyphen'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CauseManagerSheet extends StatefulWidget {
-  const _CauseManagerSheet({required this.initialCauses});
-
-  final List<String> initialCauses;
-
-  @override
-  State<_CauseManagerSheet> createState() => _CauseManagerSheetState();
-}
-
-class _CauseManagerSheetState extends State<_CauseManagerSheet> {
-  late List<String> _causes;
-  final TextEditingController _newCauseController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _causes = List<String>.from(widget.initialCauses);
-  }
-
-  @override
-  void dispose() {
-    _newCauseController.dispose();
-    super.dispose();
-  }
-
-  void _addCause() {
-    final value = _newCauseController.text.trim();
-    if (value.isEmpty) return;
-    final exists = _causes.any((c) => c.toLowerCase() == value.toLowerCase());
-    if (exists) return;
-    setState(() {
-      _causes.add(value);
-      _newCauseController.clear();
-    });
-  }
-
-  void _deleteCause(int index) {
-    if (_causes.length <= 1) return;
-    setState(() {
-      _causes.removeAt(index);
-    });
-  }
-
-  void _moveCause(int index, int delta) {
-    final next = index + delta;
-    if (next < 0 || next >= _causes.length) return;
-    setState(() {
-      final item = _causes.removeAt(index);
-      _causes.insert(next, item);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "Manage Causes",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(_causes),
-                  child: const Text("Done"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _newCauseController,
-                    decoration: const InputDecoration(
-                      labelText: "Add new cause",
-                    ),
-                    onSubmitted: (_) => _addCause(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.tonal(
-                  onPressed: _addCause,
-                  child: const Text("Add"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _causes.length,
-                itemBuilder: (context, index) {
-                  final cause = _causes[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: scheme.onSurface.withValues(alpha: 0.12),
-                      ),
-                      color: scheme.surface.withValues(alpha: 0.8),
-                    ),
-                    child: ListTile(
-                      dense: true,
-                      leading: Text(
-                        "${index + 1}",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurface.withValues(alpha: 0.72),
-                        ),
-                      ),
-                      title: Text(
-                        cause,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: SizedBox(
-                        width: 120,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              onPressed: index == 0
-                                  ? null
-                                  : () => _moveCause(index, -1),
-                              icon: const Icon(Icons.keyboard_arrow_up),
-                            ),
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              onPressed: index == _causes.length - 1
-                                  ? null
-                                  : () => _moveCause(index, 1),
-                              icon: const Icon(Icons.keyboard_arrow_down),
-                            ),
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              onPressed: () => _deleteCause(index),
-                              icon: const Icon(Icons.delete_outline),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title.toUpperCase(),
-      style: TextStyle(
-        letterSpacing: 1.1,
-        fontSize: 12,
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: scheme.faintTrack),
-        color: scheme.surface,
-      ),
-      child: child,
-    );
-  }
-}
-
-class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.onTap,
-    this.enabled = true,
-  });
-
-  final IconData icon;
-  final String title;
-  final String value;
-  final VoidCallback onTap;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      enabled: enabled,
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(
-        value,
-        style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.65)),
-      ),
-      trailing: Icon(
-        Icons.chevron_right,
-        color: scheme.onSurface.withValues(alpha: 0.45),
-      ),
-      onTap: enabled ? onTap : null,
-    );
-  }
-}
-
-class _MedicationReminderTile extends StatelessWidget {
-  const _MedicationReminderTile({
-    required this.reminder,
-    required this.timeLabel,
-    required this.onChanged,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final MedicationReminder reminder;
-  final String timeLabel;
-  final ValueChanged<bool> onChanged;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: Switch(value: reminder.enabled, onChanged: onChanged),
-      title: Text(reminder.name),
-      subtitle: Text(
-        "${reminder.enabled ? 'Daily' : 'Off'} at $timeLabel",
-        style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.65)),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            tooltip: "Edit medication reminder",
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined),
-          ),
-          IconButton(
-            tooltip: "Delete medication reminder",
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MedicationReminderDialog extends StatefulWidget {
-  const _MedicationReminderDialog({this.reminder});
-
-  final MedicationReminder? reminder;
-
-  @override
-  State<_MedicationReminderDialog> createState() =>
-      _MedicationReminderDialogState();
-}
-
-class _MedicationReminderDialogState extends State<_MedicationReminderDialog> {
-  late final TextEditingController _nameController;
-  late TimeOfDay _time;
-
-  @override
-  void initState() {
-    super.initState();
-    final reminder = widget.reminder;
-    _nameController = TextEditingController(text: reminder?.name ?? '');
-    _time = TimeOfDay(hour: reminder?.hour ?? 9, minute: reminder?.minute ?? 0);
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(context: context, initialTime: _time);
-    if (picked == null) return;
-    setState(() {
-      _time = picked;
-    });
-  }
-
-  void _save() {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) return;
-    final current = widget.reminder;
-    Navigator.of(context).pop(
-      MedicationReminder(
-        id: current?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
-        name: name,
-        hour: _time.hour,
-        minute: _time.minute,
-        enabled: current?.enabled ?? true,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final timeLabel = MaterialLocalizations.of(context).formatTimeOfDay(_time);
-    return AlertDialog(
-      title: Text(
-        widget.reminder == null
-            ? "Add medication reminder"
-            : "Edit medication reminder",
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _nameController,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: "Medication name",
-              hintText: "For example, Sumatriptan",
-            ),
-            onSubmitted: (_) => _save(),
-          ),
-          const SizedBox(height: 12),
-          _SettingsRow(
-            icon: Icons.schedule_outlined,
-            title: "Reminder time",
-            value: timeLabel,
-            onTap: _pickTime,
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text("Cancel"),
-        ),
-        TextButton(onPressed: _save, child: const Text("Save")),
-      ],
-    );
-  }
-}
-
-enum _NfcStatus { detecting, notDetected, success, error, unavailable }
-
-class _NfcActionDialog extends StatefulWidget {
-  const _NfcActionDialog();
-
-  @override
-  State<_NfcActionDialog> createState() => _NfcActionDialogState();
-}
-
-class _NfcActionDialogState extends State<_NfcActionDialog>
-    with SingleTickerProviderStateMixin {
-  static const _nfcUri = 'migraine-tracker://log';
-  late final AnimationController _pulseController;
-  _NfcStatus _status = _NfcStatus.detecting;
-  String _message = 'Detecting NFC chip...';
-  Timer? _timeout;
-  bool _completed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    )..repeat();
-    _startNfc();
-  }
-
-  @override
-  void dispose() {
-    _timeout?.cancel();
-    _pulseController.dispose();
-    NfcManager.instance.stopSession();
-    super.dispose();
-  }
-
-  Future<void> _startNfc() async {
-    final available = await NfcManager.instance.isAvailable();
-    if (!mounted) return;
-    if (!available) {
-      setState(() {
-        _status = _NfcStatus.unavailable;
-        _message = 'NFC not available on this device.';
-      });
-      return;
-    }
-
-    _completed = false;
-    setState(() {
-      _status = _NfcStatus.detecting;
-      _message =
-          'Hold an NFC tag near your phone to program it with the app shortcut.';
-    });
-
-    _timeout?.cancel();
-    _timeout = Timer(const Duration(seconds: 8), () async {
-      if (_completed || !mounted) return;
-      await NfcManager.instance.stopSession();
-      if (!mounted) return;
-      setState(() {
-        _status = _NfcStatus.notDetected;
-        _message = 'Not detected';
-      });
-    });
-
-    NfcManager.instance.startSession(
-      onDiscovered: (tag) async {
-        if (_completed) return;
-        _completed = true;
-        _timeout?.cancel();
-        try {
-          final ndef = Ndef.from(tag);
-          if (ndef == null || !ndef.isWritable) {
-            throw Exception('Tag not writable');
-          }
-          final msg = NdefMessage([NdefRecord.createUri(Uri.parse(_nfcUri))]);
-          await ndef.write(msg);
-          await NfcManager.instance.stopSession();
-          if (!mounted) return;
-          setState(() {
-            _status = _NfcStatus.success;
-            _message =
-                'NFC tag programmed. You can now tap it from Home/Lock screen to open logging.';
-          });
-        } catch (e) {
-          await NfcManager.instance.stopSession(errorMessage: e.toString());
-          if (!mounted) return;
-          setState(() {
-            _status = _NfcStatus.error;
-            _message = 'Error: $e';
-          });
-        }
-      },
-    );
-  }
-
-  Future<void> _scanAgain() async {
-    await _startNfc();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isError =
-        _status == _NfcStatus.notDetected || _status == _NfcStatus.error;
-
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Program NFC Tag',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _NfcPulse(
-              controller: _pulseController,
-              color: isError ? scheme.error : scheme.primary,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isError ? scheme.error : scheme.onSurface,
-                fontWeight: isError ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 14),
-            if (_status == _NfcStatus.notDetected ||
-                _status == _NfcStatus.error)
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _scanAgain,
-                      child: const Text('Scan again'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Close'),
-                    ),
-                  ),
-                ],
-              ),
-            if (_status == _NfcStatus.success ||
-                _status == _NfcStatus.unavailable)
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NfcPulse extends StatelessWidget {
-  const _NfcPulse({required this.controller, required this.color});
-
-  final AnimationController controller;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 110,
-      height: 110,
-      child: AnimatedBuilder(
-        animation: controller,
-        builder: (context, child) {
-          final t = controller.value;
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              _ring(0.75 + t * 0.9, (1 - t) * 0.32),
-              _ring(0.45 + t * 0.7, (1 - t) * 0.22),
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color.withValues(alpha: 0.2),
-                ),
-                child: Icon(Icons.nfc, color: color),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _ring(double scale, double alpha) {
-    return Transform.scale(
-      scale: scale,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: color.withValues(alpha: alpha.clamp(0.0, 1.0)),
-            width: 2,
-          ),
-        ),
       ),
     );
   }
