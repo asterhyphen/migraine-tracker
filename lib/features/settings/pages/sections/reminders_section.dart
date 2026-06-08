@@ -101,7 +101,7 @@ class RemindersSection extends StatelessWidget {
           onChanged: onToggleForceDailyReminder,
           title: const Text("Force daily reminder"),
           subtitle: const Text(
-            "Send the daily reminder even if you've logged today",
+            "Send the daily reminder even if log has been recorded for the day",
           ),
           secondary: const Icon(Icons.push_pin_outlined),
         ),

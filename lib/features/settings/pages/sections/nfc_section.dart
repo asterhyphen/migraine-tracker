@@ -17,7 +17,7 @@ class NfcSection extends StatelessWidget {
             icon: Icons.nfc_rounded,
             title: "Program NFC tag",
             value:
-                "One-time setup. Then tap tag from Home/Lock screen to open logging directly.",
+                "Program tag once, use anytime.",
             onTap: onProgramNfc,
           ),
         ],

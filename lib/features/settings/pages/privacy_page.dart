@@ -6,7 +6,7 @@ Future<void> _launchDevUrl(BuildContext context) async {
   if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Could not open https://asterhyphen.xyz')),
+      const SnackBar(content: Text('Could not open the website')),
     );
   }
 }

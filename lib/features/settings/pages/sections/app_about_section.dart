@@ -27,15 +27,15 @@ class AppAboutSection extends StatelessWidget {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.developer_mode_outlined),
-            title: const Text('Dev website'),
+            title: const Text('Developer website'),
             subtitle: const Text('https://asterhyphen.xyz'),
             onTap: onDevWebsiteTap,
           ),
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.code),
-            title: const Text('GitHub'),
-            subtitle: const Text('https://github.com/AsterHyphen'),
+            title: const Text('App Source'),
+            subtitle: const Text('https://github.com/asterhyphen/migraine-tracker'),
             onTap: onGithubTap,
           ),
         ],

@@ -20,14 +20,14 @@ class LegalSection extends StatelessWidget {
           SettingsRow(
             icon: Icons.privacy_tip_outlined,
             title: "Privacy Policy",
-            value: "Read privacy policy details",
+            value: "Read the privacy policy",
             onTap: onPrivacyPolicyTap,
           ),
           const Divider(height: 1),
           SettingsRow(
             icon: Icons.description_outlined,
             title: "Terms and Conditions",
-            value: "Read terms and conditions details",
+            value: "Read the terms and conditions",
             onTap: onTermsConditionsTap,
           ),
         ],

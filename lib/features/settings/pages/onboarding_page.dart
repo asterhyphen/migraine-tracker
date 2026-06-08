@@ -46,7 +46,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     if (name.isEmpty || _dob == null) {
       AppSnackBar.showInfo(
         context,
-        title: 'Complete your profile',
+        title: 'Set up your profile',
         message: 'Please enter your name and date of birth.',
       );
       return;
