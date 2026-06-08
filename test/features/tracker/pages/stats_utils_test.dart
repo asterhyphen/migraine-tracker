@@ -14,7 +14,7 @@ MigraineEntry entry(DateTime date, int intensity) {
 }
 
 void main() {
-  test('does not infer a trend during the first seven days', () {
+  test('does not infer a trend before seven days have elapsed', () {
     final comparison = buildMonthlyProgressComparison(
       allEntries: [
         entry(DateTime(2026, 6, 2), 3),

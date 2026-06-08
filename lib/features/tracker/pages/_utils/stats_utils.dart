@@ -132,7 +132,7 @@ MonthlyProgressComparison buildMonthlyProgressComparison({
     return result(
       MonthlyProgressStatus.insufficient,
       "Too early to compare",
-      "A trend will appear after day 7, using the same days from last month.",
+      "A trend will appear once 7 days have elapsed, using the same days from last month.",
     );
   }
   if (selectedEntries.length < 2 || previousEntries.length < 2) {
