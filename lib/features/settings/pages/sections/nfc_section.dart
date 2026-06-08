@@ -16,8 +16,7 @@ class NfcSection extends StatelessWidget {
           SettingsRow(
             icon: Icons.nfc_rounded,
             title: "Program NFC tag",
-            value:
-                "Program tag once, use anytime.",
+            value: "Program tag once, use anytime.",
             onTap: onProgramNfc,
           ),
         ],

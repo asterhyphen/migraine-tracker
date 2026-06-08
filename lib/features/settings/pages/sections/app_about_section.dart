@@ -35,7 +35,9 @@ class AppAboutSection extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.code),
             title: const Text('App Source'),
-            subtitle: const Text('https://github.com/asterhyphen/migraine-tracker'),
+            subtitle: const Text(
+              'https://github.com/asterhyphen/migraine-tracker',
+            ),
             onTap: onGithubTap,
           ),
         ],
