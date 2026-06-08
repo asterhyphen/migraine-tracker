@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:migraine_tracker/core/theme/app_theme.dart';
 import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
+import 'package:migraine_tracker/features/tracker/pages/_utils/stats_utils.dart'
+    as stats_utils;
 import 'package:migraine_tracker/features/tracker/pages/view_page.dart';
 import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
 import 'package:migraine_tracker/core/utils/date_utils.dart';
@@ -79,6 +81,10 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             selectedMonth: selectedMonth,
             compareMonth: compareMonth,
           );
+    final progressComparison = stats_utils.buildMonthlyProgressComparison(
+      allEntries: entries,
+      selectedMonth: selectedMonth,
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text("Statistics")),
@@ -120,6 +126,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                           ? null
                           : _monthLabelFull(compareMonth),
                     ),
+                    const SizedBox(height: 12),
+                    _MonthlyProgressCard(comparison: progressComparison),
                     const SizedBox(height: 24),
                     if (filtered.isEmpty) ...[
                       _SelectedMonthEmptyState(
@@ -794,6 +802,128 @@ class _SectionTitle extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _MonthlyProgressCard extends StatelessWidget {
+  const _MonthlyProgressCard({required this.comparison});
+
+  final stats_utils.MonthlyProgressComparison comparison;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final (accent, icon) = switch (comparison.status) {
+      stats_utils.MonthlyProgressStatus.better => (
+        const Color(0xFF16865F),
+        Icons.trending_down_rounded,
+      ),
+      stats_utils.MonthlyProgressStatus.worse => (
+        scheme.error,
+        Icons.trending_up_rounded,
+      ),
+      stats_utils.MonthlyProgressStatus.steady => (
+        scheme.tertiary,
+        Icons.trending_flat_rounded,
+      ),
+      stats_utils.MonthlyProgressStatus.mixed => (
+        scheme.secondary,
+        Icons.swap_vert_rounded,
+      ),
+      stats_utils.MonthlyProgressStatus.insufficient => (
+        scheme.onSurface.withValues(alpha: 0.62),
+        Icons.hourglass_top_rounded,
+      ),
+    };
+    final currentAverage = comparison.currentAverage;
+    final previousAverage = comparison.previousAverage;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        color: accent.withValues(alpha: 0.08),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: accent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  comparison.title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(comparison.message),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _ComparisonMetric(
+                label: "Migraines",
+                value:
+                    "${comparison.currentCount} vs ${comparison.previousCount}",
+                accent: accent,
+              ),
+              _ComparisonMetric(
+                label: "Avg. intensity",
+                value: currentAverage == null || previousAverage == null
+                    ? "Not available"
+                    : "${currentAverage.toStringAsFixed(1)} vs ${previousAverage.toStringAsFixed(1)}",
+                accent: accent,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            comparison.periodLabel,
+            style: TextStyle(
+              fontSize: 12,
+              color: scheme.onSurface.withValues(alpha: 0.62),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComparisonMetric extends StatelessWidget {
+  const _ComparisonMetric({
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
+
+  final String label;
+  final String value;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.82),
+        border: Border.all(color: accent.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        "$label: $value",
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

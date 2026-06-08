@@ -48,6 +48,144 @@ class ComparisonItem {
   final String subtitle;
 }
 
+enum MonthlyProgressStatus { better, worse, steady, mixed, insufficient }
+
+/// A conservative comparison with the same elapsed period in the prior month.
+class MonthlyProgressComparison {
+  const MonthlyProgressComparison({
+    required this.status,
+    required this.title,
+    required this.message,
+    required this.periodLabel,
+    required this.currentCount,
+    required this.previousCount,
+    this.currentAverage,
+    this.previousAverage,
+  });
+
+  final MonthlyProgressStatus status;
+  final String title;
+  final String message;
+  final String periodLabel;
+  final int currentCount;
+  final int previousCount;
+  final double? currentAverage;
+  final double? previousAverage;
+}
+
+/// Compare a selected month with the equivalent elapsed days one month earlier.
+///
+/// Current-month comparisons wait for at least seven elapsed days. A directional
+/// result also requires at least two entries in each period so that one isolated
+/// migraine does not decide whether the month is better or worse.
+MonthlyProgressComparison buildMonthlyProgressComparison({
+  required List<MigraineEntry> allEntries,
+  required DateTime selectedMonth,
+  DateTime? now,
+}) {
+  final today = now ?? DateTime.now();
+  final selected = DateTime(selectedMonth.year, selectedMonth.month);
+  final current = DateTime(today.year, today.month);
+  final previous = DateTime(selected.year, selected.month - 1);
+  final isCurrentMonth = isSameMonth(selected, current);
+  final elapsedDays = isCurrentMonth
+      ? today.day
+      : DateTime(selected.year, selected.month + 1, 0).day;
+  final previousMonthDays = DateTime(previous.year, previous.month + 1, 0).day;
+  final comparisonDays = elapsedDays.clamp(1, previousMonthDays);
+
+  final selectedEntries = allEntries.where((entry) {
+    return entry.hadMigraine &&
+        isSameMonth(entry.date, selected) &&
+        entry.date.day <= elapsedDays;
+  }).toList();
+  final previousEntries = allEntries.where((entry) {
+    return entry.hadMigraine &&
+        isSameMonth(entry.date, previous) &&
+        entry.date.day <= comparisonDays;
+  }).toList();
+
+  final periodLabel = isCurrentMonth
+      ? "Days 1-$comparisonDays vs ${monthLabel(previous)} 1-$comparisonDays"
+      : "${monthLabelFull(selected)} vs ${monthLabelFull(previous)}";
+  final selectedAverage = _averageIntensity(selectedEntries);
+  final previousAverage = _averageIntensity(previousEntries);
+
+  MonthlyProgressComparison result(
+    MonthlyProgressStatus status,
+    String title,
+    String message,
+  ) {
+    return MonthlyProgressComparison(
+      status: status,
+      title: title,
+      message: message,
+      periodLabel: periodLabel,
+      currentCount: selectedEntries.length,
+      previousCount: previousEntries.length,
+      currentAverage: selectedAverage,
+      previousAverage: previousAverage,
+    );
+  }
+
+  if (isCurrentMonth && elapsedDays < 7) {
+    return result(
+      MonthlyProgressStatus.insufficient,
+      "Too early to compare",
+      "A trend will appear after day 7, using the same days from last month.",
+    );
+  }
+  if (selectedEntries.length < 2 || previousEntries.length < 2) {
+    return result(
+      MonthlyProgressStatus.insufficient,
+      "Not enough comparable data",
+      "At least 2 migraine entries in each period are needed for a trend.",
+    );
+  }
+
+  final countDelta = selectedEntries.length - previousEntries.length;
+  final intensityDelta = selectedAverage! - previousAverage!;
+  final frequencySignal = countDelta.compareTo(0);
+  final intensitySignal = intensityDelta.abs() < 0.5
+      ? 0
+      : intensityDelta.compareTo(0);
+  final hasBetterSignal = frequencySignal < 0 || intensitySignal < 0;
+  final hasWorseSignal = frequencySignal > 0 || intensitySignal > 0;
+
+  if (hasBetterSignal && !hasWorseSignal) {
+    return result(
+      MonthlyProgressStatus.better,
+      "Looking better",
+      "Migraine frequency or intensity is lower, with no measured worsening.",
+    );
+  }
+  if (hasWorseSignal && !hasBetterSignal) {
+    return result(
+      MonthlyProgressStatus.worse,
+      "Looking worse",
+      "Migraine frequency or intensity is higher, with no measured improvement.",
+    );
+  }
+  if (!hasBetterSignal && !hasWorseSignal) {
+    return result(
+      MonthlyProgressStatus.steady,
+      "About the same",
+      "Frequency is unchanged and average intensity differs by less than 0.5.",
+    );
+  }
+  return result(
+    MonthlyProgressStatus.mixed,
+    "Mixed changes",
+    "Frequency and average intensity are moving in different directions.",
+  );
+}
+
+double? _averageIntensity(List<MigraineEntry> entries) {
+  if (entries.isEmpty) return null;
+  return entries.map((entry) => entry.intensity).reduce((a, b) => a + b) /
+      entries.length;
+}
+
 /// Build weekly frequency data for a month.
 List<BarDatum> buildWeeklyFrequency(
   List<MigraineEntry> source,
