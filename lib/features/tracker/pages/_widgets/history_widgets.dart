@@ -280,19 +280,49 @@ class HistoryEntryCard extends StatelessWidget {
 }
 
 class MonthHeader extends StatelessWidget {
-  const MonthHeader({required this.title});
+  const MonthHeader({
+    required this.title,
+    this.count,
+  });
 
   final String title;
+  final int? count;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w700,
-        color: Theme.of(context).colorScheme.primary,
-      ),
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: scheme.primary,
+          ),
+        ),
+        if (count != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: scheme.primary.withValues(alpha: 0.22),
+              ),
+            ),
+            child: Text(
+              count == 1 ? "1 entry" : "$count entries",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: scheme.primary,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

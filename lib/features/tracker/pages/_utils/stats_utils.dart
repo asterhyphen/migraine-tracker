@@ -12,11 +12,12 @@ class BarDatum {
 
 /// Data class for cause statistics.
 class CauseDatum {
-  CauseDatum(this.label, this.count, this.total);
+  CauseDatum(this.label, this.count, this.total, {this.avgIntensity = 0.0});
 
   final String label;
   final int count;
   final int total;
+  final double avgIntensity;
 
   double get percent => total == 0 ? 0 : count / total;
 }
@@ -255,15 +256,126 @@ DateTime? validatedCompareMonth({
 /// Build cause statistics from entries.
 List<CauseDatum> buildCauseStats(List<MigraineEntry> source) {
   final Map<String, int> counts = {};
+  final Map<String, List<int>> intensities = {};
   for (final entry in source) {
     for (final cause in entry.causes) {
       counts[cause] = (counts[cause] ?? 0) + 1;
+      intensities.putIfAbsent(cause, () => []).add(entry.intensity);
     }
   }
   final total = counts.values.fold<int>(0, (sum, v) => sum + v);
   final sorted = counts.entries.toList()
     ..sort((a, b) => b.value.compareTo(a.value));
-  return sorted.map((e) => CauseDatum(e.key, e.value, total)).toList();
+  return sorted.map((e) {
+    final list = intensities[e.key] ?? [];
+    final avg = list.isEmpty ? 0.0 : list.reduce((a, b) => a + b) / list.length;
+    return CauseDatum(e.key, e.value, total, avgIntensity: avg);
+  }).toList();
+}
+
+/// Data class for a calendar day item.
+class CalendarDayInfo {
+  const CalendarDayInfo({
+    required this.date,
+    required this.isCurrentMonth,
+    required this.isToday,
+    this.entry,
+  });
+
+  final DateTime date;
+  final bool isCurrentMonth;
+  final bool isToday;
+  final MigraineEntry? entry;
+
+  bool get hasMigraine => entry != null && entry!.hadMigraine;
+}
+
+/// Build the grid of days (Monday through Sunday) for an Apple-style calendar.
+List<CalendarDayInfo> buildCalendarMonthDays({
+  required DateTime month,
+  required List<MigraineEntry> entries,
+  DateTime? now,
+}) {
+  final today = now ?? DateTime.now();
+  final year = month.year;
+  final m = month.month;
+  final firstDayOfMonth = DateTime(year, m, 1);
+  final daysInMonth = DateTime(year, m + 1, 0).day;
+  final daysInPrevMonth = DateTime(year, m, 0).day;
+
+  // Weekday: Monday is 1, Sunday is 7.
+  final leadingDays = firstDayOfMonth.weekday - 1;
+
+  final result = <CalendarDayInfo>[];
+
+  // Map entries for quick O(1) lookup by date string 'yyyy-MM-dd'
+  final entryMap = <String, MigraineEntry>{};
+  for (final entry in entries) {
+    final key = "${entry.date.year}-${entry.date.month}-${entry.date.day}";
+    if (!entryMap.containsKey(key) ||
+        (entry.hadMigraine && !entryMap[key]!.hadMigraine)) {
+      entryMap[key] = entry;
+    }
+  }
+
+  // Leading days from previous month
+  for (int i = leadingDays - 1; i >= 0; i--) {
+    final dayNum = daysInPrevMonth - i;
+    final date = DateTime(year, m - 1, dayNum);
+    final key = "${date.year}-${date.month}-${date.day}";
+    final isTodayDate =
+        date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
+    result.add(
+      CalendarDayInfo(
+        date: date,
+        isCurrentMonth: false,
+        isToday: isTodayDate,
+        entry: entryMap[key],
+      ),
+    );
+  }
+
+  // Days in current month
+  for (int day = 1; day <= daysInMonth; day++) {
+    final date = DateTime(year, m, day);
+    final key = "${date.year}-${date.month}-${date.day}";
+    final isTodayDate =
+        date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
+    result.add(
+      CalendarDayInfo(
+        date: date,
+        isCurrentMonth: true,
+        isToday: isTodayDate,
+        entry: entryMap[key],
+      ),
+    );
+  }
+
+  // Trailing days from next month to complete the row (total 35 or 42 cells)
+  final totalCells = result.length <= 35 ? 35 : 42;
+  final trailingDays = totalCells - result.length;
+  for (int day = 1; day <= trailingDays; day++) {
+    final date = DateTime(year, m + 1, day);
+    final key = "${date.year}-${date.month}-${date.day}";
+    final isTodayDate =
+        date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day;
+    result.add(
+      CalendarDayInfo(
+        date: date,
+        isCurrentMonth: false,
+        isToday: isTodayDate,
+        entry: entryMap[key],
+      ),
+    );
+  }
+
+  return result;
 }
 
 /// Calculate painkiller usage percentage.

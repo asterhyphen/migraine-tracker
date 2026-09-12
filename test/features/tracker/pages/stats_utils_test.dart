@@ -65,4 +65,73 @@ void main() {
 
     expect(comparison.status, MonthlyProgressStatus.mixed);
   });
+
+  test('buildCalendarMonthDays generates grid with migraine markers', () {
+    final entries = [
+      MigraineEntry(
+        date: DateTime(2026, 9, 12),
+        hadMigraine: true,
+        intensity: 8,
+        painkillers: true,
+        notes: '',
+        causes: ['Stress'],
+      ),
+      MigraineEntry(
+        date: DateTime(2026, 9, 20),
+        hadMigraine: false,
+        intensity: 0,
+        painkillers: false,
+        notes: '',
+        causes: [],
+      ),
+    ];
+
+    final days = buildCalendarMonthDays(
+      month: DateTime(2026, 9),
+      entries: entries,
+      now: DateTime(2026, 9, 12),
+    );
+
+    expect(days.length % 7, 0); // Must be multiple of 7
+    final sep12 = days.firstWhere(
+      (d) => d.isCurrentMonth && d.date.day == 12,
+    );
+    expect(sep12.isToday, isTrue);
+    expect(sep12.hasMigraine, isTrue);
+
+    final sep20 = days.firstWhere(
+      (d) => d.isCurrentMonth && d.date.day == 20,
+    );
+    expect(sep20.hasMigraine, isFalse);
+  });
+
+  test('buildCauseStats computes occurrences, percent and avg intensity', () {
+    final entries = [
+      MigraineEntry(
+        date: DateTime(2026, 9, 2),
+        hadMigraine: true,
+        intensity: 6,
+        painkillers: false,
+        notes: '',
+        causes: ['Stress', 'Lack of sleep'],
+      ),
+      MigraineEntry(
+        date: DateTime(2026, 9, 4),
+        hadMigraine: true,
+        intensity: 8,
+        painkillers: true,
+        notes: '',
+        causes: ['Stress'],
+      ),
+    ];
+
+    final causes = buildCauseStats(entries);
+    expect(causes.length, 2);
+    expect(causes.first.label, 'Stress');
+    expect(causes.first.count, 2);
+    expect(causes.first.avgIntensity, 7.0);
+    expect(causes[1].label, 'Lack of sleep');
+    expect(causes[1].count, 1);
+    expect(causes[1].avgIntensity, 6.0);
+  });
 }

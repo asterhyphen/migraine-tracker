@@ -47,7 +47,10 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
       children.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
-          child: MonthHeader(title: group.key),
+          child: MonthHeader(
+            title: group.key,
+            count: group.value.length,
+          ),
         ),
       );
       for (final entry in group.value) {
