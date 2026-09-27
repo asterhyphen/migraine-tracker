@@ -57,6 +57,9 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
     required String dailyMessage,
     required String staleMessage,
     required List<MedicationReminder> medicationReminders,
+    required bool dailySurveyEnabled,
+    required int dailySurveyHour,
+    required int dailySurveyMinute,
   }) async {
     await _repository.saveReminderSettings(
       dailyEnabled: dailyEnabled,
@@ -68,6 +71,9 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
       dailyMessage: dailyMessage,
       staleMessage: staleMessage,
       medicationReminders: medicationReminders,
+      dailySurveyEnabled: dailySurveyEnabled,
+      dailySurveyHour: dailySurveyHour,
+      dailySurveyMinute: dailySurveyMinute,
     );
     final current = state.value ?? AppSettings.initial();
     state = AsyncValue.data(
@@ -81,7 +87,16 @@ class AppSettingsController extends AsyncNotifier<AppSettings> {
         dailyReminderMessage: dailyMessage,
         staleReminderMessage: staleMessage,
         medicationReminders: medicationReminders,
+        dailySurveyEnabled: dailySurveyEnabled,
+        dailySurveyHour: dailySurveyHour,
+        dailySurveyMinute: dailySurveyMinute,
       ),
     );
+  }
+
+  Future<void> setAdvancedStatsEnabled(bool enabled) async {
+    await _repository.setAdvancedStatsEnabled(enabled);
+    final current = state.value ?? AppSettings.initial();
+    state = AsyncValue.data(current.copyWith(advancedStatsEnabled: enabled));
   }
 }

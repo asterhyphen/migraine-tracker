@@ -15,6 +15,10 @@ class AppSettings {
     required this.dailyReminderMessage,
     required this.staleReminderMessage,
     required this.medicationReminders,
+    this.dailySurveyEnabled = true,
+    this.dailySurveyHour = 21,
+    this.dailySurveyMinute = 0,
+    this.advancedStatsEnabled = false,
   });
 
   factory AppSettings.initial() {
@@ -34,6 +38,10 @@ class AppSettings {
       staleReminderMessage:
           'It has been a few days since your last log. Add a quick update when you can.',
       medicationReminders: [],
+      dailySurveyEnabled: true,
+      dailySurveyHour: 21,
+      dailySurveyMinute: 0,
+      advancedStatsEnabled: false,
     );
   }
 
@@ -50,6 +58,10 @@ class AppSettings {
   final String dailyReminderMessage;
   final String staleReminderMessage;
   final List<MedicationReminder> medicationReminders;
+  final bool dailySurveyEnabled;
+  final int dailySurveyHour;
+  final int dailySurveyMinute;
+  final bool advancedStatsEnabled;
 
   bool get hasProfile => name != null && dob != null;
 
@@ -69,6 +81,10 @@ class AppSettings {
     String? dailyReminderMessage,
     String? staleReminderMessage,
     List<MedicationReminder>? medicationReminders,
+    bool? dailySurveyEnabled,
+    int? dailySurveyHour,
+    int? dailySurveyMinute,
+    bool? advancedStatsEnabled,
     bool clearProfileImagePath = false,
   }) {
     return AppSettings(
@@ -87,6 +103,10 @@ class AppSettings {
       dailyReminderMessage: dailyReminderMessage ?? this.dailyReminderMessage,
       staleReminderMessage: staleReminderMessage ?? this.staleReminderMessage,
       medicationReminders: medicationReminders ?? this.medicationReminders,
+      dailySurveyEnabled: dailySurveyEnabled ?? this.dailySurveyEnabled,
+      dailySurveyHour: dailySurveyHour ?? this.dailySurveyHour,
+      dailySurveyMinute: dailySurveyMinute ?? this.dailySurveyMinute,
+      advancedStatsEnabled: advancedStatsEnabled ?? this.advancedStatsEnabled,
     );
   }
 }

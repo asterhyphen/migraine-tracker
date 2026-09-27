@@ -53,6 +53,11 @@ class SettingsPage extends ConsumerStatefulWidget {
     required this.staleReminderMessage,
     required this.medicationReminders,
     required this.onReminderSettingsChanged,
+    required this.dailySurveyEnabled,
+    required this.dailySurveyHour,
+    required this.dailySurveyMinute,
+    required this.advancedStatsEnabled,
+    required this.onAdvancedStatsChanged,
   });
 
   final String initialName;
@@ -71,6 +76,11 @@ class SettingsPage extends ConsumerStatefulWidget {
   final String dailyReminderMessage;
   final String staleReminderMessage;
   final List<MedicationReminder> medicationReminders;
+  final bool dailySurveyEnabled;
+  final int dailySurveyHour;
+  final int dailySurveyMinute;
+  final bool advancedStatsEnabled;
+  final ValueChanged<bool> onAdvancedStatsChanged;
   final Future<void> Function({
     required bool dailyEnabled,
     required bool staleEnabled,
@@ -81,6 +91,9 @@ class SettingsPage extends ConsumerStatefulWidget {
     required String dailyMessage,
     required String staleMessage,
     required List<MedicationReminder> medicationReminders,
+    required bool dailySurveyEnabled,
+    required int dailySurveyHour,
+    required int dailySurveyMinute,
   })
   onReminderSettingsChanged;
 
@@ -101,6 +114,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late String _dailyReminderMessage;
   late String _staleReminderMessage;
   late List<MedicationReminder> _medicationReminders;
+  late bool _dailySurveyEnabled;
+  late int _dailySurveyHour;
+  late int _dailySurveyMinute;
+  late bool _advancedStatsEnabled;
   String? _profileImagePath;
   String _appVersion = '-';
   bool _busy = false;
@@ -123,6 +140,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _medicationReminders = List<MedicationReminder>.from(
       widget.medicationReminders,
     );
+    _dailySurveyEnabled = widget.dailySurveyEnabled;
+    _dailySurveyHour = widget.dailySurveyHour;
+    _dailySurveyMinute = widget.dailySurveyMinute;
+    _advancedStatsEnabled = widget.advancedStatsEnabled;
     _profileImagePath = widget.initialProfileImagePath;
     _loadAppVersion();
     _loadCauseOptions();
@@ -261,6 +282,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     await widget.onThemeChanged(value);
   }
 
+  String _formatSurveyTime(BuildContext context) {
+    return MaterialLocalizations.of(context).formatTimeOfDay(
+      TimeOfDay(hour: _dailySurveyHour, minute: _dailySurveyMinute),
+    );
+  }
+
   Future<void> _saveReminderSettings() async {
     await widget.onReminderSettingsChanged(
       dailyEnabled: _dailyReminderEnabled,
@@ -272,6 +299,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       dailyMessage: _dailyReminderMessage,
       staleMessage: _staleReminderMessage,
       medicationReminders: _medicationReminders,
+      dailySurveyEnabled: _dailySurveyEnabled,
+      dailySurveyHour: _dailySurveyHour,
+      dailySurveyMinute: _dailySurveyMinute,
     );
   }
 
@@ -291,6 +321,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (value && !await _ensureNotificationPermission()) return;
     setState(() {
       _dailyReminderEnabled = value;
+    });
+    await _saveReminderSettings();
+  }
+
+  Future<void> _toggleDailySurvey(bool value) async {
+    if (value && !await _ensureNotificationPermission()) return;
+    setState(() {
+      _dailySurveyEnabled = value;
+    });
+    await _saveReminderSettings();
+  }
+
+  Future<void> _pickSurveyTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: _dailySurveyHour,
+        minute: _dailySurveyMinute,
+      ),
+    );
+    if (picked == null) return;
+    setState(() {
+      _dailySurveyHour = picked.hour;
+      _dailySurveyMinute = picked.minute;
     });
     await _saveReminderSettings();
   }
@@ -739,6 +793,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           AppearanceSection(
             isDarkTheme: _isDarkTheme,
             onThemeChanged: _toggleTheme,
+            advancedStatsEnabled: _advancedStatsEnabled,
+            onAdvancedStatsChanged: (value) {
+              setState(() {
+                _advancedStatsEnabled = value;
+              });
+              widget.onAdvancedStatsChanged(value);
+            },
           ),
           const SizedBox(height: 20),
 
@@ -799,6 +860,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             onToggleMedicationReminder: _toggleMedicationReminder,
             onDeleteMedicationReminder: _deleteMedicationReminder,
             formatMedicationReminderTime: _formatMedicationReminderTime,
+            dailySurveyEnabled: _dailySurveyEnabled,
+            dailySurveyHour: _dailySurveyHour,
+            dailySurveyMinute: _dailySurveyMinute,
+            formatSurveyTime: _formatSurveyTime,
+            onToggleDailySurvey: _toggleDailySurvey,
+            onPickSurveyTime: _pickSurveyTime,
           ),
           const SizedBox(height: 20),
 

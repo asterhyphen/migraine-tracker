@@ -14,8 +14,12 @@ class ReminderService {
   static final ReminderService instance = ReminderService._();
 
   static const logPayload = 'open-log';
+  static const surveyPayload = 'daily-survey';
+  static const surveyActionYes = 'survey_yes';
+  static const surveyActionNo = 'survey_no';
   static const _dailyReminderId = 701;
   static const _staleReminderId = 702;
+  static const _dailySurveyId = 705;
   static const _medicationReminderBaseId = 720;
   static const _maxMedicationReminders = 50;
 
@@ -25,7 +29,10 @@ class ReminderService {
   bool _initialized = false;
   bool _handledLaunchNotification = false;
 
-  Future<void> initialize({void Function()? onLogRequested}) async {
+  Future<void> initialize({
+    void Function()? onLogRequested,
+    void Function(bool hadMigraine)? onSurveyResponse,
+  }) async {
     if (_initialized) {
       return;
     }
@@ -40,6 +47,22 @@ class ReminderService {
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
+      notificationCategories: [
+        DarwinNotificationCategory(
+          'daily_survey_category',
+          actions: [
+            DarwinNotificationAction.plain(
+              surveyActionYes,
+              'Yes, had migraine',
+              options: {DarwinNotificationActionOption.foreground},
+            ),
+            DarwinNotificationAction.plain(
+              surveyActionNo,
+              'No, pain-free',
+            ),
+          ],
+        ),
+      ],
     );
     const initializationSettings = InitializationSettings(
       android: androidSettings,
@@ -50,7 +73,13 @@ class ReminderService {
     await _notifications.initialize(
       settings: initializationSettings,
       onDidReceiveNotificationResponse: (response) {
-        if (response.payload == logPayload) {
+        if (response.actionId == surveyActionYes) {
+          onSurveyResponse?.call(true);
+        } else if (response.actionId == surveyActionNo) {
+          onSurveyResponse?.call(false);
+        } else if (response.payload == surveyPayload) {
+          onLogRequested?.call();
+        } else if (response.payload == logPayload) {
           onLogRequested?.call();
         }
       },
@@ -62,9 +91,16 @@ class ReminderService {
     final response = launchDetails?.notificationResponse;
     if (!_handledLaunchNotification &&
         launchDetails?.didNotificationLaunchApp == true &&
-        response?.payload == logPayload) {
+        response != null) {
       _handledLaunchNotification = true;
-      onLogRequested?.call();
+      if (response.actionId == surveyActionYes) {
+        onSurveyResponse?.call(true);
+      } else if (response.actionId == surveyActionNo) {
+        onSurveyResponse?.call(false);
+      } else if (response.payload == surveyPayload ||
+          response.payload == logPayload) {
+        onLogRequested?.call();
+      }
     }
   }
 
@@ -106,11 +142,18 @@ class ReminderService {
     await initialize();
     await _notifications.cancel(id: _dailyReminderId);
     await _notifications.cancel(id: _staleReminderId);
+    await _notifications.cancel(id: _dailySurveyId);
     await _cancelMedicationReminders();
 
     if (settings.dailyReminderEnabled) {
       if (settings.forceDailyReminder || !_hasLoggedToday(entries)) {
         await _scheduleDaily(settings);
+      }
+    }
+
+    if (settings.dailySurveyEnabled) {
+      if (!_hasLoggedToday(entries)) {
+        await _scheduleDailySurvey(settings);
       }
     }
 
@@ -134,6 +177,7 @@ class ReminderService {
     await initialize();
     await _notifications.cancel(id: _dailyReminderId);
     await _notifications.cancel(id: _staleReminderId);
+    await _notifications.cancel(id: _dailySurveyId);
     await _cancelMedicationReminders();
   }
 
@@ -156,6 +200,22 @@ class ReminderService {
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
       payload: logPayload,
+    );
+  }
+
+  Future<void> _scheduleDailySurvey(AppSettings settings) async {
+    await _notifications.zonedSchedule(
+      id: _dailySurveyId,
+      title: 'Daily Check-in',
+      body: 'Did you have a migraine today?',
+      scheduledDate: _nextTime(
+        settings.dailySurveyHour,
+        settings.dailySurveyMinute,
+      ),
+      notificationDetails: _surveyNotificationDetails(),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
+      payload: surveyPayload,
     );
   }
 
@@ -242,6 +302,37 @@ class ReminderService {
       category: AndroidNotificationCategory.reminder,
     );
     const darwin = DarwinNotificationDetails();
+    return const NotificationDetails(
+      android: android,
+      iOS: darwin,
+      macOS: darwin,
+    );
+  }
+
+  NotificationDetails _surveyNotificationDetails() {
+    const android = AndroidNotificationDetails(
+      'migraine_survey_reminders',
+      'Daily check-in survey',
+      channelDescription: 'Quick daily survey to record migraine status.',
+      importance: Importance.high,
+      priority: Priority.high,
+      category: AndroidNotificationCategory.reminder,
+      actions: [
+        AndroidNotificationAction(
+          surveyActionYes,
+          'Yes',
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction(
+          surveyActionNo,
+          'No',
+          showsUserInterface: false,
+        ),
+      ],
+    );
+    const darwin = DarwinNotificationDetails(
+      categoryIdentifier: 'daily_survey_category',
+    );
     return const NotificationDetails(
       android: android,
       iOS: darwin,

@@ -20,6 +20,10 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
   static const _dailyReminderMessageKey = 'daily_reminder_message';
   static const _staleReminderMessageKey = 'stale_reminder_message';
   static const _medicationRemindersKey = 'medication_reminders';
+  static const _dailySurveyEnabledKey = 'daily_survey_enabled';
+  static const _dailySurveyHourKey = 'daily_survey_hour';
+  static const _dailySurveyMinuteKey = 'daily_survey_minute';
+  static const _advancedStatsEnabledKey = 'advanced_stats_enabled';
 
   @override
   Future<int?> loadBirthdayAnnouncedYear() async {
@@ -53,6 +57,10 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
       medicationReminders: _loadMedicationReminders(
         prefs.getString(_medicationRemindersKey),
       ),
+      dailySurveyEnabled: prefs.getBool(_dailySurveyEnabledKey) ?? true,
+      dailySurveyHour: prefs.getInt(_dailySurveyHourKey) ?? 21,
+      dailySurveyMinute: prefs.getInt(_dailySurveyMinuteKey) ?? 0,
+      advancedStatsEnabled: prefs.getBool(_advancedStatsEnabledKey) ?? false,
     );
   }
 
@@ -91,6 +99,9 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
     required String dailyMessage,
     required String staleMessage,
     required List<MedicationReminder> medicationReminders,
+    required bool dailySurveyEnabled,
+    required int dailySurveyHour,
+    required int dailySurveyMinute,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_dailyReminderEnabledKey, dailyEnabled);
@@ -107,12 +118,21 @@ class SharedPrefsSettingsRepository implements AppSettingsRepository {
         medicationReminders.map((reminder) => reminder.toJson()).toList(),
       ),
     );
+    await prefs.setBool(_dailySurveyEnabledKey, dailySurveyEnabled);
+    await prefs.setInt(_dailySurveyHourKey, dailySurveyHour);
+    await prefs.setInt(_dailySurveyMinuteKey, dailySurveyMinute);
   }
 
   @override
   Future<void> setDarkMode(bool isDark) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_themePrefKey, isDark);
+  }
+
+  @override
+  Future<void> setAdvancedStatsEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_advancedStatsEnabledKey, enabled);
   }
 
   static List<MedicationReminder> _loadMedicationReminders(String? raw) {

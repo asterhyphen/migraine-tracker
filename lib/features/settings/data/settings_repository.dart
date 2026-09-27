@@ -16,6 +16,10 @@ abstract class AppSettingsRepository {
     required String dailyMessage,
     required String staleMessage,
     required List<MedicationReminder> medicationReminders,
+    required bool dailySurveyEnabled,
+    required int dailySurveyHour,
+    required int dailySurveyMinute,
   });
   Future<void> setDarkMode(bool isDark);
+  Future<void> setAdvancedStatsEnabled(bool enabled);
 }

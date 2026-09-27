@@ -29,6 +29,12 @@ class RemindersSection extends StatelessWidget {
     required this.onToggleMedicationReminder,
     required this.onDeleteMedicationReminder,
     required this.formatMedicationReminderTime,
+    required this.dailySurveyEnabled,
+    required this.dailySurveyHour,
+    required this.dailySurveyMinute,
+    required this.formatSurveyTime,
+    required this.onToggleDailySurvey,
+    required this.onPickSurveyTime,
   });
 
   final bool dailyReminderEnabled;
@@ -54,6 +60,12 @@ class RemindersSection extends StatelessWidget {
   final Function(MedicationReminder) onDeleteMedicationReminder;
   final String Function(BuildContext, MedicationReminder)
   formatMedicationReminderTime;
+  final bool dailySurveyEnabled;
+  final int dailySurveyHour;
+  final int dailySurveyMinute;
+  final String Function(BuildContext) formatSurveyTime;
+  final ValueChanged<bool> onToggleDailySurvey;
+  final VoidCallback onPickSurveyTime;
 
   String _shortReminderPreview(String value) {
     const max = 52;
@@ -137,6 +149,31 @@ class RemindersSection extends StatelessWidget {
           title: "Check-in delay",
           value: "$staleReminderDays days after the last log",
           onTap: onPickStaleReminderDays,
+        ),
+      );
+    }
+
+    addReminderRow(
+      SwitchListTile(
+        value: dailySurveyEnabled,
+        onChanged: onToggleDailySurvey,
+        title: const Text("Daily check-in survey"),
+        subtitle: Text(
+          dailySurveyEnabled
+              ? "Everyday ask at ${formatSurveyTime(context)} (Yes/No directly in notification)"
+              : "Off",
+        ),
+        secondary: const Icon(Icons.quiz_outlined),
+      ),
+    );
+
+    if (dailySurveyEnabled) {
+      addReminderRow(
+        SettingsRow(
+          icon: Icons.access_time_outlined,
+          title: "Survey time",
+          value: formatSurveyTime(context),
+          onTap: onPickSurveyTime,
         ),
       );
     }

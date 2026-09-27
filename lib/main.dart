@@ -57,8 +57,42 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   void initState() {
     super.initState();
-    ReminderService.instance.initialize(onLogRequested: _handleReminderOpen);
+    ReminderService.instance.initialize(
+      onLogRequested: _handleReminderOpen,
+      onSurveyResponse: _handleSurveyResponse,
+    );
     _setupDeepLinks();
+  }
+
+  Future<void> _handleSurveyResponse(bool hadMigraine) async {
+    if (hadMigraine) {
+      _handleReminderOpen();
+    } else {
+      final today = DateTime.now();
+      final existing = await ref
+          .read(migraineEntriesProvider.notifier)
+          .entryForDate(today);
+      if (existing != null) {
+        final updated = existing.copyWith(
+          hadMigraine: false,
+          intensity: 0,
+          painkillers: false,
+          notes: existing.notes.isEmpty
+              ? 'Daily check-in: Pain-free'
+              : existing.notes,
+        );
+        await ref.read(migraineEntriesProvider.notifier).saveEntry(updated);
+      } else {
+        final entry = MigraineEntry(
+          date: today,
+          hadMigraine: false,
+          intensity: 0,
+          painkillers: false,
+          notes: 'Daily check-in: Pain-free',
+        );
+        await ref.read(migraineEntriesProvider.notifier).saveEntry(entry);
+      }
+    }
   }
 
   @override
@@ -245,6 +279,13 @@ class _AppShellState extends ConsumerState<AppShell> {
         onReminderSettingsChanged: ref
             .read(appSettingsProvider.notifier)
             .saveReminderSettings,
+        dailySurveyEnabled: appSettings.dailySurveyEnabled,
+        dailySurveyHour: appSettings.dailySurveyHour,
+        dailySurveyMinute: appSettings.dailySurveyMinute,
+        advancedStatsEnabled: appSettings.advancedStatsEnabled,
+        onAdvancedStatsChanged: ref
+            .read(appSettingsProvider.notifier)
+            .setAdvancedStatsEnabled,
       ),
     ];
 
