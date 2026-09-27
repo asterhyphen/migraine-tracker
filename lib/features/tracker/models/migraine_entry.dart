@@ -6,7 +6,7 @@ class MigraineEntry {
     required this.intensity,
     required this.painkillers,
     required this.notes,
-    required this.causes,
+    this.causes = const [],
   });
 
   final int? id;
@@ -16,6 +16,26 @@ class MigraineEntry {
   final bool painkillers;
   final String notes;
   final List<String> causes;
+
+  MigraineEntry copyWith({
+    int? id,
+    DateTime? date,
+    bool? hadMigraine,
+    int? intensity,
+    bool? painkillers,
+    String? notes,
+    List<String>? causes,
+  }) {
+    return MigraineEntry(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      hadMigraine: hadMigraine ?? this.hadMigraine,
+      intensity: intensity ?? this.intensity,
+      painkillers: painkillers ?? this.painkillers,
+      notes: notes ?? this.notes,
+      causes: causes ?? this.causes,
+    );
+  }
 
   Map<String, Object?> toMap() {
     return {

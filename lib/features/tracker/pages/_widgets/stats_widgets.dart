@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:migraine_tracker/core/theme/app_theme.dart';
 import 'package:migraine_tracker/core/widgets/wavy_surface.dart';
@@ -224,6 +225,92 @@ class SelectedMonthEmptyState extends StatelessWidget {
             child: Text(
               "No entries for $monthLabel. Showing empty monthly stats.",
               style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.72)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class MonthlyProgressCard extends StatelessWidget {
+  const MonthlyProgressCard({
+    super.key,
+    required this.comparison,
+  });
+
+  final MonthlyProgressComparison comparison;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final iconData = switch (comparison.status) {
+      MonthlyProgressStatus.better => Icons.trending_down_rounded,
+      MonthlyProgressStatus.worse => Icons.trending_up_rounded,
+      MonthlyProgressStatus.steady => Icons.trending_flat_rounded,
+      MonthlyProgressStatus.mixed => Icons.swap_horiz_rounded,
+      MonthlyProgressStatus.insufficient => Icons.hourglass_top_rounded,
+    };
+    final color = switch (comparison.status) {
+      MonthlyProgressStatus.better => scheme.primary,
+      MonthlyProgressStatus.worse => scheme.error,
+      MonthlyProgressStatus.steady => scheme.secondary,
+      MonthlyProgressStatus.mixed => scheme.tertiary,
+      MonthlyProgressStatus.insufficient =>
+        scheme.onSurface.withValues(alpha: 0.55),
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+        color: scheme.surface.withValues(alpha: 0.74),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withValues(alpha: 0.12),
+            ),
+            child: Icon(iconData, color: color, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      comparison.title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      comparison.periodLabel,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurface.withValues(alpha: 0.58),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  comparison.message,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: scheme.onSurface.withValues(alpha: 0.72),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

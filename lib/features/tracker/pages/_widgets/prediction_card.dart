@@ -33,7 +33,7 @@ class _PredictionCardState extends ConsumerState<PredictionCard> {
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (error, stackTrace) => const SizedBox.shrink(),
       data: (prediction) {
         final feedback = todayFeedbackAsync.value;
         final riskColor = prediction.riskColor;
