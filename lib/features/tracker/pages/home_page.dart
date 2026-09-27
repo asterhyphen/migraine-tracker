@@ -8,6 +8,7 @@ import 'package:migraine_tracker/core/widgets/wavy_surface.dart';
 import 'package:migraine_tracker/features/settings/providers/settings_provider.dart';
 import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
 import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
+import '_widgets/prediction_card.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key, required this.dob, this.name});
@@ -213,6 +214,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 const SizedBox(height: 14),
                 const _BirthdayBanner(),
               ],
+              const SizedBox(height: 16),
+              const PredictionCard(),
               const SizedBox(height: 24),
               const _SectionTitle(
                 title: "At a Glance",
