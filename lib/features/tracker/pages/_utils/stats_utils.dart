@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:migraine_tracker/core/utils/date_utils.dart';
 import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
@@ -542,4 +543,555 @@ String signedDoubleDelta(double value) {
   if (value.abs() < 0.05) return "No change";
   final sign = value > 0 ? "+" : "";
   return "$sign${value.toStringAsFixed(1)}";
+}
+
+// ==========================================
+// ADVANCED STATISTICAL ANALYTICS MODELS
+// ==========================================
+
+/// Advanced Trigger Co-occurrence Correlation
+class TriggerCorrelation {
+  const TriggerCorrelation({
+    required this.causeA,
+    required this.causeB,
+    required this.coOccurrences,
+    required this.correlationPercent,
+  });
+
+  final String causeA;
+  final String causeB;
+  final int coOccurrences;
+  final double correlationPercent;
+}
+
+/// Cause impact on intensity (intensity multiplier)
+class TriggerRiskMultiplier {
+  const TriggerRiskMultiplier({
+    required this.cause,
+    required this.occurrences,
+    required this.avgIntensityWith,
+    required this.avgIntensityWithout,
+    required this.intensityDelta,
+  });
+
+  final String cause;
+  final int occurrences;
+  final double avgIntensityWith;
+  final double avgIntensityWithout;
+  final double intensityDelta;
+}
+
+/// Cycle & periodicity intervals
+class CycleIntervalMetrics {
+  const CycleIntervalMetrics({
+    required this.intervalCount,
+    required this.meanIntervalDays,
+    required this.medianIntervalDays,
+    required this.minIntervalDays,
+    required this.maxIntervalDays,
+    required this.intervalStandardDeviation,
+    required this.regularityScore,
+    required this.intervalsUnder4Days,
+    required this.intervals4to7Days,
+    required this.intervals8to14Days,
+    required this.intervals15PlusDays,
+  });
+
+  final int intervalCount;
+  final double meanIntervalDays;
+  final double medianIntervalDays;
+  final int minIntervalDays;
+  final int maxIntervalDays;
+  final double intervalStandardDeviation;
+  final double regularityScore;
+  final int intervalsUnder4Days;
+  final int intervals4to7Days;
+  final int intervals8to14Days;
+  final int intervals15PlusDays;
+}
+
+/// Day of week distribution
+class WeekdayDayMetric {
+  const WeekdayDayMetric({
+    required this.weekdayName,
+    required this.shortName,
+    required this.count,
+    required this.percent,
+    required this.avgIntensity,
+  });
+
+  final String weekdayName;
+  final String shortName;
+  final int count;
+  final double percent;
+  final double avgIntensity;
+}
+
+class WeekdayDistribution {
+  const WeekdayDistribution({
+    required this.days,
+    required this.peakDayName,
+    required this.peakDayCount,
+    required this.isWeekendPeak,
+  });
+
+  final List<WeekdayDayMetric> days;
+  final String peakDayName;
+  final int peakDayCount;
+  final bool isWeekendPeak;
+}
+
+/// Severity classification
+class SeverityDistribution {
+  const SeverityDistribution({
+    required this.mildCount,
+    required this.mildPercent,
+    required this.moderateCount,
+    required this.moderatePercent,
+    required this.severeCount,
+    required this.severePercent,
+    required this.totalCount,
+    required this.standardDeviation,
+  });
+
+  final int mildCount;
+  final double mildPercent;
+  final int moderateCount;
+  final double moderatePercent;
+  final int severeCount;
+  final double severePercent;
+  final int totalCount;
+  final double standardDeviation;
+}
+
+/// Medication Overuse & Rebound Risk
+enum MedicationOveruseLevel { low, caution, high }
+
+class MedicationRiskMetrics {
+  const MedicationRiskMetrics({
+    required this.medicationDaysThisMonth,
+    required this.medicationDaysLast30Days,
+    required this.totalDaysInMonth,
+    required this.riskLevel,
+    required this.riskMessage,
+    required this.consecutiveDaysMax,
+  });
+
+  final int medicationDaysThisMonth;
+  final int medicationDaysLast30Days;
+  final int totalDaysInMonth;
+  final MedicationOveruseLevel riskLevel;
+  final String riskMessage;
+  final int consecutiveDaysMax;
+}
+
+// ==========================================
+// ADVANCED STATISTICAL COMPUTATION FUNCTIONS
+// ==========================================
+
+/// Calculate pairwise trigger co-occurrences.
+List<TriggerCorrelation> calculateTriggerCorrelations(
+  List<MigraineEntry> entries, {
+  int minCoOccurrences = 1,
+}) {
+  final migraineEntries = entries.where((e) => e.hadMigraine).toList();
+  if (migraineEntries.isEmpty) return const [];
+
+  final pairCounts = <String, int>{};
+  final causeCounts = <String, int>{};
+
+  for (final entry in migraineEntries) {
+    final uniqueCauses = entry.causes.toSet().toList()..sort();
+    for (int i = 0; i < uniqueCauses.length; i++) {
+      final a = uniqueCauses[i];
+      causeCounts[a] = (causeCounts[a] ?? 0) + 1;
+      for (int j = i + 1; j < uniqueCauses.length; j++) {
+        final b = uniqueCauses[j];
+        final key = "$a|||$b";
+        pairCounts[key] = (pairCounts[key] ?? 0) + 1;
+      }
+    }
+  }
+
+  final correlations = <TriggerCorrelation>[];
+  for (final entry in pairCounts.entries) {
+    if (entry.value < minCoOccurrences) continue;
+    final parts = entry.key.split("|||");
+    final causeA = parts[0];
+    final causeB = parts[1];
+    final countA = causeCounts[causeA] ?? 1;
+    final countB = causeCounts[causeB] ?? 1;
+    final minCount = math.min(countA, countB);
+    final percent = minCount > 0 ? (entry.value / minCount) * 100 : 0.0;
+
+    correlations.add(
+      TriggerCorrelation(
+        causeA: causeA,
+        causeB: causeB,
+        coOccurrences: entry.value,
+        correlationPercent: percent.clamp(0.0, 100.0),
+      ),
+    );
+  }
+
+  correlations.sort((a, b) {
+    final cmp = b.coOccurrences.compareTo(a.coOccurrences);
+    if (cmp != 0) return cmp;
+    return b.correlationPercent.compareTo(a.correlationPercent);
+  });
+
+  return correlations;
+}
+
+/// Calculate trigger risk multipliers (how much pain intensity changes when a trigger is present).
+List<TriggerRiskMultiplier> calculateTriggerRiskMultipliers(
+  List<MigraineEntry> entries, {
+  int minOccurrences = 1,
+}) {
+  final migraineEntries = entries.where((e) => e.hadMigraine).toList();
+  if (migraineEntries.isEmpty) return const [];
+
+  final causeMap = <String, List<int>>{};
+  for (final entry in migraineEntries) {
+    for (final cause in entry.causes) {
+      causeMap.putIfAbsent(cause, () => []).add(entry.intensity);
+    }
+  }
+
+  final overallSum = migraineEntries.fold<int>(0, (sum, e) => sum + e.intensity);
+  final overallCount = migraineEntries.length;
+
+  final multipliers = <TriggerRiskMultiplier>[];
+  for (final entry in causeMap.entries) {
+    final cause = entry.key;
+    final withIntensities = entry.value;
+    if (withIntensities.length < minOccurrences) continue;
+
+    final avgWith =
+        withIntensities.reduce((a, b) => a + b) / withIntensities.length;
+    
+    // Average intensity of migraine entries without this cause
+    final withoutEntries =
+        migraineEntries.where((e) => !e.causes.contains(cause)).toList();
+    final avgWithout = withoutEntries.isEmpty
+        ? (overallCount > 0 ? overallSum / overallCount : avgWith)
+        : withoutEntries.fold<int>(0, (sum, e) => sum + e.intensity) /
+            withoutEntries.length;
+
+    final delta = avgWith - avgWithout;
+
+    multipliers.add(
+      TriggerRiskMultiplier(
+        cause: cause,
+        occurrences: withIntensities.length,
+        avgIntensityWith: avgWith,
+        avgIntensityWithout: avgWithout,
+        intensityDelta: delta,
+      ),
+    );
+  }
+
+  multipliers.sort((a, b) {
+    final cmp = b.intensityDelta.compareTo(a.intensityDelta);
+    if (cmp != 0) return cmp;
+    return b.occurrences.compareTo(a.occurrences);
+  });
+
+  return multipliers;
+}
+
+/// Calculate inter-attack interval statistics and periodicity regularity.
+CycleIntervalMetrics calculateCycleIntervalMetrics(List<MigraineEntry> allEntries) {
+  final migraineDays = allEntries
+      .where((e) => e.hadMigraine)
+      .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
+      .toSet()
+      .toList()
+    ..sort();
+
+  if (migraineDays.length < 2) {
+    return const CycleIntervalMetrics(
+      intervalCount: 0,
+      meanIntervalDays: 0,
+      medianIntervalDays: 0,
+      minIntervalDays: 0,
+      maxIntervalDays: 0,
+      intervalStandardDeviation: 0,
+      regularityScore: 0,
+      intervalsUnder4Days: 0,
+      intervals4to7Days: 0,
+      intervals8to14Days: 0,
+      intervals15PlusDays: 0,
+    );
+  }
+
+  final intervals = <int>[];
+  for (int i = 1; i < migraineDays.length; i++) {
+    final diff = migraineDays[i].difference(migraineDays[i - 1]).inDays;
+    if (diff > 0) {
+      intervals.add(diff);
+    }
+  }
+
+  if (intervals.isEmpty) {
+    return const CycleIntervalMetrics(
+      intervalCount: 0,
+      meanIntervalDays: 0,
+      medianIntervalDays: 0,
+      minIntervalDays: 0,
+      maxIntervalDays: 0,
+      intervalStandardDeviation: 0,
+      regularityScore: 0,
+      intervalsUnder4Days: 0,
+      intervals4to7Days: 0,
+      intervals8to14Days: 0,
+      intervals15PlusDays: 0,
+    );
+  }
+
+  final sum = intervals.reduce((a, b) => a + b);
+  final mean = sum / intervals.length;
+
+  final sortedIntervals = List<int>.from(intervals)..sort();
+  final median = sortedIntervals.length.isOdd
+      ? sortedIntervals[sortedIntervals.length ~/ 2].toDouble()
+      : (sortedIntervals[sortedIntervals.length ~/ 2 - 1] +
+              sortedIntervals[sortedIntervals.length ~/ 2]) /
+          2.0;
+
+  final minVal = sortedIntervals.first;
+  final maxVal = sortedIntervals.last;
+
+  final varianceSum = intervals.fold<double>(
+    0.0,
+    (acc, val) => acc + math.pow(val - mean, 2),
+  );
+  final stdDev = math.sqrt(varianceSum / intervals.length);
+
+  // Coefficient of Variation regularity score (0 to 100%)
+  final cv = mean > 0 ? (stdDev / mean) : 1.0;
+  final regularity = ((1.0 - cv.clamp(0.0, 1.0)) * 100).roundToDouble();
+
+  int under4 = 0;
+  int d4to7 = 0;
+  int d8to14 = 0;
+  int d15plus = 0;
+
+  for (final iv in intervals) {
+    if (iv < 4) {
+      under4++;
+    } else if (iv <= 7) {
+      d4to7++;
+    } else if (iv <= 14) {
+      d8to14++;
+    } else {
+      d15plus++;
+    }
+  }
+
+  return CycleIntervalMetrics(
+    intervalCount: intervals.length,
+    meanIntervalDays: mean,
+    medianIntervalDays: median,
+    minIntervalDays: minVal,
+    maxIntervalDays: maxVal,
+    intervalStandardDeviation: stdDev,
+    regularityScore: regularity,
+    intervalsUnder4Days: under4,
+    intervals4to7Days: d4to7,
+    intervals8to14Days: d8to14,
+    intervals15PlusDays: d15plus,
+  );
+}
+
+/// Calculate weekday attack distribution (Monday to Sunday).
+WeekdayDistribution calculateWeekdayDistribution(List<MigraineEntry> entries) {
+  const weekdayNames = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  const shortNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  final counts = List<int>.filled(7, 0);
+  final intensitySums = List<int>.filled(7, 0);
+
+  final migraineEntries = entries.where((e) => e.hadMigraine).toList();
+  for (final entry in migraineEntries) {
+    final idx = (entry.date.weekday - 1).clamp(0, 6);
+    counts[idx] += 1;
+    intensitySums[idx] += entry.intensity;
+  }
+
+  final total = migraineEntries.length;
+  final dayMetrics = <WeekdayDayMetric>[];
+
+  int peakCount = 0;
+  String peakDay = "None";
+
+  for (int i = 0; i < 7; i++) {
+    final count = counts[i];
+    final percent = total > 0 ? (count / total) * 100 : 0.0;
+    final avg = count > 0 ? intensitySums[i] / count : 0.0;
+    if (count > peakCount) {
+      peakCount = count;
+      peakDay = weekdayNames[i];
+    }
+    dayMetrics.add(
+      WeekdayDayMetric(
+        weekdayName: weekdayNames[i],
+        shortName: shortNames[i],
+        count: count,
+        percent: percent,
+        avgIntensity: avg,
+      ),
+    );
+  }
+
+  final isWeekend = peakDay == 'Saturday' || peakDay == 'Sunday';
+
+  return WeekdayDistribution(
+    days: dayMetrics,
+    peakDayName: peakDay,
+    peakDayCount: peakCount,
+    isWeekendPeak: isWeekend,
+  );
+}
+
+/// Calculate pain severity distribution and volatility.
+SeverityDistribution calculateSeverityDistribution(List<MigraineEntry> entries) {
+  final migraineEntries = entries.where((e) => e.hadMigraine).toList();
+  if (migraineEntries.isEmpty) {
+    return const SeverityDistribution(
+      mildCount: 0,
+      mildPercent: 0,
+      moderateCount: 0,
+      moderatePercent: 0,
+      severeCount: 0,
+      severePercent: 0,
+      totalCount: 0,
+      standardDeviation: 0,
+    );
+  }
+
+  int mild = 0;
+  int moderate = 0;
+  int severe = 0;
+  final intensities = <int>[];
+
+  for (final entry in migraineEntries) {
+    intensities.add(entry.intensity);
+    if (entry.intensity <= 3) {
+      mild++;
+    } else if (entry.intensity <= 6) {
+      moderate++;
+    } else {
+      severe++;
+    }
+  }
+
+  final total = migraineEntries.length;
+  final mean = intensities.reduce((a, b) => a + b) / total;
+  final varianceSum = intensities.fold<double>(
+    0.0,
+    (acc, val) => acc + math.pow(val - mean, 2),
+  );
+  final stdDev = math.sqrt(varianceSum / total);
+
+  return SeverityDistribution(
+    mildCount: mild,
+    mildPercent: (mild / total) * 100,
+    moderateCount: moderate,
+    moderatePercent: (moderate / total) * 100,
+    severeCount: severe,
+    severePercent: (severe / total) * 100,
+    totalCount: total,
+    standardDeviation: stdDev,
+  );
+}
+
+/// Calculate medication overuse headache (MOH) risk metrics.
+MedicationRiskMetrics calculateMedicationRisk(
+  List<MigraineEntry> allEntries,
+  DateTime selectedMonth, {
+  DateTime? now,
+}) {
+  final refDate = now ?? DateTime.now();
+  final daysInMonth =
+      DateTime(selectedMonth.year, selectedMonth.month + 1, 0).day;
+
+  final monthPainkillerDays = allEntries
+      .where((e) =>
+          e.painkillers &&
+          e.date.year == selectedMonth.year &&
+          e.date.month == selectedMonth.month)
+      .map((e) => e.date.day)
+      .toSet()
+      .length;
+
+  final thirtyDaysAgo = refDate.subtract(const Duration(days: 30));
+  final recentPainkillerDays = allEntries
+      .where((e) =>
+          e.painkillers &&
+          e.date.isAfter(thirtyDaysAgo) &&
+          e.date.isBefore(refDate.add(const Duration(days: 1))))
+      .map((e) => "${e.date.year}-${e.date.month}-${e.date.day}")
+      .toSet()
+      .length;
+
+  // Compute maximum consecutive medication days
+  final sortedMedDates = allEntries
+      .where((e) => e.painkillers)
+      .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
+      .toSet()
+      .toList()
+    ..sort();
+
+  int maxConsecutive = 0;
+  int currentStreak = 0;
+  for (int i = 0; i < sortedMedDates.length; i++) {
+    if (i == 0) {
+      currentStreak = 1;
+    } else {
+      final diff = sortedMedDates[i].difference(sortedMedDates[i - 1]).inDays;
+      if (diff == 1) {
+        currentStreak++;
+      } else {
+        currentStreak = 1;
+      }
+    }
+    if (currentStreak > maxConsecutive) {
+      maxConsecutive = currentStreak;
+    }
+  }
+
+  MedicationOveruseLevel riskLevel;
+  String message;
+
+  if (monthPainkillerDays >= 10 || recentPainkillerDays >= 10) {
+    riskLevel = MedicationOveruseLevel.high;
+    message =
+        "Analgesic frequency ($monthPainkillerDays days/mo) exceeds the 10-day MOH clinical threshold. Risk of rebound headaches.";
+  } else if (monthPainkillerDays >= 6 || recentPainkillerDays >= 6) {
+    riskLevel = MedicationOveruseLevel.caution;
+    message =
+        "Moderate analgesic frequency ($monthPainkillerDays days/mo). Keep usage under 10 days/month to avoid rebound cycles.";
+  } else {
+    riskLevel = MedicationOveruseLevel.low;
+    message =
+        "Low analgesic frequency ($monthPainkillerDays days/mo). Well within safe clinical parameters.";
+  }
+
+  return MedicationRiskMetrics(
+    medicationDaysThisMonth: monthPainkillerDays,
+    medicationDaysLast30Days: recentPainkillerDays,
+    totalDaysInMonth: daysInMonth,
+    riskLevel: riskLevel,
+    riskMessage: message,
+    consecutiveDaysMax: maxConsecutive,
+  );
 }

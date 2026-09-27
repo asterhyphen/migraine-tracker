@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:migraine_tracker/core/theme/app_theme.dart';
+import 'package:migraine_tracker/features/settings/providers/settings_provider.dart';
 import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
 import 'package:migraine_tracker/features/tracker/pages/_utils/stats_utils.dart'
     as stats_utils;
+import 'package:migraine_tracker/features/tracker/pages/_widgets/stats_widgets.dart'
+    as stats_widgets;
 import 'package:migraine_tracker/features/tracker/pages/view_page.dart';
 import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
 import 'package:migraine_tracker/core/utils/date_utils.dart';
@@ -85,9 +88,31 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       allEntries: entries,
       selectedMonth: selectedMonth,
     );
+    final appSettings = ref.watch(appSettingsProvider).value;
+    final isAdvancedStats = appSettings?.advancedStatsEnabled ?? false;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Statistics")),
+      appBar: AppBar(
+        title: const Text("Statistics"),
+        actions: [
+          IconButton(
+            tooltip: isAdvancedStats
+                ? "Disable Pro Analytics"
+                : "Enable Pro Analytics",
+            icon: Icon(
+              isAdvancedStats
+                  ? Icons.auto_graph_rounded
+                  : Icons.insights_outlined,
+              color: isAdvancedStats ? Theme.of(context).colorScheme.primary : null,
+            ),
+            onPressed: () {
+              ref
+                  .read(appSettingsProvider.notifier)
+                  .setAdvancedStatsEnabled(!isAdvancedStats);
+            },
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _loadStats,
         child: SingleChildScrollView(
@@ -128,6 +153,47 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                     ),
                     const SizedBox(height: 12),
                     _MonthlyProgressCard(comparison: progressComparison),
+                    const SizedBox(height: 16),
+                    // Pro Analytics Toggle Pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
+                        ),
+                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.72),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isAdvancedStats
+                                ? Icons.auto_graph_rounded
+                                : Icons.bar_chart_rounded,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              isAdvancedStats ? "Pro Analytics View" : "Standard Summary View",
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          Switch.adaptive(
+                            value: isAdvancedStats,
+                            onChanged: (val) {
+                              ref
+                                  .read(appSettingsProvider.notifier)
+                                  .setAdvancedStatsEnabled(val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     if (filtered.isEmpty) ...[
                       _SelectedMonthEmptyState(
@@ -255,6 +321,12 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                         ],
                       ),
                     ),
+                    if (isAdvancedStats)
+                      stats_widgets.AdvancedStatsSection(
+                        entries: filtered,
+                        allEntries: entries,
+                        selectedMonth: selectedMonth,
+                      ),
                   ],
                 ),
         ),

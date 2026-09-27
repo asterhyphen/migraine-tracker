@@ -1411,3 +1411,902 @@ class LinePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
+
+// ==========================================
+// ADVANCED STATS SUITE WIDGETS
+// ==========================================
+
+class AdvancedStatsSection extends StatelessWidget {
+  const AdvancedStatsSection({
+    super.key,
+    required this.entries,
+    required this.allEntries,
+    required this.selectedMonth,
+  });
+
+  final List<MigraineEntry> entries;
+  final List<MigraineEntry> allEntries;
+  final DateTime selectedMonth;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final correlations = calculateTriggerCorrelations(entries);
+    final riskMultipliers = calculateTriggerRiskMultipliers(entries);
+    final intervals = calculateCycleIntervalMetrics(allEntries);
+    final weekdayDist = calculateWeekdayDistribution(entries);
+    final severityDist = calculateSeverityDistribution(entries);
+    final medRisk = calculateMedicationRisk(allEntries, selectedMonth);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.auto_graph_rounded, size: 16, color: scheme.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    "PRO ANALYTICS",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                      color: scheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const SectionTitle(
+          title: "Periodicity & Interval Regularity",
+          subtitle: "Clinical cycle metrics and attack recurrence gaps",
+        ),
+        const SizedBox(height: 12),
+        _PeriodicityCard(metrics: intervals),
+        const SizedBox(height: 20),
+        const SectionTitle(
+          title: "Weekday Vulnerability Profile",
+          subtitle: "Day-of-week recurrence and weekend let-down patterns",
+        ),
+        const SizedBox(height: 12),
+        _WeekdayProfileCard(distribution: weekdayDist),
+        const SizedBox(height: 20),
+        const SectionTitle(
+          title: "Trigger Impact & Correlations",
+          subtitle: "Pairwise co-occurrences and pain intensity multipliers",
+        ),
+        const SizedBox(height: 12),
+        _TriggerImpactCard(
+          correlations: correlations,
+          riskMultipliers: riskMultipliers,
+        ),
+        const SizedBox(height: 20),
+        const SectionTitle(
+          title: "Pain Severity & Volatility",
+          subtitle: "Mild/Mod/Severe distribution and clinical pain stability",
+        ),
+        const SizedBox(height: 12),
+        _SeverityVolatilityCard(distribution: severityDist),
+        const SizedBox(height: 20),
+        const SectionTitle(
+          title: "Medication Overuse (MOH) Guard",
+          subtitle: "Analgesic frequency monitoring against rebound risk thresholds",
+        ),
+        const SizedBox(height: 12),
+        _MedicationOveruseCard(metrics: medRisk),
+      ],
+    );
+  }
+}
+
+class _PeriodicityCard extends StatelessWidget {
+  const _PeriodicityCard({required this.metrics});
+
+  final CycleIntervalMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    if (metrics.intervalCount == 0) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+          color: scheme.surface.withValues(alpha: 0.72),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.timeline_rounded, color: scheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Need at least 2 migraine entries across your history to calculate cycle periodicity and interval metrics.",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: scheme.onSurface.withValues(alpha: 0.72),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+        color: scheme.surface.withValues(alpha: 0.76),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _IntervalMetricPill(
+                label: "Mean Interval",
+                value: "${metrics.meanIntervalDays.toStringAsFixed(1)}d",
+              ),
+              _IntervalMetricPill(
+                label: "Median Gap",
+                value: "${metrics.medianIntervalDays.toStringAsFixed(1)}d",
+              ),
+              _IntervalMetricPill(
+                label: "Regularity",
+                value: "${metrics.regularityScore.toInt()}%",
+                badgeColor: metrics.regularityScore > 70
+                    ? Colors.green
+                    : (metrics.regularityScore > 40 ? Colors.orange : Colors.red),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          Text(
+            "Recurrence Interval Breakdown",
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface.withValues(alpha: 0.85),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _IntervalDistributionBar(metrics: metrics),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Min gap: ${metrics.minIntervalDays}d",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: scheme.onSurface.withValues(alpha: 0.60),
+                ),
+              ),
+              Text(
+                "Max pain-free gap: ${metrics.maxIntervalDays}d",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: scheme.primary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IntervalMetricPill extends StatelessWidget {
+  const _IntervalMetricPill({
+    required this.label,
+    required this.value,
+    this.badgeColor,
+  });
+
+  final String label;
+  final String value;
+  final Color? badgeColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: scheme.onSurface.withValues(alpha: 0.60),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: badgeColor ?? scheme.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _IntervalDistributionBar extends StatelessWidget {
+  const _IntervalDistributionBar({required this.metrics});
+
+  final CycleIntervalMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = metrics.intervalCount;
+    if (total == 0) return const SizedBox.shrink();
+
+    final pUnder4 = metrics.intervalsUnder4Days / total;
+    final p4to7 = metrics.intervals4to7Days / total;
+    final p8to14 = metrics.intervals8to14Days / total;
+    final p15plus = metrics.intervals15PlusDays / total;
+
+    return Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            height: 14,
+            child: Row(
+              children: [
+                if (pUnder4 > 0)
+                  Expanded(
+                    flex: (pUnder4 * 100).toInt().clamp(1, 100),
+                    child: Container(color: Colors.redAccent),
+                  ),
+                if (p4to7 > 0)
+                  Expanded(
+                    flex: (p4to7 * 100).toInt().clamp(1, 100),
+                    child: Container(color: Colors.orangeAccent),
+                  ),
+                if (p8to14 > 0)
+                  Expanded(
+                    flex: (p8to14 * 100).toInt().clamp(1, 100),
+                    child: Container(color: Colors.lightGreen),
+                  ),
+                if (p15plus > 0)
+                  Expanded(
+                    flex: (p15plus * 100).toInt().clamp(1, 100),
+                    child: Container(color: Colors.green),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 12,
+          runSpacing: 4,
+          children: [
+            _IntervalLegendItem(
+              label: "< 4d (${metrics.intervalsUnder4Days})",
+              color: Colors.redAccent,
+            ),
+            _IntervalLegendItem(
+              label: "4-7d (${metrics.intervals4to7Days})",
+              color: Colors.orangeAccent,
+            ),
+            _IntervalLegendItem(
+              label: "8-14d (${metrics.intervals8to14Days})",
+              color: Colors.lightGreen,
+            ),
+            _IntervalLegendItem(
+              label: "15+d (${metrics.intervals15PlusDays})",
+              color: Colors.green,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _IntervalLegendItem extends StatelessWidget {
+  const _IntervalLegendItem({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+}
+
+class _WeekdayProfileCard extends StatelessWidget {
+  const _WeekdayProfileCard({required this.distribution});
+
+  final WeekdayDistribution distribution;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final total = distribution.days.fold<int>(0, (sum, d) => sum + d.count);
+
+    if (total == 0) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+          color: scheme.surface.withValues(alpha: 0.72),
+        ),
+        child: Text(
+          "No migraine logs in this period to construct weekday attack patterns.",
+          style: TextStyle(
+            fontSize: 13,
+            color: scheme.onSurface.withValues(alpha: 0.72),
+          ),
+        ),
+      );
+    }
+
+    final maxDayCount =
+        distribution.days.map((d) => d.count).reduce(math.max);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+        color: scheme.surface.withValues(alpha: 0.76),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.calendar_view_week_rounded,
+                color: scheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  distribution.isWeekendPeak
+                      ? "Weekend Vulnerability Alert (${distribution.peakDayName})"
+                      : "Peak Attack Day: ${distribution.peakDayName} (${distribution.peakDayCount} attacks)",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: distribution.isWeekendPeak
+                        ? Colors.orangeAccent
+                        : scheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: distribution.days.map((day) {
+              final ratio = maxDayCount > 0 ? day.count / maxDayCount : 0.0;
+              final isPeak = day.count == maxDayCount && day.count > 0;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "${day.count}",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isPeak ? FontWeight.w800 : FontWeight.w500,
+                      color: isPeak ? scheme.primary : scheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: 28,
+                    height: (ratio * 70).clamp(6.0, 70.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      gradient: isPeak
+                          ? LinearGradient(
+                              colors: [scheme.primary, scheme.secondary],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            )
+                          : LinearGradient(
+                              colors: [
+                                scheme.onSurface.withValues(alpha: 0.15),
+                                scheme.onSurface.withValues(alpha: 0.28),
+                              ],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    day.shortName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isPeak ? FontWeight.w700 : FontWeight.w500,
+                      color: isPeak ? scheme.primary : scheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TriggerImpactCard extends StatelessWidget {
+  const _TriggerImpactCard({
+    required this.correlations,
+    required this.riskMultipliers,
+  });
+
+  final List<TriggerCorrelation> correlations;
+  final List<TriggerRiskMultiplier> riskMultipliers;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    if (correlations.isEmpty && riskMultipliers.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+          color: scheme.surface.withValues(alpha: 0.72),
+        ),
+        child: Text(
+          "No multi-trigger logs recorded yet for correlation and impact analysis.",
+          style: TextStyle(
+            fontSize: 13,
+            color: scheme.onSurface.withValues(alpha: 0.72),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+        color: scheme.surface.withValues(alpha: 0.76),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (riskMultipliers.isNotEmpty) ...[
+            Text(
+              "Intensity Impact (Delta when Trigger Present)",
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface.withValues(alpha: 0.90),
+              ),
+            ),
+            const SizedBox(height: 10),
+            ...riskMultipliers.take(3).map((item) {
+              final isPositive = item.intensityDelta >= 0;
+              final sign = isPositive ? "+" : "";
+              final deltaStr = "$sign${item.intensityDelta.toStringAsFixed(1)} pts";
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.cause,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      "avg ${item.avgIntensityWith.toStringAsFixed(1)}/10",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurface.withValues(alpha: 0.60),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isPositive
+                            ? Colors.red.withValues(alpha: 0.15)
+                            : Colors.green.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        deltaStr,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isPositive ? Colors.redAccent : Colors.green,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+          if (correlations.isNotEmpty) ...[
+            if (riskMultipliers.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+            ],
+            Text(
+              "Top Trigger Co-occurrences",
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface.withValues(alpha: 0.90),
+              ),
+            ),
+            const SizedBox(height: 10),
+            ...correlations.take(3).map((corr) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.link_rounded,
+                      size: 16,
+                      color: scheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "${corr.causeA} + ${corr.causeB}",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      "${corr.coOccurrences}x (${corr.correlationPercent.toInt()}%)",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SeverityVolatilityCard extends StatelessWidget {
+  const _SeverityVolatilityCard({required this.distribution});
+
+  final SeverityDistribution distribution;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    if (distribution.totalCount == 0) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+          color: scheme.surface.withValues(alpha: 0.72),
+        ),
+        child: Text(
+          "No migraine logs in this period to measure severity brackets.",
+          style: TextStyle(
+            fontSize: 13,
+            color: scheme.onSurface.withValues(alpha: 0.72),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+        color: scheme.surface.withValues(alpha: 0.76),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Pain Stability Index",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface.withValues(alpha: 0.85),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  "σ = ${distribution.standardDeviation.toStringAsFixed(2)}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: scheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              height: 14,
+              child: Row(
+                children: [
+                  if (distribution.mildPercent > 0)
+                    Expanded(
+                      flex: distribution.mildPercent.toInt().clamp(1, 100),
+                      child: Container(color: Colors.green),
+                    ),
+                  if (distribution.moderatePercent > 0)
+                    Expanded(
+                      flex: distribution.moderatePercent.toInt().clamp(1, 100),
+                      child: Container(color: Colors.amber),
+                    ),
+                  if (distribution.severePercent > 0)
+                    Expanded(
+                      flex: distribution.severePercent.toInt().clamp(1, 100),
+                      child: Container(color: Colors.redAccent),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _SeverityLegendPill(
+                label: "Mild (1-3)",
+                count: distribution.mildCount,
+                percent: distribution.mildPercent,
+                color: Colors.green,
+              ),
+              _SeverityLegendPill(
+                label: "Moderate (4-6)",
+                count: distribution.moderateCount,
+                percent: distribution.moderatePercent,
+                color: Colors.amber,
+              ),
+              _SeverityLegendPill(
+                label: "Severe (7-10)",
+                count: distribution.severeCount,
+                percent: distribution.severePercent,
+                color: Colors.redAccent,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SeverityLegendPill extends StatelessWidget {
+  const _SeverityLegendPill({
+    required this.label,
+    required this.count,
+    required this.percent,
+    required this.color,
+  });
+
+  final String label;
+  final int count;
+  final double percent;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          "$count (${percent.toInt()}%)",
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MedicationOveruseCard extends StatelessWidget {
+  const _MedicationOveruseCard({required this.metrics});
+
+  final MedicationRiskMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    Color badgeColor;
+    String badgeText;
+    IconData badgeIcon;
+
+    switch (metrics.riskLevel) {
+      case MedicationOveruseLevel.high:
+        badgeColor = Colors.redAccent;
+        badgeText = "HIGH RISK";
+        badgeIcon = Icons.warning_amber_rounded;
+        break;
+      case MedicationOveruseLevel.caution:
+        badgeColor = Colors.orangeAccent;
+        badgeText = "CAUTION";
+        badgeIcon = Icons.info_outline_rounded;
+        break;
+      case MedicationOveruseLevel.low:
+        badgeColor = Colors.green;
+        badgeText = "SAFE";
+        badgeIcon = Icons.check_circle_outline_rounded;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.35)),
+        color: scheme.surface.withValues(alpha: 0.76),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.medication_outlined, color: badgeColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    "${metrics.medicationDaysThisMonth} medication days this month",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(badgeIcon, size: 12, color: badgeColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      badgeText,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: badgeColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            metrics.riskMessage,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: scheme.onSurface.withValues(alpha: 0.76),
+            ),
+          ),
+          if (metrics.consecutiveDaysMax > 1) ...[
+            const SizedBox(height: 8),
+            Text(
+              "Max consecutive analgesic days: ${metrics.consecutiveDaysMax} days",
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: scheme.onSurface.withValues(alpha: 0.60),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
