@@ -31,14 +31,15 @@ class MigrainePredictionController extends AsyncNotifier<PredictionResult> {
 
   @override
   Future<PredictionResult> build() async {
+    final now = DateTime.now();
     final entries = await ref.watch(migraineEntriesProvider.future);
-    final bias = await _feedbackRepo.getCalibrationBias();
+    final bias = await _feedbackRepo.getCalibrationBias(targetDate: now);
     final accuracy = await _feedbackRepo.getAccuracyRate();
     final allFeedback = await _feedbackRepo.getAllFeedback();
 
     return _service.predictRisk(
       entries: entries,
-      targetDate: DateTime.now(),
+      targetDate: now,
       calibrationBias: bias,
       accuracyRate: accuracy,
       totalFeedbackCount: allFeedback.length,

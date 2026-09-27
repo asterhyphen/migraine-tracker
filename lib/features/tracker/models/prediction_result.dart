@@ -27,6 +27,7 @@ class PredictionResult {
     required this.daysSinceLast,
     required this.accuracyRate,
     required this.totalFeedbackCount,
+    this.calibrationBias = 0.0,
   });
 
   final PredictionRisk riskLevel;
@@ -38,6 +39,7 @@ class PredictionResult {
   final int daysSinceLast;
   final double? accuracyRate; // e.g. 0.85
   final int totalFeedbackCount;
+  final double calibrationBias;
 
   int get scorePercent => (probability * 100).round().clamp(0, 100);
 

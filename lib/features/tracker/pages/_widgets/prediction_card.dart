@@ -68,45 +68,53 @@ class _PredictionCardState extends ConsumerState<PredictionCard> {
               children: [
                 // Top Header Row
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: riskColor.withValues(alpha: 0.16),
-                          ),
-                          child: Icon(
-                            Icons.auto_awesome_rounded,
-                            size: 18,
-                            color: riskColor,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              "Migraine Risk Forecast",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                              ),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: riskColor.withValues(alpha: 0.16),
                             ),
-                            Text(
-                              "Based on cycle, weekday & patterns",
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: scheme.onSurface.withValues(alpha: 0.6),
-                              ),
+                            child: Icon(
+                              Icons.auto_awesome_rounded,
+                              size: 18,
+                              color: riskColor,
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Migraine Risk Forecast",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  "Cycle, weekday & patterns",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: scheme.onSurface.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     // Risk Level Pill
                     Container(
                       padding: const EdgeInsets.symmetric(

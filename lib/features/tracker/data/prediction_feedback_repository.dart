@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/prediction_result.dart';
 
@@ -7,7 +8,7 @@ abstract class PredictionFeedbackRepository {
   Future<List<PredictionFeedback>> getAllFeedback();
   Future<PredictionFeedback?> getFeedbackForDate(DateTime date);
   Future<double?> getAccuracyRate();
-  Future<double> getCalibrationBias();
+  Future<double> getCalibrationBias({DateTime? targetDate});
 }
 
 class SharedPrefsPredictionFeedbackRepository
@@ -78,24 +79,52 @@ class SharedPrefsPredictionFeedbackRepository
   }
 
   @override
-  Future<double> getCalibrationBias() async {
-    // If user consistently marks High Risk predictions as inaccurate (false positives),
-    // reduce probability bias. If user marks Low Risk as inaccurate (false negatives),
-    // increase probability bias.
+  Future<double> getCalibrationBias({DateTime? targetDate}) async {
     final all = await getAllFeedback();
-    if (all.length < 3) return 0.0;
+    if (all.isEmpty) return 0.0;
 
-    final recent = all.take(10).toList();
-    double bias = 0.0;
-    for (final f in recent) {
-      if (!f.wasAccurate) {
-        if (f.predictedScore >= 60 && !f.hadActualMigraine) {
-          bias -= 0.04; // Dampen over-predictions
-        } else if (f.predictedScore < 40 && f.hadActualMigraine) {
-          bias += 0.04; // Boost under-predictions
-        }
-      }
+    final target = targetDate ?? DateTime.now();
+    final targetWeekday = target.weekday;
+
+    // 1. Calculate general gradient residual error across recent feedback items
+    final recent = all.take(15).toList();
+    double weightedErrorSum = 0.0;
+    double totalWeights = 0.0;
+
+    for (int i = 0; i < recent.length; i++) {
+      final f = recent[i];
+      final actual = f.hadActualMigraine ? 1.0 : 0.0;
+      final predicted = (f.predictedScore / 100.0).clamp(0.05, 0.95);
+      final residual = actual - predicted;
+
+      // Exponential decay weight for older feedback
+      final weight = math.exp(-0.08 * i);
+      weightedErrorSum += residual * weight;
+      totalWeights += weight;
     }
-    return bias.clamp(-0.25, 0.25);
+
+    final meanResidual = totalWeights > 0 ? weightedErrorSum / totalWeights : 0.0;
+    // Learning rate factor for smooth continuous convergence
+    final generalBias = (meanResidual * 0.40).clamp(-0.25, 0.25);
+
+    // 2. Calculate day-of-week specific feedback calibration
+    final sameWeekdayFeedback = all.where((f) {
+      final dt = DateTime.tryParse(f.dateKey);
+      return dt != null && dt.weekday == targetWeekday;
+    }).toList();
+
+    double weekdayBias = 0.0;
+    if (sameWeekdayFeedback.isNotEmpty) {
+      double dayErrorSum = 0.0;
+      for (final f in sameWeekdayFeedback) {
+        final actual = f.hadActualMigraine ? 1.0 : 0.0;
+        final predicted = (f.predictedScore / 100.0).clamp(0.05, 0.95);
+        dayErrorSum += (actual - predicted);
+      }
+      weekdayBias = (dayErrorSum / sameWeekdayFeedback.length) * 0.15;
+    }
+
+    final totalBias = (generalBias + weekdayBias).clamp(-0.30, 0.30);
+    return totalBias;
   }
 }

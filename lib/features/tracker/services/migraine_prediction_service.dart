@@ -218,6 +218,21 @@ class MigrainePredictionService {
     }
 
     // 6. Combine weighted probability + calibration feedback bias
+    if (calibrationBias.abs() >= 0.03) {
+      final biasPercent = (calibrationBias * 100).round();
+      final isPositive = calibrationBias > 0;
+      factors.add(
+        RiskFactor(
+          title: "Personalized Model Tuning",
+          description: isPositive
+              ? "Adjusted +$biasPercent% higher based on your personal confirmation feedback history."
+              : "Adjusted $biasPercent% lower based on your personal confirmation feedback history.",
+          impactWeight: calibrationBias,
+          icon: Icons.tune_rounded,
+        ),
+      );
+    }
+
     double finalProbability = (intervalScore * 0.45) +
         (weekdayScore * 0.25) +
         (momentumScore * 0.15) +
@@ -260,6 +275,7 @@ class MigrainePredictionService {
       daysSinceLast: daysSinceLast,
       accuracyRate: accuracyRate,
       totalFeedbackCount: totalFeedbackCount,
+      calibrationBias: calibrationBias,
     );
   }
 
