@@ -6,8 +6,7 @@ import '../widgets/settings_row.dart';
 import '../widgets/medication_reminder_tile.dart';
 
 class RemindersSection extends StatelessWidget {
-  const RemindersSection({
-    required this.dailyReminderEnabled,
+  const RemindersSection({super.key, required this.dailyReminderEnabled,
     required this.staleReminderEnabled,
     required this.reminderHour,
     required this.reminderMinute,

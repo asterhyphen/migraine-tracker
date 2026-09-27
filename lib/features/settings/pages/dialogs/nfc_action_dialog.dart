@@ -8,7 +8,7 @@ import '../widgets/nfc_pulse.dart';
 enum _NfcStatus { detecting, notDetected, success, error, unavailable }
 
 class NfcActionDialog extends StatefulWidget {
-  const NfcActionDialog();
+  const NfcActionDialog({super.key});
 
   @override
   State<NfcActionDialog> createState() => _NfcActionDialogState();

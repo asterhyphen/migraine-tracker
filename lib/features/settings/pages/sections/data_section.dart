@@ -4,8 +4,7 @@ import '../widgets/settings_card.dart';
 import '../widgets/settings_row.dart';
 
 class DataSection extends StatelessWidget {
-  const DataSection({
-    required this.isBusy,
+  const DataSection({super.key, required this.isBusy,
     required this.onImportData,
     required this.onExportData,
   });

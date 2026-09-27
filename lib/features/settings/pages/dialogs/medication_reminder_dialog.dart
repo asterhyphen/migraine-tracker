@@ -4,7 +4,7 @@ import 'package:migraine_tracker/features/settings/models/app_settings.dart';
 import '../widgets/settings_row.dart';
 
 class MedicationReminderDialog extends StatefulWidget {
-  const MedicationReminderDialog({this.reminder});
+  const MedicationReminderDialog({super.key, this.reminder});
 
   final MedicationReminder? reminder;
 

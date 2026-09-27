@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../_utils/view_utils.dart';
 
 class ComparisonStatsCard extends StatelessWidget {
-  const ComparisonStatsCard({required this.stats});
+  const ComparisonStatsCard({super.key, required this.stats});
 
   final EntryComparisonStats stats;
 
@@ -95,6 +95,7 @@ class ComparisonStatsCard extends StatelessWidget {
 
 class StatTile extends StatelessWidget {
   const StatTile({
+    super.key,
     required this.label,
     required this.value,
     required this.detail,

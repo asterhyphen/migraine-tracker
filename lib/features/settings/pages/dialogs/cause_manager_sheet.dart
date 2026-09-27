@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CauseManagerSheet extends StatefulWidget {
-  const CauseManagerSheet({required this.initialCauses});
+  const CauseManagerSheet({super.key, required this.initialCauses});
 
   final List<String> initialCauses;
 

@@ -6,7 +6,7 @@ import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
 import '../_utils/stats_utils.dart';
 
 class StatsLoadingView extends StatelessWidget {
-  const StatsLoadingView();
+  const StatsLoadingView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class StatsLoadingView extends StatelessWidget {
 }
 
 class StatsEmptyState extends StatelessWidget {
-  const StatsEmptyState();
+  const StatsEmptyState({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -72,8 +72,7 @@ class StatsEmptyState extends StatelessWidget {
 }
 
 class StatsSkeletonBox extends StatelessWidget {
-  const StatsSkeletonBox({
-    required this.height,
+  const StatsSkeletonBox({super.key, required this.height,
     this.width = double.infinity,
     this.radius = 10,
   });
@@ -105,8 +104,7 @@ class StatsSkeletonBox extends StatelessWidget {
 }
 
 class MonthFilterCard extends StatelessWidget {
-  const MonthFilterCard({
-    required this.selectedMonth,
+  const MonthFilterCard({super.key, required this.selectedMonth,
     required this.compareMonth,
     required this.options,
     required this.onSelectedChanged,
@@ -203,7 +201,7 @@ class MonthFilterCard extends StatelessWidget {
 }
 
 class SelectedMonthEmptyState extends StatelessWidget {
-  const SelectedMonthEmptyState({required this.monthLabel});
+  const SelectedMonthEmptyState({super.key, required this.monthLabel});
 
   final String monthLabel;
 
@@ -320,8 +318,7 @@ class MonthlyProgressCard extends StatelessWidget {
 }
 
 class DashboardHeader extends StatelessWidget {
-  const DashboardHeader({
-    required this.totalEntries,
+  const DashboardHeader({super.key, required this.totalEntries,
     required this.monthLabel,
     this.compareLabel,
   });
@@ -388,7 +385,7 @@ class DashboardHeader extends StatelessWidget {
 }
 
 class SectionTitle extends StatelessWidget {
-  const SectionTitle({required this.title, required this.subtitle});
+  const SectionTitle({super.key, required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -420,7 +417,7 @@ class SectionTitle extends StatelessWidget {
 }
 
 class ChartCard extends StatelessWidget {
-  const ChartCard({required this.title, required this.child});
+  const ChartCard({super.key, required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -448,8 +445,7 @@ class ChartCard extends StatelessWidget {
 }
 
 class InsightCard extends StatelessWidget {
-  const InsightCard({
-    required this.title,
+  const InsightCard({super.key, required this.title,
     required this.value,
     required this.subtitle,
     this.onTap,
@@ -515,7 +511,7 @@ class InsightCard extends StatelessWidget {
 }
 
 class ComparisonCard extends StatelessWidget {
-  const ComparisonCard({required this.item});
+  const ComparisonCard({super.key, required this.item});
 
   final ComparisonItem item;
 
@@ -578,7 +574,7 @@ class ComparisonCard extends StatelessWidget {
 }
 
 class BarChart extends StatelessWidget {
-  const BarChart({required this.data});
+  const BarChart({super.key, required this.data});
 
   final List<BarDatum> data;
 
@@ -623,7 +619,7 @@ class BarChart extends StatelessWidget {
 }
 
 class CalendarStatPill extends StatelessWidget {
-  const CalendarStatPill({required this.dotColor, required this.label});
+  const CalendarStatPill({super.key, required this.dotColor, required this.label});
 
   final Color dotColor;
   final String label;
@@ -655,8 +651,7 @@ class CalendarStatPill extends StatelessWidget {
 }
 
 class AppleCalendarCard extends StatelessWidget {
-  const AppleCalendarCard({
-    required this.month,
+  const AppleCalendarCard({super.key, required this.month,
     required this.entries,
     this.onDayTap,
   });
@@ -908,8 +903,7 @@ class AppleCalendarCard extends StatelessWidget {
 }
 
 class CausesGraphCard extends StatelessWidget {
-  const CausesGraphCard({
-    required this.data,
+  const CausesGraphCard({super.key, required this.data,
     required this.totalEntries,
   });
 
@@ -1295,7 +1289,7 @@ class CausesGraphCard extends StatelessWidget {
 }
 
 class CauseList extends StatelessWidget {
-  const CauseList({required this.data});
+  const CauseList({super.key, required this.data});
 
   final List<CauseDatum> data;
 
@@ -1353,7 +1347,7 @@ class CauseList extends StatelessWidget {
 }
 
 class Gauge extends StatelessWidget {
-  const Gauge({required this.value});
+  const Gauge({super.key, required this.value});
 
   final double value;
 
@@ -1384,7 +1378,7 @@ class Gauge extends StatelessWidget {
 }
 
 class LineChart extends StatelessWidget {
-  const LineChart({required this.values});
+  const LineChart({super.key, required this.values});
 
   final List<int> values;
 
@@ -1705,11 +1699,9 @@ class _PeriodicityCard extends StatelessWidget {
 }
 
 class _IntervalMetricPill extends StatelessWidget {
-  const _IntervalMetricPill({
-    required this.label,
+  const _IntervalMetricPill({required this.label,
     required this.value,
-    this.badgeColor,
-  });
+    this.badgeColor,});
 
   final String label;
   final String value;
@@ -1968,10 +1960,8 @@ class _WeekdayProfileCard extends StatelessWidget {
 }
 
 class _TriggerImpactCard extends StatelessWidget {
-  const _TriggerImpactCard({
-    required this.correlations,
-    required this.riskMultipliers,
-  });
+  const _TriggerImpactCard({required this.correlations,
+    required this.riskMultipliers,});
 
   final List<TriggerCorrelation> correlations;
   final List<TriggerRiskMultiplier> riskMultipliers;
@@ -2244,12 +2234,10 @@ class _SeverityVolatilityCard extends StatelessWidget {
 }
 
 class _SeverityLegendPill extends StatelessWidget {
-  const _SeverityLegendPill({
-    required this.label,
+  const _SeverityLegendPill({required this.label,
     required this.count,
     required this.percent,
-    required this.color,
-  });
+    required this.color,});
 
   final String label;
   final int count;

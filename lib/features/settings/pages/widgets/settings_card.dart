@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:migraine_tracker/core/theme/app_theme.dart';
 
 class SettingsCard extends StatelessWidget {
-  const SettingsCard({required this.child});
+  const SettingsCard({super.key, required this.child});
 
   final Widget child;
 

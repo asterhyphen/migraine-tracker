@@ -23,6 +23,7 @@ import 'terms_page.dart';
 import 'widgets/section_header.dart';
 import 'sections/profile_section.dart';
 import 'sections/appearance_section.dart';
+import 'sections/analytics_section.dart';
 import 'sections/causes_section.dart';
 import 'sections/reminders_section.dart';
 import 'sections/nfc_section.dart';
@@ -793,6 +794,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           AppearanceSection(
             isDarkTheme: _isDarkTheme,
             onThemeChanged: _toggleTheme,
+          ),
+          const SizedBox(height: 20),
+
+          // Statistics & Analytics Section
+          SectionHeader(title: "Statistics & Analytics"),
+          const SizedBox(height: 12),
+          AnalyticsSection(
             advancedStatsEnabled: _advancedStatsEnabled,
             onAdvancedStatsChanged: (value) {
               setState(() {

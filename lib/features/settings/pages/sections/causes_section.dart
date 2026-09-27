@@ -4,8 +4,7 @@ import '../widgets/settings_card.dart';
 import '../widgets/settings_row.dart';
 
 class CausesSection extends StatelessWidget {
-  const CausesSection({
-    required this.causeCount,
+  const CausesSection({super.key, required this.causeCount,
     required this.topCauses,
     required this.onManageCauses,
   });

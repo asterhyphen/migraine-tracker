@@ -6,8 +6,7 @@ import '../widgets/settings_card.dart';
 import '../widgets/settings_row.dart';
 
 class ProfileSection extends StatelessWidget {
-  const ProfileSection({
-    required this.name,
+  const ProfileSection({super.key, required this.name,
     required this.dob,
     required this.profileImagePath,
     required this.formatDate,

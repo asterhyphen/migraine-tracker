@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:migraine_tracker/features/settings/models/app_settings.dart';
 
 class MedicationReminderTile extends StatelessWidget {
-  const MedicationReminderTile({
-    required this.reminder,
+  const MedicationReminderTile({super.key, required this.reminder,
     required this.timeLabel,
     required this.onChanged,
     required this.onEdit,

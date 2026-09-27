@@ -4,8 +4,7 @@ import '../widgets/settings_card.dart';
 import '../widgets/settings_row.dart';
 
 class LegalSection extends StatelessWidget {
-  const LegalSection({
-    required this.onPrivacyPolicyTap,
+  const LegalSection({super.key, required this.onPrivacyPolicyTap,
     required this.onTermsConditionsTap,
   });
 

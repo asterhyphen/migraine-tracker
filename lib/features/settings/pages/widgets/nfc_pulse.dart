@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class NfcPulse extends StatelessWidget {
-  const NfcPulse({required this.controller, required this.color});
+  const NfcPulse({super.key, required this.controller, required this.color});
 
   final AnimationController controller;
   final Color color;

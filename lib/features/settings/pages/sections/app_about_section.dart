@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/settings_card.dart';
 
 class AppAboutSection extends StatelessWidget {
-  const AppAboutSection({
-    required this.appVersion,
+  const AppAboutSection({super.key, required this.appVersion,
     required this.onDevWebsiteTap,
     required this.onGithubTap,
   });

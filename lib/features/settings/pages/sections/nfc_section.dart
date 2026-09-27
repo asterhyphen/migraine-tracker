@@ -4,7 +4,7 @@ import '../widgets/settings_card.dart';
 import '../widgets/settings_row.dart';
 
 class NfcSection extends StatelessWidget {
-  const NfcSection({required this.onProgramNfc});
+  const NfcSection({super.key, required this.onProgramNfc});
 
   final VoidCallback onProgramNfc;
 

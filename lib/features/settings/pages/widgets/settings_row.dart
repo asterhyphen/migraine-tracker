@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SettingsRow extends StatelessWidget {
-  const SettingsRow({
-    required this.icon,
+  const SettingsRow({super.key, required this.icon,
     required this.title,
     required this.value,
     required this.onTap,

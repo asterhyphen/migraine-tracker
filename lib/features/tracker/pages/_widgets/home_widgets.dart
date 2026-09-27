@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:migraine_tracker/core/widgets/wavy_surface.dart';
 
 class HomeLoadingView extends StatelessWidget {
-  const HomeLoadingView();
+  const HomeLoadingView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +33,7 @@ class HomeLoadingView extends StatelessWidget {
 
 class SkeletonBox extends StatelessWidget {
   const SkeletonBox({
+    super.key,
     required this.height,
     this.width = double.infinity,
     this.radius = 10,
@@ -66,6 +67,7 @@ class SkeletonBox extends StatelessWidget {
 
 class HeroCard extends StatelessWidget {
   const HeroCard({
+    super.key,
     required this.title,
     required this.subtitle,
     required this.onTap,
@@ -198,7 +200,7 @@ class HeroCard extends StatelessWidget {
 }
 
 class BirthdayBanner extends StatelessWidget {
-  const BirthdayBanner();
+  const BirthdayBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -230,7 +232,7 @@ class BirthdayBanner extends StatelessWidget {
 }
 
 class PartyCrackersBadge extends StatefulWidget {
-  const PartyCrackersBadge();
+  const PartyCrackersBadge({super.key});
 
   @override
   State<PartyCrackersBadge> createState() => _PartyCrackersBadgeState();
@@ -291,7 +293,11 @@ class _PartyCrackersBadgeState extends State<PartyCrackersBadge>
 }
 
 class SectionTitle extends StatelessWidget {
-  const SectionTitle({required this.title, required this.subtitle});
+  const SectionTitle({
+    super.key,
+    required this.title,
+    required this.subtitle,
+  });
 
   final String title;
   final String subtitle;
@@ -324,6 +330,7 @@ class SectionTitle extends StatelessWidget {
 
 class StatCard extends StatelessWidget {
   const StatCard({
+    super.key,
     required this.title,
     required this.value,
     required this.icon,
@@ -421,6 +428,7 @@ class StatCard extends StatelessWidget {
 
 class DetailCard extends StatelessWidget {
   const DetailCard({
+    super.key,
     required this.title,
     required this.subtitle,
     this.trailing,
@@ -468,6 +476,7 @@ class DetailCard extends StatelessWidget {
 
 class EmptyStateCard extends StatelessWidget {
   const EmptyStateCard({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,

@@ -4,6 +4,7 @@ import 'package:migraine_tracker/core/utils/date_utils.dart';
 
 class HistorySearchField extends StatelessWidget {
   const HistorySearchField({
+    super.key,
     required this.controller,
     required this.onChanged,
     required this.onClear,
@@ -50,7 +51,7 @@ class HistorySearchField extends StatelessWidget {
 }
 
 class HistoryNoResultsState extends StatelessWidget {
-  const HistoryNoResultsState({required this.query});
+  const HistoryNoResultsState({super.key, required this.query});
 
   final String query;
 
@@ -81,7 +82,7 @@ class HistoryNoResultsState extends StatelessWidget {
 }
 
 class HistoryEmptyState extends StatelessWidget {
-  const HistoryEmptyState({required this.onLogMissedDay});
+  const HistoryEmptyState({super.key, required this.onLogMissedDay});
 
   final VoidCallback onLogMissedDay;
 
@@ -125,7 +126,7 @@ class HistoryEmptyState extends StatelessWidget {
 }
 
 class HistorySummaryCard extends StatelessWidget {
-  const HistorySummaryCard({required this.entries});
+  const HistorySummaryCard({super.key, required this.entries});
 
   final List<MigraineEntry> entries;
 
@@ -184,6 +185,7 @@ class HistorySummaryCard extends StatelessWidget {
 
 class HistoryEntryCard extends StatelessWidget {
   const HistoryEntryCard({
+    super.key,
     required this.entry,
     required this.formatDay,
     required this.formatDate,
@@ -281,6 +283,7 @@ class HistoryEntryCard extends StatelessWidget {
 
 class MonthHeader extends StatelessWidget {
   const MonthHeader({
+    super.key,
     required this.title,
     this.count,
   });
