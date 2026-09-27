@@ -8,6 +8,7 @@ import 'package:migraine_tracker/features/tracker/providers/causes_provider.dart
 import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
 import 'package:migraine_tracker/core/utils/date_utils.dart';
 import 'package:migraine_tracker/core/widgets/app_snackbar.dart';
+import '_utils/log_utils.dart' as log_utils;
 
 class LogMigrainePage extends ConsumerStatefulWidget {
   const LogMigrainePage({super.key, this.entry, this.initialDate});
@@ -20,11 +21,11 @@ class LogMigrainePage extends ConsumerStatefulWidget {
 }
 
 class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
-  static const _otherCauseLabel = 'Other';
+  static const _otherCauseLabel = log_utils.otherCauseLabel;
 
   bool hadMigraine = true;
-  double intensity = 5;
-  int _lastHapticIntensity = 5;
+  double intensity = log_utils.defaultIntensity;
+  int _lastHapticIntensity = log_utils.defaultIntensity.toInt();
   bool tookPainkillers = false;
   final TextEditingController notesController = TextEditingController();
   final TextEditingController _otherCauseController = TextEditingController();
@@ -53,9 +54,9 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
       tookPainkillers = entry.painkillers;
       notesController.text = entry.notes;
       for (final cause in entry.causes) {
-        if (_isSavedOtherCause(cause)) {
+        if (log_utils.isSavedOtherCause(cause)) {
           selectedCauses.add(_otherCauseLabel);
-          final detail = _extractOtherCauseDetail(cause);
+          final detail = log_utils.extractOtherCauseDetail(cause);
           if (detail.isNotEmpty) {
             _otherCauseController.text = detail;
           }
@@ -108,24 +109,21 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
   }
 
   bool _hasUnsavedChanges() {
-    final currentEntryDate = DateTime(
-      (_entryDate ?? DateTime.now()).year,
-      (_entryDate ?? DateTime.now()).month,
-      (_entryDate ?? DateTime.now()).day,
+    return log_utils.hasUnsavedChanges(
+      initialHadMigraine: _initialHadMigraine,
+      currentHadMigraine: hadMigraine,
+      initialIntensity: _initialIntensity.toInt(),
+      currentIntensity: intensity.toInt(),
+      initialTookPainkillers: _initialTookPainkillers,
+      currentTookPainkillers: tookPainkillers,
+      initialNotes: _initialNotes,
+      currentNotes: notesController.text,
+      initialCauses: _initialSavedCauses,
+      currentCauses: _buildCausesForSave().toSet(),
+      initialEntryDate: _initialEntryDate,
+      currentEntryDate: _entryDate ?? DateTime.now(),
+      isEditingExistingEntry: widget.entry != null,
     );
-    if (hadMigraine != _initialHadMigraine) return true;
-    if (intensity.toInt() != _initialIntensity.toInt()) return true;
-    if (tookPainkillers != _initialTookPainkillers) return true;
-    if (notesController.text.trim() != _initialNotes.trim()) return true;
-    final currentSavedCauses = _buildCausesForSave().toSet();
-    if (!currentSavedCauses.containsAll(_initialSavedCauses) ||
-        !_initialSavedCauses.containsAll(currentSavedCauses)) {
-      return true;
-    }
-    if (widget.entry == null && currentEntryDate != _initialEntryDate) {
-      return true;
-    }
-    return false;
   }
 
   Future<bool> _confirmDiscardChanges() async {
@@ -414,53 +412,12 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
     );
   }
 
-  List<String> _displayCauses() {
-    final ordered = <String>[..._causes];
-    for (final selected in selectedCauses) {
-      if (!ordered.contains(selected)) {
-        ordered.add(selected);
-      }
-    }
-    return ordered;
-  }
+  List<String> _displayCauses() => log_utils.displayCauses(_causes, selectedCauses);
 
   bool get _isOtherSelected => selectedCauses.contains(_otherCauseLabel);
 
-  bool _isSavedOtherCause(String cause) {
-    final trimmed = cause.trim();
-    return trimmed == _otherCauseLabel ||
-        trimmed.toLowerCase().startsWith('${_otherCauseLabel.toLowerCase()}:');
-  }
-
-  String _extractOtherCauseDetail(String cause) {
-    final trimmed = cause.trim();
-    if (trimmed == _otherCauseLabel) return '';
-    final colonIndex = trimmed.indexOf(':');
-    if (colonIndex == -1) return '';
-    return trimmed.substring(colonIndex + 1).trim();
-  }
-
-  List<String> _buildCausesForSave() {
-    final causes = <String>[];
-    for (final cause in selectedCauses) {
-      final trimmed = cause.trim();
-      if (trimmed.isEmpty || trimmed == _otherCauseLabel) continue;
-      causes.add(trimmed);
-    }
-
-    if (_isOtherSelected) {
-      final otherDetail = _sanitizeOtherCauseDetail(_otherCauseController.text);
-      causes.add(
-        otherDetail.isEmpty
-            ? _otherCauseLabel
-            : '$_otherCauseLabel: $otherDetail',
+  List<String> _buildCausesForSave() => log_utils.buildCausesForSave(
+        selectedCauses,
+        _otherCauseController.text,
       );
-    }
-
-    return causes;
-  }
-
-  String _sanitizeOtherCauseDetail(String value) {
-    return value.trim().replaceAll(',', ' ').replaceAll(RegExp(r'\s+'), ' ');
-  }
 }
