@@ -18,8 +18,18 @@ class SqfliteMigraineRepository implements MigraineRepository {
   }
 
   @override
+  Future<List<MigraineEntry>> getAllEntries() {
+    return _db.getAllEntries();
+  }
+
+  @override
   Future<MigraineEntry?> getEntryForDate(DateTime date) {
     return _db.getEntryForDate(date);
+  }
+
+  @override
+  Future<MigraineEntry?> getAnyEntryForDate(DateTime date) {
+    return _db.getAnyEntryForDate(date);
   }
 
   @override

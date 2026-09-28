@@ -149,4 +149,19 @@ class MigraineDb {
     if (rows.isEmpty) return null;
     return MigraineEntry.fromMap(rows.first);
   }
+
+  Future<MigraineEntry?> getAnyEntryForDate(DateTime date) async {
+    final db = await database;
+    final start = DateTime(date.year, date.month, date.day);
+    final end = start.add(const Duration(days: 1));
+    final rows = await db.query(
+      'migraine_entries',
+      where: 'date >= ? AND date < ?',
+      whereArgs: [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+      orderBy: 'date DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return MigraineEntry.fromMap(rows.first);
+  }
 }

@@ -33,6 +33,14 @@ class MigraineEntriesController extends AsyncNotifier<List<MigraineEntry>> {
     return _repository.getEntryForDate(date);
   }
 
+  Future<MigraineEntry?> anyEntryForDate(DateTime date) {
+    return _repository.getAnyEntryForDate(date);
+  }
+
+  Future<List<MigraineEntry>> getAllEntries() {
+    return _repository.getAllEntries();
+  }
+
   Future<void> saveEntry(MigraineEntry entry) async {
     await _repository.saveEntry(entry);
     await reload();

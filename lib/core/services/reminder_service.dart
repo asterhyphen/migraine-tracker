@@ -138,6 +138,7 @@ class ReminderService {
   Future<void> reschedule({
     required AppSettings settings,
     required List<MigraineEntry> entries,
+    bool? hasLoggedToday,
   }) async {
     await initialize();
     await _notifications.cancel(id: _dailyReminderId);
@@ -145,15 +146,25 @@ class ReminderService {
     await _notifications.cancel(id: _dailySurveyId);
     await _cancelMedicationReminders();
 
+    final isLoggedToday = hasLoggedToday ?? _hasLoggedToday(entries);
+
     if (settings.dailyReminderEnabled) {
-      if (settings.forceDailyReminder || !_hasLoggedToday(entries)) {
-        await _scheduleDaily(settings);
+      if (settings.forceDailyReminder) {
+        await _scheduleDaily(settings, forceTomorrow: false);
+      } else if (!isLoggedToday) {
+        await _scheduleDaily(settings, forceTomorrow: false);
+      } else {
+        await _scheduleDaily(settings, forceTomorrow: true);
       }
     }
 
     if (settings.dailySurveyEnabled) {
-      if (!_hasLoggedToday(entries)) {
-        await _scheduleDailySurvey(settings);
+      if (!isLoggedToday) {
+        await _scheduleDailySurvey(settings, forceTomorrow: false);
+      } else {
+        // If already logged/checked in today, do not ask again today.
+        // Schedule the recurring survey starting tomorrow.
+        await _scheduleDailySurvey(settings, forceTomorrow: true);
       }
     }
 
@@ -190,12 +201,19 @@ class ReminderService {
     }
   }
 
-  Future<void> _scheduleDaily(AppSettings settings) async {
+  Future<void> _scheduleDaily(
+    AppSettings settings, {
+    bool forceTomorrow = false,
+  }) async {
     await _notifications.zonedSchedule(
       id: _dailyReminderId,
       title: 'Time to log your symptoms',
       body: settings.dailyReminderMessage,
-      scheduledDate: _nextTime(settings.reminderHour, settings.reminderMinute),
+      scheduledDate: _nextTime(
+        settings.reminderHour,
+        settings.reminderMinute,
+        forceTomorrow: forceTomorrow,
+      ),
       notificationDetails: _notificationDetails(),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
@@ -203,7 +221,10 @@ class ReminderService {
     );
   }
 
-  Future<void> _scheduleDailySurvey(AppSettings settings) async {
+  Future<void> _scheduleDailySurvey(
+    AppSettings settings, {
+    bool forceTomorrow = false,
+  }) async {
     await _notifications.zonedSchedule(
       id: _dailySurveyId,
       title: 'Daily Check-in',
@@ -211,6 +232,7 @@ class ReminderService {
       scheduledDate: _nextTime(
         settings.dailySurveyHour,
         settings.dailySurveyMinute,
+        forceTomorrow: forceTomorrow,
       ),
       notificationDetails: _surveyNotificationDetails(),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -276,7 +298,11 @@ class ReminderService {
     }
   }
 
-  tz.TZDateTime _nextTime(int hour, int minute) {
+  tz.TZDateTime _nextTime(
+    int hour,
+    int minute, {
+    bool forceTomorrow = false,
+  }) {
     final now = tz.TZDateTime.now(tz.local);
     var scheduled = tz.TZDateTime(
       tz.local,
@@ -286,7 +312,7 @@ class ReminderService {
       hour,
       minute,
     );
-    if (!scheduled.isAfter(now)) {
+    if (forceTomorrow || !scheduled.isAfter(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
     return scheduled;

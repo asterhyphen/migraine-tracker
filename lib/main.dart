@@ -71,7 +71,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       final today = DateTime.now();
       final existing = await ref
           .read(migraineEntriesProvider.notifier)
-          .entryForDate(today);
+          .anyEntryForDate(today);
       if (existing != null) {
         final updated = existing.copyWith(
           hadMigraine: false,
@@ -214,23 +214,31 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     ref.listen(appSettingsProvider, (_, next) => _processPendingAction());
-    ref.listen(appSettingsProvider, (_, next) {
+    ref.listen(appSettingsProvider, (_, next) async {
       final appSettings = next.value;
       if (appSettings == null) return;
       final entries =
           ref.read(migraineEntriesProvider).value ?? const <MigraineEntry>[];
+      final anyEntryToday = await ref
+          .read(migraineEntriesProvider.notifier)
+          .anyEntryForDate(DateTime.now());
       ReminderService.instance.reschedule(
         settings: appSettings,
         entries: entries,
+        hasLoggedToday: anyEntryToday != null,
       );
     });
-    ref.listen(migraineEntriesProvider, (_, next) {
+    ref.listen(migraineEntriesProvider, (_, next) async {
       final appSettings = ref.read(appSettingsProvider).value;
       final entries = next.value;
       if (appSettings == null || entries == null) return;
+      final anyEntryToday = await ref
+          .read(migraineEntriesProvider.notifier)
+          .anyEntryForDate(DateTime.now());
       ReminderService.instance.reschedule(
         settings: appSettings,
         entries: entries,
+        hasLoggedToday: anyEntryToday != null,
       );
     });
 

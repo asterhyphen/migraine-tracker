@@ -191,7 +191,7 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
     final existingForDate = widget.entry == null
         ? await ref
               .read(migraineEntriesProvider.notifier)
-              .entryForDate(targetDate)
+              .anyEntryForDate(targetDate)
         : null;
     final entry = MigraineEntry(
       id: widget.entry?.id ?? existingForDate?.id,
