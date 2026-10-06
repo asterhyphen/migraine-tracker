@@ -1,12 +1,60 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:migraine_tracker/features/settings/data/shared_prefs_settings_repository.dart';
 import 'package:migraine_tracker/features/settings/models/app_settings.dart';
+import 'package:migraine_tracker/features/tracker/data/migraine_db.dart';
 import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse response) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final notifications = FlutterLocalNotificationsPlugin();
+  if (response.id != null) {
+    await notifications.cancel(id: response.id!);
+  }
+  await notifications.cancel(id: ReminderService.dailySurveyId);
+
+  if (response.actionId == ReminderService.surveyActionNo) {
+    final today = DateTime.now();
+    final existing = await MigraineDb.instance.getAnyEntryForDate(today);
+    if (existing != null) {
+      final updated = existing.copyWith(
+        hadMigraine: false,
+        intensity: 0,
+        painkillers: false,
+        notes: existing.notes.isEmpty
+            ? 'Daily check-in: Pain-free'
+            : existing.notes,
+      );
+      await MigraineDb.instance.updateEntry(updated);
+    } else {
+      final entry = MigraineEntry(
+        date: today,
+        hadMigraine: false,
+        intensity: 0,
+        painkillers: false,
+        notes: 'Daily check-in: Pain-free',
+        causes: const [],
+      );
+      await MigraineDb.instance.insertEntry(entry);
+    }
+
+    final prefsRepo = const SharedPrefsSettingsRepository();
+    final settings = await prefsRepo.load();
+    final allEntries = await MigraineDb.instance.getAllEntries();
+    await ReminderService.instance.reschedule(
+      settings: settings,
+      entries: allEntries,
+      hasLoggedToday: true,
+    );
+  }
+}
 
 class ReminderService {
   ReminderService._();
@@ -19,7 +67,8 @@ class ReminderService {
   static const surveyActionNo = 'survey_no';
   static const _dailyReminderId = 701;
   static const _staleReminderId = 702;
-  static const _dailySurveyId = 705;
+  static const dailySurveyId = 705;
+  static const _dailySurveyId = dailySurveyId;
   static const _medicationReminderBaseId = 720;
   static const _maxMedicationReminders = 50;
 
@@ -72,7 +121,12 @@ class ReminderService {
 
     await _notifications.initialize(
       settings: initializationSettings,
-      onDidReceiveNotificationResponse: (response) {
+      onDidReceiveNotificationResponse: (response) async {
+        if (response.id != null) {
+          await _notifications.cancel(id: response.id!);
+        }
+        await _notifications.cancel(id: _dailySurveyId);
+
         if (response.actionId == surveyActionYes) {
           onSurveyResponse?.call(true);
         } else if (response.actionId == surveyActionNo) {
@@ -83,6 +137,7 @@ class ReminderService {
           onLogRequested?.call();
         }
       },
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
     _initialized = true;
 
@@ -93,6 +148,11 @@ class ReminderService {
         launchDetails?.didNotificationLaunchApp == true &&
         response != null) {
       _handledLaunchNotification = true;
+      if (response.id != null) {
+        await _notifications.cancel(id: response.id!);
+      }
+      await _notifications.cancel(id: _dailySurveyId);
+
       if (response.actionId == surveyActionYes) {
         onSurveyResponse?.call(true);
       } else if (response.actionId == surveyActionNo) {
@@ -326,6 +386,7 @@ class ReminderService {
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
       category: AndroidNotificationCategory.reminder,
+      autoCancel: true,
     );
     const darwin = DarwinNotificationDetails();
     return const NotificationDetails(
@@ -343,16 +404,19 @@ class ReminderService {
       importance: Importance.high,
       priority: Priority.high,
       category: AndroidNotificationCategory.reminder,
+      autoCancel: true,
       actions: [
         AndroidNotificationAction(
           surveyActionYes,
           'Yes',
           showsUserInterface: true,
+          cancelNotification: true,
         ),
         AndroidNotificationAction(
           surveyActionNo,
           'No',
           showsUserInterface: false,
+          cancelNotification: true,
         ),
       ],
     );
@@ -374,6 +438,7 @@ class ReminderService {
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
       category: AndroidNotificationCategory.reminder,
+      autoCancel: true,
     );
     const darwin = DarwinNotificationDetails();
     return const NotificationDetails(
