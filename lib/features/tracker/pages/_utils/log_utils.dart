@@ -9,7 +9,14 @@ List<String> displayCauses(List<String> causes, Set<String> selectedCauses) {
   final ordered = <String>[...causes];
   for (final selected in selectedCauses) {
     if (!ordered.contains(selected)) {
-      ordered.add(selected);
+      final otherIdx = ordered.indexWhere(
+        (c) => c.toLowerCase() == otherCauseLabel.toLowerCase(),
+      );
+      if (otherIdx != -1) {
+        ordered.insert(otherIdx, selected);
+      } else {
+        ordered.add(selected);
+      }
     }
   }
   return ordered;

@@ -169,13 +169,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => CauseManagerSheet(initialCauses: _causeOptions),
+      builder: (_) => CauseManagerSheet(
+        initialCauses: _causeOptions,
+        onChanged: (causes) {
+          setState(() {
+            _causeOptions = causes;
+          });
+          _saveCauseOptions();
+        },
+      ),
     );
-    if (updated == null) return;
-    setState(() {
-      _causeOptions = updated;
-    });
-    await _saveCauseOptions();
+    if (updated != null) {
+      setState(() {
+        _causeOptions = updated;
+      });
+      await _saveCauseOptions();
+    }
     if (!mounted) return;
     AppSnackBar.showSuccess(
       context,

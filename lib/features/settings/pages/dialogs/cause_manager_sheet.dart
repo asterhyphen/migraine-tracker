@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 class CauseManagerSheet extends StatefulWidget {
-  const CauseManagerSheet({super.key, required this.initialCauses});
+  const CauseManagerSheet({
+    super.key,
+    required this.initialCauses,
+    this.onChanged,
+  });
 
   final List<String> initialCauses;
+  final ValueChanged<List<String>>? onChanged;
 
   @override
   State<CauseManagerSheet> createState() => _CauseManagerSheetState();
@@ -12,6 +17,7 @@ class CauseManagerSheet extends StatefulWidget {
 class _CauseManagerSheetState extends State<CauseManagerSheet> {
   late List<String> _causes;
   final TextEditingController _newCauseController = TextEditingController();
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -25,15 +31,43 @@ class _CauseManagerSheetState extends State<CauseManagerSheet> {
     super.dispose();
   }
 
+  void _commitPendingText() {
+    final value = _newCauseController.text.trim();
+    if (value.isEmpty) return;
+    final exists = _causes.any((c) => c.toLowerCase() == value.toLowerCase());
+    if (!exists) {
+      final otherIndex = _causes.indexWhere((c) => c.toLowerCase() == 'other');
+      if (otherIndex != -1) {
+        _causes.insert(otherIndex, value);
+      } else {
+        _causes.add(value);
+      }
+      _newCauseController.clear();
+      widget.onChanged?.call(_causes);
+    }
+  }
+
   void _addCause() {
     final value = _newCauseController.text.trim();
     if (value.isEmpty) return;
     final exists = _causes.any((c) => c.toLowerCase() == value.toLowerCase());
-    if (exists) return;
+    if (exists) {
+      setState(() {
+        _errorMessage = '"$value" is already in your causes list';
+      });
+      return;
+    }
     setState(() {
-      _causes.add(value);
+      _errorMessage = null;
+      final otherIndex = _causes.indexWhere((c) => c.toLowerCase() == 'other');
+      if (otherIndex != -1) {
+        _causes.insert(otherIndex, value);
+      } else {
+        _causes.add(value);
+      }
       _newCauseController.clear();
     });
+    widget.onChanged?.call(_causes);
   }
 
   void _deleteCause(int index) {
@@ -41,6 +75,7 @@ class _CauseManagerSheetState extends State<CauseManagerSheet> {
     setState(() {
       _causes.removeAt(index);
     });
+    widget.onChanged?.call(_causes);
   }
 
   void _moveCause(int index, int delta) {
@@ -50,57 +85,86 @@ class _CauseManagerSheetState extends State<CauseManagerSheet> {
       final item = _causes.removeAt(index);
       _causes.insert(next, item);
     });
+    widget.onChanged?.call(_causes);
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    "Manage Causes",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(_causes),
-                  child: const Text("Done"),
-                ),
-              ],
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        _commitPendingText();
+        widget.onChanged?.call(_causes);
+      },
+      child: SafeArea(
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottomInset),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
             ),
-            const SizedBox(height: 6),
-            Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _newCauseController,
-                    decoration: const InputDecoration(
-                      labelText: "Add new cause",
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "Manage Causes",
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                    onSubmitted: (_) => _addCause(),
-                  ),
+                    TextButton(
+                      onPressed: () {
+                        _commitPendingText();
+                        Navigator.of(context).pop(_causes);
+                      },
+                      child: const Text("Done"),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                FilledButton.tonal(
-                  onPressed: _addCause,
-                  child: const Text("Add"),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _newCauseController,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          labelText: "Add new cause",
+                          hintText: "e.g. Caffeine, Perfume, Noise",
+                          errorText: _errorMessage,
+                        ),
+                        onChanged: (_) {
+                          if (_errorMessage != null) {
+                            setState(() => _errorMessage = null);
+                          }
+                        },
+                        onSubmitted: (_) => _addCause(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: FilledButton.tonal(
+                        onPressed: _addCause,
+                        child: const Text("Add"),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _causes.length,
+                const SizedBox(height: 10),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _causes.length,
                 itemBuilder: (context, index) {
                   final cause = _causes[index];
                   return Container(
@@ -161,6 +225,8 @@ class _CauseManagerSheetState extends State<CauseManagerSheet> {
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }

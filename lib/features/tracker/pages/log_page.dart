@@ -41,6 +41,7 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
   List<String> _causes = List<String>.from(defaultCauseOptions);
 
   final Set<String> selectedCauses = {};
+  bool _saveOtherAsCauseOption = true;
 
   @override
   void initState() {
@@ -177,6 +178,64 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
     });
   }
 
+  Future<void> _showAddCauseDialog() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text("Add New Cause"),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            labelText: "Cause / Trigger name",
+            hintText: "e.g. Caffeine, Perfume, Bright lights",
+          ),
+          onSubmitted: (val) => Navigator.of(dialogCtx).pop(val.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(controller.text.trim()),
+            child: const Text("Add"),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result.isEmpty) return;
+    final success = await ref.read(causeOptionsProvider.notifier).addCause(result);
+    if (!mounted) return;
+    setState(() {
+      selectedCauses.add(result);
+      if (!_causes.contains(result)) {
+        final otherIdx = _causes.indexWhere((c) => c.toLowerCase() == 'other');
+        if (otherIdx != -1) {
+          _causes.insert(otherIdx, result);
+        } else {
+          _causes.add(result);
+        }
+      }
+    });
+    if (success) {
+      AppSnackBar.showSuccess(
+        context,
+        title: "Cause added",
+        message: '"$result" was added and selected for this entry.',
+      );
+    } else {
+      AppSnackBar.showInfo(
+        context,
+        title: "Trigger selected",
+        message: '"$result" is already in your causes list and has been selected.',
+      );
+    }
+  }
+
   Future<void> _saveEntry() async {
     if (!hadMigraine) {
       AppSnackBar.showInfo(
@@ -205,6 +264,10 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
 
     try {
       await ref.read(migraineEntriesProvider.notifier).saveEntry(entry);
+      final otherDetail = _otherCauseController.text.trim();
+      if (_isOtherSelected && _saveOtherAsCauseOption && otherDetail.isNotEmpty) {
+        await ref.read(causeOptionsProvider.notifier).addCause(otherDetail);
+      }
       if (!mounted) return;
       HapticFeedback.lightImpact();
       AppSnackBar.showSuccess(
@@ -265,6 +328,7 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
 
   @override
   Widget build(BuildContext context) {
+    final activeCauses = ref.watch(causeOptionsProvider).value ?? _causes;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
@@ -358,19 +422,36 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
               const SizedBox(height: 12),
               const SizedBox(height: 6),
               const SizedBox(height: 16),
-              const Text("Probable Cause"),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Probable Cause"),
+                  TextButton.icon(
+                    onPressed: _showAddCauseDialog,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text("Add Cause"),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _displayCauses().map((cause) {
-                  final selected = selectedCauses.contains(cause);
-                  return ChoiceChip(
-                    label: Text(cause),
-                    selected: selected,
-                    onSelected: (_) => _toggleCause(cause),
-                  );
-                }).toList(),
+                children: [
+                  ..._displayCauses(activeCauses).map((cause) {
+                    final selected = selectedCauses.contains(cause);
+                    return ChoiceChip(
+                      label: Text(cause),
+                      selected: selected,
+                      onSelected: (_) => _toggleCause(cause),
+                    );
+                  }),
+                  ActionChip(
+                    avatar: const Icon(Icons.add, size: 16),
+                    label: const Text("Add Cause"),
+                    onPressed: _showAddCauseDialog,
+                  ),
+                ],
               ),
               if (_isOtherSelected) ...[
                 const SizedBox(height: 12),
@@ -382,6 +463,21 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
                     hintText: "Example: strong perfume, bright sunlight...",
                     border: OutlineInputBorder(),
                   ),
+                ),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  value: _saveOtherAsCauseOption,
+                  title: const Text(
+                    "Save this as a reusable cause option",
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  onChanged: (val) {
+                    setState(() {
+                      _saveOtherAsCauseOption = val ?? true;
+                    });
+                  },
                 ),
               ],
               const SizedBox(height: 16),
@@ -412,7 +508,8 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
     );
   }
 
-  List<String> _displayCauses() => log_utils.displayCauses(_causes, selectedCauses);
+  List<String> _displayCauses(List<String> causesList) =>
+      log_utils.displayCauses(causesList, selectedCauses);
 
   bool get _isOtherSelected => selectedCauses.contains(_otherCauseLabel);
 
