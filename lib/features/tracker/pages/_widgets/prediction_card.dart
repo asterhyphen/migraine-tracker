@@ -69,46 +69,40 @@ class _PredictionCardState extends ConsumerState<PredictionCard> {
                 // Top Header Row
                 Row(
                   children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: riskColor.withValues(alpha: 0.16),
+                      ),
+                      child: Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 18,
+                        color: riskColor,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
                     Expanded(
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: riskColor.withValues(alpha: 0.16),
-                            ),
-                            child: Icon(
-                              Icons.auto_awesome_rounded,
-                              size: 18,
-                              color: riskColor,
+                          const Text(
+                            "Migraine Risk Forecast",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Migraine Risk Forecast",
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  "Cycle, weekday & patterns",
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: scheme.onSurface.withValues(alpha: 0.6),
-                                  ),
-                                ),
-                              ],
+                          Text(
+                            "Cycle, weekday & patterns",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: scheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -116,39 +110,45 @@ class _PredictionCardState extends ConsumerState<PredictionCard> {
                     ),
                     const SizedBox(width: 8),
                     // Risk Level Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: riskColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: riskColor.withValues(alpha: 0.35),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: riskColor,
-                            ),
+                        decoration: BoxDecoration(
+                          color: riskColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: riskColor.withValues(alpha: 0.35),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            prediction.riskLabel,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: riskColor,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: riskColor,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                prediction.riskLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: riskColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -156,72 +156,63 @@ class _PredictionCardState extends ConsumerState<PredictionCard> {
                 const SizedBox(height: 16),
 
                 // Main Metric Row
-                Row(
-                  children: [
-                    // Percentage Gauge
-                    Expanded(
-                      flex: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          color: scheme.surface.withValues(alpha: 0.8),
-                          border: Border.all(
-                            color: scheme.onSurface.withValues(alpha: 0.08),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Calculated Probability",
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: scheme.onSurface.withValues(alpha: 0.6),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text(
-                                  "${prediction.scorePercent}%",
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w800,
-                                    color: riskColor,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    prediction.hasSufficientData
-                                        ? "Day ${prediction.daysSinceLast} of ~${prediction.meanIntervalDays?.toStringAsFixed(0) ?? '?'}d cycle"
-                                        : "Baseline estimate",
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: scheme.onSurface.withValues(
-                                        alpha: 0.65,
-                                      ),
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    color: scheme.surface.withValues(alpha: 0.8),
+                    border: Border.all(
+                      color: scheme.onSurface.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Calculated Probability",
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            "${prediction.scorePercent}%",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: riskColor,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              prediction.hasSufficientData
+                                  ? "Day ${prediction.daysSinceLast} of ~${prediction.meanIntervalDays?.toStringAsFixed(0) ?? '?'}d cycle"
+                                  : "Baseline estimate",
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: scheme.onSurface.withValues(
+                                  alpha: 0.65,
+                                ),
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
 
@@ -351,94 +342,101 @@ class _PredictionCardState extends ConsumerState<PredictionCard> {
                     ),
                   ),
                   child: feedback == null
-                      ? Row(
+                      ? Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          runSpacing: 8,
                           children: [
-                            Expanded(
-                              child: Text(
-                                "Accurate prediction?",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: scheme.onSurface.withValues(alpha: 0.75),
-                                ),
+                            Text(
+                              "Accurate prediction?",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: scheme.onSurface.withValues(alpha: 0.75),
                               ),
                             ),
-                            InkWell(
-                              onTap: () => _submitFeedback(
-                                wasAccurate: true,
-                                hadActualMigraine:
-                                    prediction.riskLevel != PredictionRisk.low,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF10AC84).withValues(
-                                    alpha: 0.12,
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                InkWell(
+                                  onTap: () => _submitFeedback(
+                                    wasAccurate: true,
+                                    hadActualMigraine:
+                                        prediction.riskLevel != PredictionRisk.low,
                                   ),
                                   borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.thumb_up_alt_outlined,
-                                      size: 13,
-                                      color: Color(0xFF10AC84),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
                                     ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      "Yes",
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF10AC84),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10AC84).withValues(
+                                        alpha: 0.12,
                                       ),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
-                                  ],
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.thumb_up_alt_outlined,
+                                          size: 13,
+                                          color: Color(0xFF10AC84),
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          "Yes",
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF10AC84),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () => _submitFeedback(
-                                wasAccurate: false,
-                                hadActualMigraine:
-                                    prediction.riskLevel == PredictionRisk.low,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: scheme.error.withValues(alpha: 0.12),
+                                const SizedBox(width: 8),
+                                InkWell(
+                                  onTap: () => _submitFeedback(
+                                    wasAccurate: false,
+                                    hadActualMigraine:
+                                        prediction.riskLevel == PredictionRisk.low,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.thumb_down_alt_outlined,
-                                      size: 13,
-                                      color: scheme.error,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      "No",
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        color: scheme.error,
-                                      ),
+                                    decoration: BoxDecoration(
+                                      color: scheme.error.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
-                                  ],
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.thumb_down_alt_outlined,
+                                          size: 13,
+                                          color: scheme.error,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "No",
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: scheme.error,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           ],
                         )
