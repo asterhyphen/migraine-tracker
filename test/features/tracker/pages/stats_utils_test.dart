@@ -305,4 +305,63 @@ void main() {
     expect(risk.riskLevel, MedicationOveruseLevel.high);
     expect(risk.medicationDaysThisMonth, 11);
   });
+
+  group('findHighestMigraineMonth and buildSummary highest month item', () {
+    test('findHighestMigraineMonth returns null on empty entries', () {
+      expect(findHighestMigraineMonth([]), isNull);
+    });
+
+    test('findHighestMigraineMonth finds peak migraine attack month', () {
+      final entries = [
+        entry(DateTime(2026, 5, 2), 5),
+        entry(DateTime(2026, 5, 10), 6),
+        entry(DateTime(2026, 6, 1), 7),
+        entry(DateTime(2026, 6, 5), 8),
+        entry(DateTime(2026, 6, 20), 4),
+        entry(DateTime(2026, 7, 3), 6),
+      ];
+
+      final highest = findHighestMigraineMonth(entries);
+      expect(highest, isNotNull);
+      expect(highest!.month, DateTime(2026, 6));
+      expect(highest.migraineCount, 3);
+    });
+
+    test('findHighestMigraineMonth picks more recent month on ties', () {
+      final entries = [
+        entry(DateTime(2026, 3, 2), 5),
+        entry(DateTime(2026, 3, 10), 6),
+        entry(DateTime(2026, 8, 1), 7),
+        entry(DateTime(2026, 8, 5), 8),
+      ];
+
+      final highest = findHighestMigraineMonth(entries);
+      expect(highest, isNotNull);
+      expect(highest!.month, DateTime(2026, 8));
+      expect(highest.migraineCount, 2);
+    });
+
+    test('buildSummary includes Highest Month item and triggers callback on tap', () {
+      final allEntries = [
+        entry(DateTime(2026, 4, 1), 5),
+        entry(DateTime(2026, 5, 1), 6),
+        entry(DateTime(2026, 5, 15), 7),
+      ];
+
+      DateTime? tappedMonth;
+      final summary = buildSummary(
+        [entry(DateTime(2026, 4, 1), 5)],
+        allEntries: allEntries,
+        onHighestMonthTap: (m) => tappedMonth = m,
+      );
+
+      final highestMonthItem = summary.firstWhere((item) => item.title == 'Highest Month');
+      expect(highestMonthItem.value, 'May 2026');
+      expect(highestMonthItem.subtitle, contains('2 migraines'));
+      expect(highestMonthItem.subtitle, contains('All-time peak'));
+
+      highestMonthItem.onTap?.call();
+      expect(tappedMonth, DateTime(2026, 5));
+    });
+  });
 }

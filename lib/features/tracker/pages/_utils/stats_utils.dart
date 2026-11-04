@@ -33,6 +33,19 @@ class SummaryItem {
   final VoidCallback? onTap;
 }
 
+/// Data class for highest migraine month info.
+class HighestMonthInfo {
+  const HighestMonthInfo({
+    required this.month,
+    required this.migraineCount,
+    required this.totalEntries,
+  });
+
+  final DateTime month;
+  final int migraineCount;
+  final int totalEntries;
+}
+
 /// Data class for comparison items between months.
 class ComparisonItem {
   ComparisonItem({
@@ -415,11 +428,87 @@ bool isSameMonth(DateTime a, DateTime b) {
   return a.year == b.year && a.month == b.month;
 }
 
+/// Find the calendar month with the highest migraine attack frequency across all entries.
+HighestMonthInfo? findHighestMigraineMonth(List<MigraineEntry> allEntries) {
+  if (allEntries.isEmpty) return null;
+
+  final migraineCounts = <DateTime, int>{};
+  final totalCounts = <DateTime, int>{};
+
+  for (final entry in allEntries) {
+    final key = DateTime(entry.date.year, entry.date.month);
+    totalCounts[key] = (totalCounts[key] ?? 0) + 1;
+    if (entry.hadMigraine) {
+      migraineCounts[key] = (migraineCounts[key] ?? 0) + 1;
+    }
+  }
+
+  if (migraineCounts.isEmpty) {
+    final sortedTotals = totalCounts.entries.toList()
+      ..sort((a, b) {
+        final countCompare = b.value.compareTo(a.value);
+        if (countCompare != 0) return countCompare;
+        return b.key.compareTo(a.key);
+      });
+    final top = sortedTotals.first;
+    return HighestMonthInfo(
+      month: top.key,
+      migraineCount: 0,
+      totalEntries: top.value,
+    );
+  }
+
+  final sorted = migraineCounts.entries.toList()
+    ..sort((a, b) {
+      final countCompare = b.value.compareTo(a.value);
+      if (countCompare != 0) return countCompare;
+      return b.key.compareTo(a.key);
+    });
+
+  final top = sorted.first;
+  return HighestMonthInfo(
+    month: top.key,
+    migraineCount: top.value,
+    totalEntries: totalCounts[top.key] ?? top.value,
+  );
+}
+
 /// Build summary items from entries.
 List<SummaryItem> buildSummary(
   List<MigraineEntry> source, {
+  List<MigraineEntry>? allEntries,
   VoidCallback? onHighestPainDayTap,
+  ValueChanged<DateTime>? onHighestMonthTap,
 }) {
+  final highestMonthInfo = findHighestMigraineMonth(allEntries ?? source);
+  final SummaryItem highestMonthItem;
+  if (highestMonthInfo != null && highestMonthInfo.migraineCount > 0) {
+    final count = highestMonthInfo.migraineCount;
+    highestMonthItem = SummaryItem(
+      "Highest Month",
+      monthLabelFull(highestMonthInfo.month),
+      "$count ${count == 1 ? 'migraine' : 'migraines'} • All-time peak",
+      onTap: onHighestMonthTap == null
+          ? null
+          : () => onHighestMonthTap(highestMonthInfo.month),
+    );
+  } else if (highestMonthInfo != null) {
+    highestMonthItem = SummaryItem(
+      "Highest Month",
+      monthLabelFull(highestMonthInfo.month),
+      "No migraines recorded",
+      onTap: onHighestMonthTap == null
+          ? null
+          : () => onHighestMonthTap(highestMonthInfo.month),
+    );
+  } else {
+    highestMonthItem = SummaryItem(
+      "Highest Month",
+      "-",
+      "No data yet",
+    );
+  }
+
   if (source.isEmpty) {
     return [
       SummaryItem("Total Entries", "0", "No logs in selected month"),
@@ -427,6 +516,7 @@ List<SummaryItem> buildSummary(
       SummaryItem("Highest Pain Day", "-", "No data yet"),
       SummaryItem("Top Cause", "-", "No data yet"),
       SummaryItem("Painkiller Rate", "0%", "For selected month"),
+      highestMonthItem,
     ];
   }
 
@@ -480,6 +570,7 @@ List<SummaryItem> buildSummary(
     ),
     SummaryItem("Top Cause", topCause, "Most frequent trigger"),
     SummaryItem("Painkiller Rate", "$painkillerRate%", "For selected month"),
+    highestMonthItem,
   ];
 }
 

@@ -66,8 +66,14 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         .toList()
         .take(14)
         .toList();
+    final highestMonthInfo = stats_utils.findHighestMigraineMonth(entries);
+    final isSelectedHighestMonth = highestMonthInfo != null &&
+        highestMonthInfo.migraineCount > 0 &&
+        stats_utils.isSameMonth(highestMonthInfo.month, selectedMonth);
+
     final summary = stats_utils.buildSummary(
       filtered,
+      allEntries: entries,
       onHighestPainDayTap: () {
         if (filtered.isNotEmpty) {
           final highestPainEntry = filtered.reduce((a, b) {
@@ -78,6 +84,16 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           });
           Navigator.of(context).push(viewMigraineRoute(entry: highestPainEntry));
         }
+      },
+      onHighestMonthTap: (month) {
+        setState(() {
+          _selectedMonth = month;
+          _compareMonth = stats_utils.validatedCompareMonth(
+            options: monthOptions,
+            selectedMonth: month,
+            currentCompare: _compareMonth,
+          );
+        });
       },
     );
     final overallAvg = entries.isEmpty
@@ -164,6 +180,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                       compareLabel: compareMonth == null
                           ? null
                           : stats_utils.monthLabelFull(compareMonth),
+                      isHighestMonth: isSelectedHighestMonth,
                     ),
                     const SizedBox(height: 12),
                     stats_widgets.MonthlyProgressCard(

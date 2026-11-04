@@ -318,14 +318,18 @@ class MonthlyProgressCard extends StatelessWidget {
 }
 
 class DashboardHeader extends StatelessWidget {
-  const DashboardHeader({super.key, required this.totalEntries,
+  const DashboardHeader({
+    super.key,
+    required this.totalEntries,
     required this.monthLabel,
     this.compareLabel,
+    this.isHighestMonth = false,
   });
 
   final int totalEntries;
   final String monthLabel;
   final String? compareLabel;
+  final bool isHighestMonth;
 
   @override
   Widget build(BuildContext context) {
@@ -358,11 +362,40 @@ class DashboardHeader extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Stats Overview",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        "Stats Overview",
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (isHighestMonth) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: scheme.error.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: scheme.error.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Text(
+                            "PEAK MONTH",
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                              color: scheme.error,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
