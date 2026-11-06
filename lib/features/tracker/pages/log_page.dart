@@ -7,6 +7,7 @@ import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
 import 'package:migraine_tracker/features/tracker/providers/causes_provider.dart';
 import 'package:migraine_tracker/features/tracker/providers/entries_provider.dart';
 import 'package:migraine_tracker/core/utils/date_utils.dart';
+import 'package:migraine_tracker/core/utils/string_utils.dart';
 import 'package:migraine_tracker/core/widgets/app_snackbar.dart';
 import '_utils/log_utils.dart' as log_utils;
 
@@ -207,17 +208,18 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
       ),
     );
 
-    if (result == null || result.isEmpty) return;
-    final success = await ref.read(causeOptionsProvider.notifier).addCause(result);
+    if (result == null || result.trim().isEmpty) return;
+    final formatted = StringUtils.toTitleCase(result);
+    final success = await ref.read(causeOptionsProvider.notifier).addCause(formatted);
     if (!mounted) return;
     setState(() {
-      selectedCauses.add(result);
-      if (!_causes.contains(result)) {
+      selectedCauses.add(formatted);
+      if (!_causes.contains(formatted)) {
         final otherIdx = _causes.indexWhere((c) => c.toLowerCase() == 'other');
         if (otherIdx != -1) {
-          _causes.insert(otherIdx, result);
+          _causes.insert(otherIdx, formatted);
         } else {
-          _causes.add(result);
+          _causes.add(formatted);
         }
       }
     });
@@ -225,13 +227,13 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
       AppSnackBar.showSuccess(
         context,
         title: "Cause added",
-        message: '"$result" was added and selected for this entry.',
+        message: '"$formatted" was added and selected for this entry.',
       );
     } else {
       AppSnackBar.showInfo(
         context,
         title: "Trigger selected",
-        message: '"$result" is already in your causes list and has been selected.',
+        message: '"$formatted" is already in your causes list and has been selected.',
       );
     }
   }

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:migraine_tracker/core/utils/string_utils.dart';
 
 import '../data/shared_prefs_cause_options_repository.dart';
 import '../models/cause_option.dart';
@@ -39,18 +40,18 @@ class CauseOptionsController extends AsyncNotifier<List<String>> {
   }
 
   Future<bool> addCause(String cause) async {
-    final trimmed = cause.trim();
-    if (trimmed.isEmpty) return false;
+    final formatted = StringUtils.toTitleCase(cause);
+    if (formatted.isEmpty) return false;
     final current = state.value ?? await _repository.loadCauses();
-    if (current.any((c) => c.toLowerCase() == trimmed.toLowerCase())) {
+    if (current.any((c) => c.toLowerCase() == formatted.toLowerCase())) {
       return false;
     }
     final updated = List<String>.from(current);
     final otherIndex = updated.indexWhere((c) => c.toLowerCase() == 'other');
     if (otherIndex != -1) {
-      updated.insert(otherIndex, trimmed);
+      updated.insert(otherIndex, formatted);
     } else {
-      updated.add(trimmed);
+      updated.add(formatted);
     }
     await save(updated);
     return true;

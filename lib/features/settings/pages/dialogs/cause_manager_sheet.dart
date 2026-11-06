@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:migraine_tracker/core/utils/string_utils.dart';
 
 class CauseManagerSheet extends StatefulWidget {
   const CauseManagerSheet({
@@ -23,16 +24,22 @@ class _CauseManagerSheetState extends State<CauseManagerSheet> {
   void initState() {
     super.initState();
     _causes = List<String>.from(widget.initialCauses);
+    _newCauseController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    setState(() {});
   }
 
   @override
   void dispose() {
+    _newCauseController.removeListener(_onTextChanged);
     _newCauseController.dispose();
     super.dispose();
   }
 
   void _commitPendingText() {
-    final value = _newCauseController.text.trim();
+    final value = StringUtils.toTitleCase(_newCauseController.text);
     if (value.isEmpty) return;
     final exists = _causes.any((c) => c.toLowerCase() == value.toLowerCase());
     if (!exists) {
@@ -48,7 +55,7 @@ class _CauseManagerSheetState extends State<CauseManagerSheet> {
   }
 
   void _addCause() {
-    final value = _newCauseController.text.trim();
+    final value = StringUtils.toTitleCase(_newCauseController.text);
     if (value.isEmpty) return;
     final exists = _causes.any((c) => c.toLowerCase() == value.toLowerCase());
     if (exists) {
@@ -130,35 +137,50 @@ class _CauseManagerSheetState extends State<CauseManagerSheet> {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _newCauseController,
-                        textCapitalization: TextCapitalization.sentences,
-                        decoration: InputDecoration(
-                          labelText: "Add new cause",
-                          hintText: "e.g. Caffeine, Perfume, Noise",
-                          errorText: _errorMessage,
+                Builder(
+                  builder: (context) {
+                    final hasValidInput = _newCauseController.text.trim().isNotEmpty;
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _newCauseController,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: InputDecoration(
+                              labelText: "Add new cause",
+                              hintText: "e.g. Caffeine, Perfume, Noise",
+                              errorText: _errorMessage,
+                            ),
+                            onChanged: (_) {
+                              if (_errorMessage != null) {
+                                setState(() => _errorMessage = null);
+                              }
+                            },
+                            onSubmitted: hasValidInput ? (_) => _addCause() : null,
+                          ),
                         ),
-                        onChanged: (_) {
-                          if (_errorMessage != null) {
-                            setState(() => _errorMessage = null);
-                          }
-                        },
-                        onSubmitted: (_) => _addCause(),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: FilledButton.tonal(
-                        onPressed: _addCause,
-                        child: const Text("Add"),
-                      ),
-                    ),
-                  ],
+                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeInOut,
+                            opacity: hasValidInput ? 1.0 : 0.45,
+                            child: AnimatedScale(
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeOutBack,
+                              scale: hasValidInput ? 1.0 : 0.92,
+                              child: FilledButton.tonal(
+                                onPressed: hasValidInput ? _addCause : null,
+                                child: const Text("Add"),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 10),
                 Flexible(

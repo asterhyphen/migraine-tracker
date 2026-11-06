@@ -78,6 +78,17 @@ void main() {
       expect(added, isFalse);
     });
 
+    test('addCause normalizes text to Title Case (e.g. "aha tomato" -> "Aha Tomato")', () async {
+      await container.read(causeOptionsProvider.future);
+      final notifier = container.read(causeOptionsProvider.notifier);
+
+      final added = await notifier.addCause('aha tomato');
+      expect(added, isTrue);
+
+      final updated = container.read(causeOptionsProvider).value!;
+      expect(updated.contains('Aha Tomato'), isTrue);
+    });
+
     test('removeCause removes specified cause', () async {
       await container.read(causeOptionsProvider.future);
       final notifier = container.read(causeOptionsProvider.notifier);
