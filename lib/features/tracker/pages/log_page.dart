@@ -138,22 +138,34 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
         return AlertDialog(
           title: const Text("Are you sure?"),
           content: const Text("Your edits will not be saved."),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: scheme.primary,
-                foregroundColor: scheme.onPrimary,
-              ),
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text("Stay"),
-            ),
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: scheme.error,
-                side: BorderSide(color: scheme.error.withValues(alpha: 0.65)),
-              ),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text("Leave"),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: scheme.primary,
+                      foregroundColor: scheme.onPrimary,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text("Stay"),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: scheme.error,
+                      side: BorderSide(
+                        color: scheme.error.withValues(alpha: 0.65),
+                      ),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text("Leave"),
+                  ),
+                ),
+              ],
             ),
           ],
         );
