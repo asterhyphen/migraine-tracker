@@ -363,5 +363,51 @@ void main() {
       highestMonthItem.onTap?.call();
       expect(tappedMonth, DateTime(2026, 5));
     });
+
+    test('calculateOutcomeMetrics defaults to Unknown and aggregates properly', () {
+      final entries = [
+        MigraineEntry(
+          date: DateTime(2026, 6, 1),
+          hadMigraine: true,
+          intensity: 5,
+          painkillers: false,
+          notes: '',
+          outcome: MigraineOutcome.unknown,
+        ),
+        MigraineEntry(
+          date: DateTime(2026, 6, 2),
+          hadMigraine: true,
+          intensity: 6,
+          painkillers: false,
+          notes: '',
+          outcome: MigraineOutcome.resolved,
+        ),
+        MigraineEntry(
+          date: DateTime(2026, 6, 3),
+          hadMigraine: true,
+          intensity: 7,
+          painkillers: false,
+          notes: '',
+          outcome: MigraineOutcome.persisted,
+        ),
+        MigraineEntry(
+          date: DateTime(2026, 6, 4),
+          hadMigraine: false, // Not a migraine
+          intensity: 0,
+          painkillers: false,
+          notes: '',
+          outcome: MigraineOutcome.unknown,
+        ),
+      ];
+
+      final metrics = calculateOutcomeMetrics(entries);
+      expect(metrics.totalMigraines, 3);
+      expect(metrics.resolvedCount, 1);
+      expect(metrics.persistedCount, 1);
+      expect(metrics.unknownCount, 1);
+      expect(metrics.resolvedPercent, 33);
+      expect(metrics.persistedPercent, 33);
+      expect(metrics.unknownPercent, 33);
+    });
   });
 }

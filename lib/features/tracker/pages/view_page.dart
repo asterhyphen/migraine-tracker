@@ -267,6 +267,116 @@ class ViewMigrainePage extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
+            // Next-Day Outcome Section
+            if (entry.hadMigraine) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: scheme.onSurface.withValues(alpha: 0.13),
+                  ),
+                  color: scheme.surface.withValues(alpha: 0.74),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Next-Day Outcome",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: scheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        if (entry.id != null)
+                          InkWell(
+                            onTap: () async {
+                              final chosen = await showDialog<MigraineOutcome>(
+                                context: context,
+                                builder: (context) {
+                                  return SimpleDialog(
+                                    title: const Text("Update Outcome"),
+                                    children: [
+                                      SimpleDialogOption(
+                                        onPressed: () => Navigator.pop(
+                                          context,
+                                          MigraineOutcome.unknown,
+                                        ),
+                                        child: const Text("Unknown"),
+                                      ),
+                                      SimpleDialogOption(
+                                        onPressed: () => Navigator.pop(
+                                          context,
+                                          MigraineOutcome.resolved,
+                                        ),
+                                        child: const Text(
+                                          "Got Better / Resolved",
+                                        ),
+                                      ),
+                                      SimpleDialogOption(
+                                        onPressed: () => Navigator.pop(
+                                          context,
+                                          MigraineOutcome.persisted,
+                                        ),
+                                        child: const Text(
+                                          "Persisted Until End of Day",
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                              if (chosen != null && context.mounted) {
+                                await ref
+                                    .read(migraineEntriesProvider.notifier)
+                                    .updateOutcome(entry.id!, chosen);
+                                if (!context.mounted) return;
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            child: Text(
+                              "Change",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: scheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Chip(
+                      avatar: Icon(
+                        entry.outcome == MigraineOutcome.resolved
+                            ? Icons.check_circle_rounded
+                            : entry.outcome == MigraineOutcome.persisted
+                            ? Icons.timelapse_rounded
+                            : Icons.help_outline_rounded,
+                        size: 16,
+                        color: entry.outcome == MigraineOutcome.resolved
+                            ? scheme.primary
+                            : entry.outcome == MigraineOutcome.persisted
+                            ? scheme.error
+                            : scheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                      label: Text(entry.outcome.label),
+                      backgroundColor: entry.outcome == MigraineOutcome.resolved
+                          ? scheme.primary.withValues(alpha: 0.15)
+                          : entry.outcome == MigraineOutcome.persisted
+                          ? scheme.error.withValues(alpha: 0.15)
+                          : scheme.onSurface.withValues(alpha: 0.08),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
             // Causes Section
             if (entry.causes.isNotEmpty)
               Column(

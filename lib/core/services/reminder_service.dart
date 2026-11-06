@@ -19,6 +19,7 @@ void notificationTapBackground(NotificationResponse response) async {
     await notifications.cancel(id: response.id!);
   }
   await notifications.cancel(id: ReminderService.dailySurveyId);
+  await notifications.cancel(id: ReminderService.followUpReminderId);
 
   if (response.actionId == ReminderService.surveyActionNo) {
     final today = DateTime.now();
@@ -53,6 +54,30 @@ void notificationTapBackground(NotificationResponse response) async {
       entries: allEntries,
       hasLoggedToday: true,
     );
+  } else if (response.actionId == ReminderService.followUpActionResolved ||
+      response.actionId == ReminderService.followUpActionPersisted) {
+    final outcome = response.actionId == ReminderService.followUpActionResolved
+        ? MigraineOutcome.resolved
+        : MigraineOutcome.persisted;
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final existing = await MigraineDb.instance.getEntryForDate(yesterday);
+    if (existing != null && existing.hadMigraine) {
+      await MigraineDb.instance.updateEntry(existing.copyWith(outcome: outcome));
+    } else {
+      final migraines = await MigraineDb.instance.getMigraineEntriesOnly();
+      if (migraines.isNotEmpty && migraines.first.outcome == MigraineOutcome.unknown) {
+        await MigraineDb.instance.updateEntry(
+          migraines.first.copyWith(outcome: outcome),
+        );
+      }
+    }
+    final prefsRepo = const SharedPrefsSettingsRepository();
+    final settings = await prefsRepo.load();
+    final allEntries = await MigraineDb.instance.getAllEntries();
+    await ReminderService.instance.reschedule(
+      settings: settings,
+      entries: allEntries,
+    );
   }
 }
 
@@ -65,10 +90,15 @@ class ReminderService {
   static const surveyPayload = 'daily-survey';
   static const surveyActionYes = 'survey_yes';
   static const surveyActionNo = 'survey_no';
+  static const followUpPayload = 'followup-persistence';
+  static const followUpActionResolved = 'follow_up_resolved';
+  static const followUpActionPersisted = 'follow_up_persisted';
   static const _dailyReminderId = 701;
   static const _staleReminderId = 702;
   static const dailySurveyId = 705;
   static const _dailySurveyId = dailySurveyId;
+  static const followUpReminderId = 708;
+  static const _followUpReminderId = followUpReminderId;
   static const _medicationReminderBaseId = 720;
   static const _maxMedicationReminders = 50;
 
@@ -81,6 +111,7 @@ class ReminderService {
   Future<void> initialize({
     void Function()? onLogRequested,
     void Function(bool hadMigraine)? onSurveyResponse,
+    void Function(MigraineOutcome outcome)? onFollowUpResponse,
   }) async {
     if (_initialized) {
       return;
@@ -111,6 +142,19 @@ class ReminderService {
             ),
           ],
         ),
+        DarwinNotificationCategory(
+          'follow_up_category',
+          actions: [
+            DarwinNotificationAction.plain(
+              followUpActionResolved,
+              'Got Better',
+            ),
+            DarwinNotificationAction.plain(
+              followUpActionPersisted,
+              'Persisted',
+            ),
+          ],
+        ),
       ],
     );
     final initializationSettings = InitializationSettings(
@@ -126,14 +170,35 @@ class ReminderService {
           await _notifications.cancel(id: response.id!);
         }
         await _notifications.cancel(id: _dailySurveyId);
+        await _notifications.cancel(id: _followUpReminderId);
 
         if (response.actionId == surveyActionYes) {
           onSurveyResponse?.call(true);
         } else if (response.actionId == surveyActionNo) {
           onSurveyResponse?.call(false);
-        } else if (response.payload == surveyPayload) {
-          onLogRequested?.call();
-        } else if (response.payload == logPayload) {
+        } else if (response.actionId == followUpActionResolved ||
+            response.actionId == followUpActionPersisted) {
+          final outcome = response.actionId == followUpActionResolved
+              ? MigraineOutcome.resolved
+              : MigraineOutcome.persisted;
+          final yesterday = DateTime.now().subtract(const Duration(days: 1));
+          final existing = await MigraineDb.instance.getEntryForDate(yesterday);
+          if (existing != null && existing.hadMigraine) {
+            await MigraineDb.instance.updateEntry(
+              existing.copyWith(outcome: outcome),
+            );
+          } else {
+            final migraines = await MigraineDb.instance.getMigraineEntriesOnly();
+            if (migraines.isNotEmpty && migraines.first.outcome == MigraineOutcome.unknown) {
+              await MigraineDb.instance.updateEntry(
+                migraines.first.copyWith(outcome: outcome),
+              );
+            }
+          }
+          onFollowUpResponse?.call(outcome);
+        } else if (response.payload == surveyPayload ||
+            response.payload == logPayload ||
+            response.payload == followUpPayload) {
           onLogRequested?.call();
         }
       },
@@ -152,13 +217,35 @@ class ReminderService {
         await _notifications.cancel(id: response.id!);
       }
       await _notifications.cancel(id: _dailySurveyId);
+      await _notifications.cancel(id: _followUpReminderId);
 
       if (response.actionId == surveyActionYes) {
         onSurveyResponse?.call(true);
       } else if (response.actionId == surveyActionNo) {
         onSurveyResponse?.call(false);
+      } else if (response.actionId == followUpActionResolved ||
+          response.actionId == followUpActionPersisted) {
+        final outcome = response.actionId == followUpActionResolved
+            ? MigraineOutcome.resolved
+            : MigraineOutcome.persisted;
+        final yesterday = DateTime.now().subtract(const Duration(days: 1));
+        final existing = await MigraineDb.instance.getEntryForDate(yesterday);
+        if (existing != null && existing.hadMigraine) {
+          await MigraineDb.instance.updateEntry(
+            existing.copyWith(outcome: outcome),
+          );
+        } else {
+          final migraines = await MigraineDb.instance.getMigraineEntriesOnly();
+          if (migraines.isNotEmpty && migraines.first.outcome == MigraineOutcome.unknown) {
+            await MigraineDb.instance.updateEntry(
+              migraines.first.copyWith(outcome: outcome),
+            );
+          }
+        }
+        onFollowUpResponse?.call(outcome);
       } else if (response.payload == surveyPayload ||
-          response.payload == logPayload) {
+          response.payload == logPayload ||
+          response.payload == followUpPayload) {
         onLogRequested?.call();
       }
     }
@@ -204,6 +291,7 @@ class ReminderService {
     await _notifications.cancel(id: _dailyReminderId);
     await _notifications.cancel(id: _staleReminderId);
     await _notifications.cancel(id: _dailySurveyId);
+    await _notifications.cancel(id: _followUpReminderId);
     await _cancelMedicationReminders();
 
     final isLoggedToday = hasLoggedToday ?? _hasLoggedToday(entries);
@@ -232,6 +320,7 @@ class ReminderService {
       await _scheduleStaleReminder(settings, entries);
     }
 
+    await _scheduleFollowUpReminder(settings, entries);
     await _scheduleMedicationReminders(settings.medicationReminders);
   }
 
@@ -249,6 +338,7 @@ class ReminderService {
     await _notifications.cancel(id: _dailyReminderId);
     await _notifications.cancel(id: _staleReminderId);
     await _notifications.cancel(id: _dailySurveyId);
+    await _notifications.cancel(id: _followUpReminderId);
     await _cancelMedicationReminders();
   }
 
@@ -441,6 +531,111 @@ class ReminderService {
       autoCancel: true,
     );
     const darwin = DarwinNotificationDetails();
+    return const NotificationDetails(
+      android: android,
+      iOS: darwin,
+      macOS: darwin,
+    );
+  }
+
+  Future<void> _scheduleFollowUpReminder(
+    AppSettings settings,
+    List<MigraineEntry> entries,
+  ) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    // Look for the most recent migraine entry that is pending follow-up (outcome == unknown)
+    MigraineEntry? targetEntry;
+    DateTime? fireDate;
+
+    for (final entry in entries) {
+      if (!entry.hadMigraine) continue;
+      final entryDate = DateTime(
+        entry.date.year,
+        entry.date.month,
+        entry.date.day,
+      );
+      if (entryDate == today && entry.outcome == MigraineOutcome.unknown) {
+        // Today has a migraine logged! Schedule follow-up for tomorrow morning.
+        targetEntry = entry;
+        fireDate = today.add(const Duration(days: 1));
+        break;
+      } else if (entryDate == yesterday &&
+          entry.outcome == MigraineOutcome.unknown) {
+        // Yesterday had a migraine and outcome is still unknown! Schedule for today.
+        targetEntry = entry;
+        fireDate = today;
+        break;
+      }
+    }
+
+    if (targetEntry == null || fireDate == null) {
+      return;
+    }
+
+    final hour = settings.dailySurveyEnabled ? settings.dailySurveyHour : 9;
+    final minute = settings.dailySurveyEnabled ? settings.dailySurveyMinute : 0;
+    var scheduled = tz.TZDateTime(
+      tz.local,
+      fireDate.year,
+      fireDate.month,
+      fireDate.day,
+      hour,
+      minute,
+    );
+
+    final nowTz = tz.TZDateTime.now(tz.local);
+    if (!scheduled.isAfter(nowTz)) {
+      if (fireDate == today) {
+        // If scheduled time today already passed, trigger within 10 seconds so the user gets asked today
+        scheduled = nowTz.add(const Duration(seconds: 10));
+      } else {
+        return;
+      }
+    }
+
+    await _notifications.zonedSchedule(
+      id: _followUpReminderId,
+      title: 'Migraine Follow-up',
+      body:
+          "Did yesterday's migraine persist until the end of the day or did you get well eventually?",
+      scheduledDate: scheduled,
+      notificationDetails: _followUpNotificationDetails(),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: followUpPayload,
+    );
+  }
+
+  NotificationDetails _followUpNotificationDetails() {
+    const android = AndroidNotificationDetails(
+      'migraine_followup_reminders',
+      'Migraine follow-up',
+      channelDescription:
+          'Next-day follow-up to record whether your migraine persisted.',
+      importance: Importance.high,
+      priority: Priority.high,
+      category: AndroidNotificationCategory.reminder,
+      autoCancel: true,
+      actions: [
+        AndroidNotificationAction(
+          followUpActionResolved,
+          'Got Better',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+        AndroidNotificationAction(
+          followUpActionPersisted,
+          'Persisted',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+      ],
+    );
+    const darwin = DarwinNotificationDetails(
+      categoryIdentifier: 'follow_up_category',
+    );
     return const NotificationDetails(
       android: android,
       iOS: darwin,

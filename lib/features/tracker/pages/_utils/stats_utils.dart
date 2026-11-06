@@ -46,6 +46,61 @@ class HighestMonthInfo {
   final int totalEntries;
 }
 
+/// Data class for outcome and next-day persistence metrics.
+class OutcomeMetrics {
+  const OutcomeMetrics({
+    required this.totalMigraines,
+    required this.resolvedCount,
+    required this.persistedCount,
+    required this.unknownCount,
+  });
+
+  final int totalMigraines;
+  final int resolvedCount;
+  final int persistedCount;
+  final int unknownCount;
+
+  double get resolvedRate =>
+      totalMigraines == 0 ? 0.0 : resolvedCount / totalMigraines;
+  double get persistedRate =>
+      totalMigraines == 0 ? 0.0 : persistedCount / totalMigraines;
+  double get unknownRate =>
+      totalMigraines == 0 ? 0.0 : unknownCount / totalMigraines;
+
+  int get resolvedPercent => (resolvedRate * 100).round();
+  int get persistedPercent => (persistedRate * 100).round();
+  int get unknownPercent => (unknownRate * 100).round();
+}
+
+/// Calculate outcome and persistence statistics for a list of entries.
+OutcomeMetrics calculateOutcomeMetrics(List<MigraineEntry> entries) {
+  final migraines = entries.where((e) => e.hadMigraine).toList();
+  var resolved = 0;
+  var persisted = 0;
+  var unknown = 0;
+
+  for (final entry in migraines) {
+    switch (entry.outcome) {
+      case MigraineOutcome.resolved:
+        resolved++;
+        break;
+      case MigraineOutcome.persisted:
+        persisted++;
+        break;
+      case MigraineOutcome.unknown:
+        unknown++;
+        break;
+    }
+  }
+
+  return OutcomeMetrics(
+    totalMigraines: migraines.length,
+    resolvedCount: resolved,
+    persistedCount: persisted,
+    unknownCount: unknown,
+  );
+}
+
 /// Data class for comparison items between months.
 class ComparisonItem {
   ComparisonItem({

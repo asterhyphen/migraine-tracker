@@ -60,8 +60,21 @@ class _AppShellState extends ConsumerState<AppShell> {
     ReminderService.instance.initialize(
       onLogRequested: _handleReminderOpen,
       onSurveyResponse: _handleSurveyResponse,
+      onFollowUpResponse: _handleFollowUpResponse,
     );
     _setupDeepLinks();
+  }
+
+  Future<void> _handleFollowUpResponse(MigraineOutcome outcome) async {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final existing = await ref
+        .read(migraineEntriesProvider.notifier)
+        .entryForDate(yesterday);
+    if (existing != null && existing.hadMigraine) {
+      await ref
+          .read(migraineEntriesProvider.notifier)
+          .saveEntry(existing.copyWith(outcome: outcome));
+    }
   }
 
   Future<void> _handleSurveyResponse(bool hadMigraine) async {

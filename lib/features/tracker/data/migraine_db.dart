@@ -9,7 +9,7 @@ class MigraineDb {
   static final MigraineDb instance = MigraineDb._();
 
   static const _dbName = 'migraine_tracker.db';
-  static const _dbVersion = 2;
+  static const _dbVersion = 3;
 
   Database? _db;
 
@@ -36,7 +36,8 @@ class MigraineDb {
             intensity INTEGER NOT NULL,
             painkillers INTEGER NOT NULL,
             notes TEXT NOT NULL,
-            causes TEXT NOT NULL
+            causes TEXT NOT NULL,
+            outcome TEXT NOT NULL DEFAULT 'unknown'
           )
         ''');
       },
@@ -53,13 +54,14 @@ class MigraineDb {
                 intensity INTEGER NOT NULL,
                 painkillers INTEGER NOT NULL,
                 notes TEXT NOT NULL,
-                causes TEXT NOT NULL
+                causes TEXT NOT NULL,
+                outcome TEXT NOT NULL DEFAULT 'unknown'
               )
             ''');
             await txn.execute('''
               INSERT INTO migraine_entries_new
-              (id, date, had_migraine, intensity, painkillers, notes, causes)
-              SELECT id, date, had_migraine, intensity, painkillers, notes, causes
+              (id, date, had_migraine, intensity, painkillers, notes, causes, outcome)
+              SELECT id, date, had_migraine, intensity, painkillers, notes, causes, 'unknown'
               FROM migraine_entries
             ''');
             await txn.execute('DROP TABLE migraine_entries');
@@ -67,6 +69,11 @@ class MigraineDb {
               'ALTER TABLE migraine_entries_new RENAME TO migraine_entries',
             );
           });
+        }
+        if (oldVersion < 3) {
+          await db.execute(
+            "ALTER TABLE migraine_entries ADD COLUMN outcome TEXT NOT NULL DEFAULT 'unknown'",
+          );
         }
       },
     );
@@ -87,6 +94,16 @@ class MigraineDb {
       entry.toMap(),
       where: 'id = ?',
       whereArgs: [entry.id],
+    );
+  }
+
+  Future<int> updateOutcome(int id, MigraineOutcome outcome) async {
+    final db = await database;
+    return db.update(
+      'migraine_entries',
+      {'outcome': outcome.value},
+      where: 'id = ?',
+      whereArgs: [id],
     );
   }
 

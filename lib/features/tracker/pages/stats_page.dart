@@ -60,6 +60,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     final monthStats = stats_utils.buildWeeklyFrequency(filtered, selectedMonth);
     final avgStats = stats_utils.buildWeeklyAverages(filtered, selectedMonth);
     final causes = stats_utils.buildCauseStats(filtered);
+    final outcomeMetrics = stats_utils.calculateOutcomeMetrics(filtered);
     final painkillerPercent = stats_utils.painkillerUsage(filtered);
     final intensitySeries = filtered.reversed
         .map((e) => e.intensity)
@@ -314,6 +315,16 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                     stats_widgets.CausesGraphCard(
                       data: causes,
                       totalEntries: filtered.length,
+                    ),
+                    const SizedBox(height: 20),
+                    const stats_widgets.SectionTitle(
+                      title: "Resolution & Persistence Graph",
+                      subtitle:
+                          "Outcome tracking for whether migraines resolved or persisted",
+                    ),
+                    const SizedBox(height: 12),
+                    stats_widgets.OutcomePersistenceGraphCard(
+                      metrics: outcomeMetrics,
                     ),
                     const SizedBox(height: 20),
                     const stats_widgets.SectionTitle(

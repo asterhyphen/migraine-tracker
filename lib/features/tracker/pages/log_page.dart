@@ -28,6 +28,7 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
   double intensity = log_utils.defaultIntensity;
   int _lastHapticIntensity = log_utils.defaultIntensity.toInt();
   bool tookPainkillers = false;
+  MigraineOutcome outcome = MigraineOutcome.unknown;
   final TextEditingController notesController = TextEditingController();
   final TextEditingController _otherCauseController = TextEditingController();
   DateTime? _entryDate;
@@ -38,6 +39,7 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
   late String _initialNotes;
   late Set<String> _initialSavedCauses;
   late DateTime _initialEntryDate;
+  late MigraineOutcome _initialOutcome;
 
   List<String> _causes = List<String>.from(defaultCauseOptions);
 
@@ -54,6 +56,7 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
       hadMigraine = entry.hadMigraine;
       intensity = entry.intensity.toDouble();
       tookPainkillers = entry.painkillers;
+      outcome = entry.outcome;
       notesController.text = entry.notes;
       for (final cause in entry.causes) {
         if (log_utils.isSavedOtherCause(cause)) {
@@ -74,6 +77,7 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
     _initialTookPainkillers = tookPainkillers;
     _initialNotes = notesController.text;
     _initialSavedCauses = _buildCausesForSave().toSet();
+    _initialOutcome = outcome;
     _initialEntryDate = DateTime(
       (_entryDate ?? DateTime.now()).year,
       (_entryDate ?? DateTime.now()).month,
@@ -125,6 +129,8 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
       initialEntryDate: _initialEntryDate,
       currentEntryDate: _entryDate ?? DateTime.now(),
       isEditingExistingEntry: widget.entry != null,
+      initialOutcome: _initialOutcome,
+      currentOutcome: outcome,
     );
   }
 
@@ -274,6 +280,7 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
       painkillers: tookPainkillers,
       notes: notesController.text.trim(),
       causes: _buildCausesForSave(),
+      outcome: outcome,
     );
 
     try {
@@ -435,8 +442,42 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
                   });
                 },
               ),
-              const SizedBox(height: 12),
-              const SizedBox(height: 6),
+              const SizedBox(height: 16),
+              const Text("Next-Day Outcome"),
+              const SizedBox(height: 4),
+              Text(
+                "Did yesterday's migraine persist or did you get well eventually?",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: scheme.onSurface.withValues(alpha: 0.65),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<MigraineOutcome>(
+                segments: const [
+                  ButtonSegment(
+                    value: MigraineOutcome.unknown,
+                    label: Text("Unknown"),
+                    icon: Icon(Icons.help_outline, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: MigraineOutcome.resolved,
+                    label: Text("Got Better"),
+                    icon: Icon(Icons.check_circle_outline, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: MigraineOutcome.persisted,
+                    label: Text("Persisted"),
+                    icon: Icon(Icons.timelapse, size: 16),
+                  ),
+                ],
+                selected: {outcome},
+                onSelectionChanged: (value) {
+                  setState(() {
+                    outcome = value.first;
+                  });
+                },
+              ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

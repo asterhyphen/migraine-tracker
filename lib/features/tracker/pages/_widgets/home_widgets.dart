@@ -522,3 +522,109 @@ class EmptyStateCard extends StatelessWidget {
     );
   }
 }
+
+class FollowUpCard extends StatelessWidget {
+  const FollowUpCard({
+    super.key,
+    required this.onResolved,
+    required this.onPersisted,
+  });
+
+  final VoidCallback onResolved;
+  final VoidCallback onPersisted;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.3)),
+        gradient: LinearGradient(
+          colors: [
+            scheme.surface,
+            scheme.primary.withValues(alpha: 0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.primary.withValues(alpha: 0.16),
+                ),
+                child: Icon(
+                  Icons.help_outline_rounded,
+                  size: 18,
+                  color: scheme.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  "Yesterday's Migraine Check-in",
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Did your migraine persist until the end of yesterday, or did you get well eventually?",
+            style: TextStyle(
+              fontSize: 13,
+              color: scheme.onSurface.withValues(alpha: 0.76),
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF10AC84),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onPressed: onResolved,
+                  icon: const Icon(Icons.check_circle_outline, size: 16),
+                  label: const Text("Got Better"),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFFF5C5C),
+                    side: const BorderSide(color: Color(0xFFFF5C5C)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onPressed: onPersisted,
+                  icon: const Icon(Icons.timelapse, size: 16),
+                  label: const Text("Persisted"),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

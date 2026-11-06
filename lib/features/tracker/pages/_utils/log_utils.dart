@@ -1,3 +1,5 @@
+import 'package:migraine_tracker/features/tracker/models/migraine_entry.dart';
+
 /// Constant label for "Other" causes.
 const String otherCauseLabel = 'Other';
 
@@ -82,11 +84,14 @@ bool hasUnsavedChanges({
   required DateTime initialEntryDate,
   required DateTime currentEntryDate,
   required bool isEditingExistingEntry,
+  MigraineOutcome initialOutcome = MigraineOutcome.unknown,
+  MigraineOutcome currentOutcome = MigraineOutcome.unknown,
 }) {
   if (currentHadMigraine != initialHadMigraine) return true;
   if (currentIntensity != initialIntensity) return true;
   if (currentTookPainkillers != initialTookPainkillers) return true;
   if (currentNotes.trim() != initialNotes.trim()) return true;
+  if (currentOutcome != initialOutcome) return true;
   if (!currentCauses.containsAll(initialCauses) ||
       !initialCauses.containsAll(currentCauses)) {
     return true;

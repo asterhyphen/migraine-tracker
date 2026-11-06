@@ -146,6 +146,11 @@ class _HomePageState extends ConsumerState<HomePage> {
         .length;
     final lastEntry = entries.isEmpty ? null : entries.first;
     final todayEntry = home_utils.entryForDate(entries, now);
+    final yesterday = now.subtract(const Duration(days: 1));
+    final yesterdayEntry = home_utils.entryForDate(entries, yesterday);
+    final needsYesterdayFollowUp = yesterdayEntry != null &&
+        yesterdayEntry.hadMigraine &&
+        yesterdayEntry.outcome == MigraineOutcome.unknown;
     final lastDays = home_utils.daysSince(lastEntry?.date);
     final lastText = lastEntry == null
         ? "No entries"
@@ -195,6 +200,43 @@ class _HomePageState extends ConsumerState<HomePage> {
               ],
               const SizedBox(height: 16),
               const PredictionCard(),
+              if (needsYesterdayFollowUp) ...[
+                const SizedBox(height: 16),
+                FollowUpCard(
+                  onResolved: () async {
+                    if (yesterdayEntry.id == null) return;
+                    await ref
+                        .read(migraineEntriesProvider.notifier)
+                        .updateOutcome(
+                          yesterdayEntry.id!,
+                          MigraineOutcome.resolved,
+                        );
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Recorded: Yesterday's migraine resolved."),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  onPersisted: () async {
+                    if (yesterdayEntry.id == null) return;
+                    await ref
+                        .read(migraineEntriesProvider.notifier)
+                        .updateOutcome(
+                          yesterdayEntry.id!,
+                          MigraineOutcome.persisted,
+                        );
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Recorded: Yesterday's migraine persisted."),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
+              ],
               const SizedBox(height: 24),
               const SectionTitle(
                 title: "At a Glance",

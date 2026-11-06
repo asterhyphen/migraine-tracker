@@ -46,6 +46,11 @@ class MigraineEntriesController extends AsyncNotifier<List<MigraineEntry>> {
     await reload();
   }
 
+  Future<void> updateOutcome(int id, MigraineOutcome outcome) async {
+    await _repository.updateOutcome(id, outcome);
+    await reload();
+  }
+
   Future<void> deleteEntry(int id) async {
     await _repository.deleteEntry(id);
     await reload();

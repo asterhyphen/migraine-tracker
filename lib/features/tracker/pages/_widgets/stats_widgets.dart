@@ -1321,6 +1321,340 @@ class CausesGraphCard extends StatelessWidget {
   }
 }
 
+class OutcomePersistenceGraphCard extends StatelessWidget {
+  const OutcomePersistenceGraphCard({
+    super.key,
+    required this.metrics,
+  });
+
+  final OutcomeMetrics metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    if (metrics.totalMigraines == 0) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+          color: scheme.surface.withValues(alpha: 0.74),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.healing_outlined,
+              size: 36,
+              color: scheme.primary.withValues(alpha: 0.6),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "No migraine outcomes yet",
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "Log migraines to track whether attacks resolved or persisted until the next day.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: scheme.onSurface.withValues(alpha: 0.65),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final total = metrics.totalMigraines;
+    final resolvedPct = metrics.resolvedPercent;
+    final persistedPct = metrics.persistedPercent;
+    final unknownPct = metrics.unknownPercent;
+
+    const resolvedColor = Color(0xFF10AC84);
+    const persistedColor = Color(0xFFFF5C5C);
+    final unknownColor = scheme.onSurface.withValues(alpha: 0.22);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.13)),
+        color: scheme.surface.withValues(alpha: 0.74),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: scheme.primary.withValues(alpha: 0.15),
+                    ),
+                    child: Icon(
+                      Icons.healing_rounded,
+                      size: 18,
+                      color: scheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    "Resolution & Persistence",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: scheme.primary.withValues(alpha: 0.22),
+                  ),
+                ),
+                child: Text(
+                  "$total ${total == 1 ? 'migraine' : 'migraines'}",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Proportional Distribution Horizontal Stacked Bar Graph
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              height: 22,
+              child: Row(
+                children: [
+                  if (metrics.resolvedCount > 0)
+                    Expanded(
+                      flex: metrics.resolvedCount,
+                      child: Container(
+                        color: resolvedColor,
+                        alignment: Alignment.center,
+                        child: resolvedPct >= 12
+                            ? Text(
+                                "$resolvedPct%",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                  if (metrics.persistedCount > 0)
+                    Expanded(
+                      flex: metrics.persistedCount,
+                      child: Container(
+                        color: persistedColor,
+                        alignment: Alignment.center,
+                        child: persistedPct >= 12
+                            ? Text(
+                                "$persistedPct%",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                  if (metrics.unknownCount > 0)
+                    Expanded(
+                      flex: metrics.unknownCount,
+                      child: Container(
+                        color: unknownColor,
+                        alignment: Alignment.center,
+                        child: unknownPct >= 12
+                            ? Text(
+                                "$unknownPct%",
+                                style: TextStyle(
+                                  color: scheme.onSurface,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Three Metric Status Cards
+          Row(
+            children: [
+              Expanded(
+                child: _OutcomePill(
+                  title: "Got Better",
+                  count: metrics.resolvedCount,
+                  percent: resolvedPct,
+                  color: resolvedColor,
+                  icon: Icons.check_circle_rounded,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _OutcomePill(
+                  title: "Persisted",
+                  count: metrics.persistedCount,
+                  percent: persistedPct,
+                  color: persistedColor,
+                  icon: Icons.timelapse_rounded,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _OutcomePill(
+                  title: "Unknown",
+                  count: metrics.unknownCount,
+                  percent: unknownPct,
+                  color: scheme.onSurface.withValues(alpha: 0.6),
+                  icon: Icons.help_outline_rounded,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Context & Insights description
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: scheme.onSurface.withValues(alpha: 0.04),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: scheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    metrics.resolvedCount >= metrics.persistedCount
+                        ? "$resolvedPct% of attacks resolved within the day. Morning follow-ups keep this data complete."
+                        : "$persistedPct% of attacks lasted till the end of the day. Consider consulting your physician about preventive care.",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurface.withValues(alpha: 0.75),
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OutcomePill extends StatelessWidget {
+  const _OutcomePill({
+    required this.title,
+    required this.count,
+    required this.percent,
+    required this.color,
+    required this.icon,
+  });
+
+  final String title;
+  final int count;
+  final int percent;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: color.withValues(alpha: 0.10),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "$count",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurface,
+            ),
+          ),
+          Text(
+            "$percent%",
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class CauseList extends StatelessWidget {
   const CauseList({super.key, required this.data});
 

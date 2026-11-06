@@ -8,4 +8,5 @@ abstract class MigraineRepository {
   Future<MigraineEntry?> getAnyEntryForDate(DateTime date);
   Future<void> insertEntries(List<MigraineEntry> entries);
   Future<void> saveEntry(MigraineEntry entry);
+  Future<void> updateOutcome(int id, MigraineOutcome outcome);
 }

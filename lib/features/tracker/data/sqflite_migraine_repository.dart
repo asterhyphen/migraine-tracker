@@ -41,4 +41,9 @@ class SqfliteMigraineRepository implements MigraineRepository {
   Future<void> saveEntry(MigraineEntry entry) async {
     await _db.updateEntry(entry);
   }
+
+  @override
+  Future<void> updateOutcome(int id, MigraineOutcome outcome) async {
+    await _db.updateOutcome(id, outcome);
+  }
 }
