@@ -93,6 +93,14 @@ class ReminderService {
   static const followUpPayload = 'followup-persistence';
   static const followUpActionResolved = 'follow_up_resolved';
   static const followUpActionPersisted = 'follow_up_persisted';
+
+  // Visual labels with standardized color indicators for notifications
+  static const surveyLabelYes = '🔴 Yes, had migraine';
+  static const surveyLabelNo = '🟢 No, pain-free';
+  static const followUpLabelResolved = '🟢 Got Better';
+  static const followUpLabelPersisted = '🔴 Persisted';
+  static const notificationColor = Color(0xFF0B826D);
+
   static const _dailyReminderId = 701;
   static const _staleReminderId = 702;
   static const dailySurveyId = 705;
@@ -133,12 +141,15 @@ class ReminderService {
           actions: [
             DarwinNotificationAction.plain(
               surveyActionYes,
-              'Yes, had migraine',
-              options: {DarwinNotificationActionOption.foreground},
+              surveyLabelYes,
+              options: {
+                DarwinNotificationActionOption.foreground,
+                DarwinNotificationActionOption.destructive,
+              },
             ),
             DarwinNotificationAction.plain(
               surveyActionNo,
-              'No, pain-free',
+              surveyLabelNo,
             ),
           ],
         ),
@@ -147,11 +158,14 @@ class ReminderService {
           actions: [
             DarwinNotificationAction.plain(
               followUpActionResolved,
-              'Got Better',
+              followUpLabelResolved,
             ),
             DarwinNotificationAction.plain(
               followUpActionPersisted,
-              'Persisted',
+              followUpLabelPersisted,
+              options: {
+                DarwinNotificationActionOption.destructive,
+              },
             ),
           ],
         ),
@@ -494,18 +508,19 @@ class ReminderService {
       importance: Importance.high,
       priority: Priority.high,
       category: AndroidNotificationCategory.reminder,
+      color: notificationColor,
       autoCancel: true,
       actions: [
         AndroidNotificationAction(
-          surveyActionYes,
-          'Yes',
-          showsUserInterface: true,
+          surveyActionNo,
+          surveyLabelNo,
+          showsUserInterface: false,
           cancelNotification: true,
         ),
         AndroidNotificationAction(
-          surveyActionNo,
-          'No',
-          showsUserInterface: false,
+          surveyActionYes,
+          surveyLabelYes,
+          showsUserInterface: true,
           cancelNotification: true,
         ),
       ],
@@ -617,17 +632,18 @@ class ReminderService {
       importance: Importance.high,
       priority: Priority.high,
       category: AndroidNotificationCategory.reminder,
+      color: notificationColor,
       autoCancel: true,
       actions: [
         AndroidNotificationAction(
           followUpActionResolved,
-          'Got Better',
+          followUpLabelResolved,
           showsUserInterface: false,
           cancelNotification: true,
         ),
         AndroidNotificationAction(
           followUpActionPersisted,
-          'Persisted',
+          followUpLabelPersisted,
           showsUserInterface: false,
           cancelNotification: true,
         ),
