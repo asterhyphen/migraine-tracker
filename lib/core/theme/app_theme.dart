@@ -240,11 +240,15 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: chipBackground,
-        selectedColor: scheme.primary.withValues(alpha: chipSelectedAlpha),
+        selectedColor: scheme.primary,
         disabledColor: chipDisabled,
+        checkmarkColor: scheme.onPrimary,
         side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.15)),
         labelStyle: TextStyle(color: scheme.onSurface),
-        secondaryLabelStyle: TextStyle(color: scheme.onSurface),
+        secondaryLabelStyle: TextStyle(
+          color: scheme.onPrimary,
+          fontWeight: FontWeight.w700,
+        ),
         brightness: brightness,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

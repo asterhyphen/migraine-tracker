@@ -330,6 +330,8 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final activeCauses = ref.watch(causeOptionsProvider).value ?? _causes;
     return PopScope(
       canPop: false,
@@ -446,6 +448,18 @@ class _LogMigrainePageState extends ConsumerState<LogMigrainePage> {
                       label: Text(cause),
                       selected: selected,
                       onSelected: (_) => _toggleCause(cause),
+                      checkmarkColor: scheme.onPrimary,
+                      selectedColor: scheme.primary,
+                      side: BorderSide(
+                        color: selected
+                            ? scheme.primary
+                            : scheme.onSurface.withValues(alpha: 0.16),
+                        width: selected ? 1.5 : 1.0,
+                      ),
+                      labelStyle: TextStyle(
+                        color: selected ? scheme.onPrimary : scheme.onSurface,
+                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      ),
                     );
                   }),
                   ActionChip(
