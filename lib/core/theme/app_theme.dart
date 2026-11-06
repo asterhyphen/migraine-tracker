@@ -16,29 +16,29 @@ class AppTheme {
   );
 
   static const darkBackground = Color(0xFF090D14);
-  static const lightBackground = Color(0xFFF4F7FB);
+  static const lightBackground = Color(0xFFF6F8FB);
 
   static const darkScheme = ColorScheme.dark(
-    primary: Color(0xFF65E0C2),
-    secondary: Color(0xFFFFC26F),
-    tertiary: Color(0xFF7E9DFF),
+    primary: Color(0xFF5AE4A8),
+    secondary: Color(0xFFFFB854),
+    tertiary: Color(0xFF7B9BFF),
     surface: Color(0xFF111927),
-    error: Color(0xFFFF6D7A),
-    onPrimary: Color(0xFF04110D),
-    onSecondary: Color(0xFF1C1200),
-    onSurface: Color(0xFFE8ECF5),
-    onError: Color(0xFF2D0208),
+    error: Color(0xFFFF6B78),
+    onPrimary: Color(0xFF04140F),
+    onSecondary: Color(0xFF1E1300),
+    onSurface: Color(0xFFE8EEF8),
+    onError: Color(0xFF2E0207),
   );
 
   static const lightScheme = ColorScheme.light(
-    primary: Color(0xFF0FA58A),
-    secondary: Color(0xFFE08A00),
-    tertiary: Color(0xFF4A6CF7),
+    primary: Color(0xFF0B826D),
+    secondary: Color(0xFFD97706),
+    tertiary: Color(0xFF3B6FE8),
     surface: Color(0xFFFFFFFF),
-    error: Color(0xFFB3261E),
+    error: Color(0xFFDC2626),
     onPrimary: Color(0xFFFFFFFF),
     onSecondary: Color(0xFFFFFFFF),
-    onSurface: Color(0xFF1A2433),
+    onSurface: Color(0xFF161F2E),
     onError: Color(0xFFFFFFFF),
   );
 
@@ -56,8 +56,8 @@ class AppTheme {
       hintAlpha: 0.50,
       labelAlpha: 0.75,
       borderAlpha: 0.12,
-      focusedBorderAlpha: 0.70,
-      cardBorderAlpha: 0.10,
+      focusedBorderAlpha: 0.75,
+      cardBorderAlpha: 0.12,
       chipBackground: darkScheme.surface.withValues(alpha: 0.90),
       chipSelectedAlpha: 0.20,
       chipDisabled: darkScheme.surface.withValues(alpha: 0.50),
@@ -75,7 +75,7 @@ class AppTheme {
       hintAlpha: 0.45,
       labelAlpha: 0.72,
       borderAlpha: 0.15,
-      focusedBorderAlpha: 0.80,
+      focusedBorderAlpha: 0.85,
       cardBorderAlpha: 0.14,
       chipBackground: lightScheme.surface,
       chipSelectedAlpha: 0.16,
@@ -129,18 +129,73 @@ class AppTheme {
     final baseText = GoogleFonts.plusJakartaSansTextTheme(
       baseTextTheme,
     ).apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface);
-    final textTheme = GoogleFonts.spaceGroteskTextTheme(baseText).copyWith(
-      titleLarge: GoogleFonts.spaceGrotesk(
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        color: scheme.onSurface,
-      ),
-      titleMedium: GoogleFonts.spaceGrotesk(
-        fontSize: 17,
-        fontWeight: FontWeight.w600,
-        color: scheme.onSurface,
-      ),
-    );
+
+    final TextTheme textTheme;
+    if (brightness == Brightness.dark) {
+      textTheme = GoogleFonts.spaceGroteskTextTheme(baseText).copyWith(
+        displayLarge: GoogleFonts.spaceGrotesk(
+          fontSize: 32,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.8,
+          color: scheme.onSurface,
+        ),
+        displayMedium: GoogleFonts.spaceGrotesk(
+          fontSize: 26,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.5,
+          color: scheme.onSurface,
+        ),
+        titleLarge: GoogleFonts.spaceGrotesk(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
+          color: scheme.onSurface,
+        ),
+        titleMedium: GoogleFonts.spaceGrotesk(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.2,
+          color: scheme.onSurface,
+        ),
+        titleSmall: GoogleFonts.spaceGrotesk(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: scheme.onSurface,
+        ),
+      );
+    } else {
+      textTheme = GoogleFonts.manropeTextTheme(baseText).copyWith(
+        displayLarge: GoogleFonts.manrope(
+          fontSize: 32,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.8,
+          color: scheme.onSurface,
+        ),
+        displayMedium: GoogleFonts.manrope(
+          fontSize: 26,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.5,
+          color: scheme.onSurface,
+        ),
+        titleLarge: GoogleFonts.manrope(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.3,
+          color: scheme.onSurface,
+        ),
+        titleMedium: GoogleFonts.manrope(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.2,
+          color: scheme.onSurface,
+        ),
+        titleSmall: GoogleFonts.manrope(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: scheme.onSurface,
+        ),
+      );
+    }
 
     return ThemeData(
       useMaterial3: true,
